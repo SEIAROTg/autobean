@@ -1,0 +1,43 @@
+2000-01-01 custom "autobean.share.policy" "default"
+    share-Alice: 1
+    share-Bob: 1
+
+2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Expenses:Bean
+2000-01-01 open Income:Topup
+2000-01-01 open Assets:Receivable:Alice
+2000-01-01 open Assets:Receivable:Bob
+2000-01-01 open Liabilities:Payable
+
+2000-01-02 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
+2000-01-02 custom "autobean.share.proportionate" Assets:BankOfBean
+
+2000-01-03 *
+    Income:Topup                             -100.00 USD
+        share-Alice: 1
+    Assets:BankOfBean:JointAccount            100.00 USD
+        share-Alice: 1
+
+2000-01-04 *
+    Income:Topup                             -100.00 USD
+        share-Bob: 1
+    Assets:BankOfBean:JointAccount            100.00 USD
+        share-Bob: 1
+
+2000-01-05 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
+2000-01-05 custom "autobean.share.proportionate" Assets:BankOfBean
+
+2000-01-06 *
+    Assets:BankOfBean:JointAccount           -100.00 USD
+    Expenses:Bean                             100.00 USD
+
+2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
+2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean
+
+2000-01-08 *
+    Assets:BankOfBean:JointAccount           -100.00 USD
+    Expenses:Bean                             100.00 USD
+        share-Alice: 1
+
+2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
+2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean

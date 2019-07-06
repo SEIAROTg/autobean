@@ -1,0 +1,6 @@
+source.beancount:18:Account "Assets:BankOfBean:JointAccount" is disproportionate
+source.beancount:19:Account "Assets:BankOfBean:JointAccount" is disproportionate
+source.beancount:34:Account "Assets:BankOfBean:JointAccount" is disproportionate
+source.beancount:35:Account "Assets:BankOfBean:JointAccount" is disproportionate
+source.beancount:58:Account "Assets:BankOfBean:JointAccount" is disproportionate
+source.beancount:59:Account "Assets:BankOfBean:JointAccount" is disproportionate

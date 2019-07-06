@@ -1,0 +1,73 @@
+2000-01-01 open Assets:Foo
+
+; invalid share policy definition
+2000-02-01 custom "autobean.share.policy" 123
+    share-Alice: 1
+
+2000-02-02 custom "autobean.share.policy" "foo" 123
+    share-Alice: 1
+
+2000-02-03 custom "autobean.share.policy" Assets:Foo 123
+    share-Alice: 1
+
+2000-02-04 custom "autobean.share.policy" ""
+    share-Alice: 1
+
+2000-02-05 custom "autobean.share.policy" "policy"
+    share-Alice: 1
+    share-: 1
+
+2000-02-06 custom "autobean.share.policy" "policy"
+    share-Alice: 1
+    share-bob: 1
+
+2000-02-07 custom "autobean.share.policy" Assets:Foo
+
+2000-02-08 custom "autobean.share.policy" "foo"
+    share-Alice: 1
+
+2000-02-09 custom "autobean.share.policy" "bar"
+    share-Bob: 1
+    share_policy: "foo"
+
+2000-02-10 custom "autobean.share.policy" "bar"
+    share_policy: "nonexistent"
+
+2000-02-11 custom "autobean.share.policy" "bar"
+    share-Alice: 1
+    share-Bob: "NaN"
+
+; policy definition on inactive accounts
+2000-03-01 custom "autobean.share.policy" Assets:NonExistent
+    share-Alice: 1
+
+2000-03-02 open Assets:NonExistent:Foo
+2000-03-02 custom "autobean.share.policy" Assets:NonExistent
+    share-Alice: 1
+    share_recursive: FALSE
+
+2000-03-03 close Assets:NonExistent:Foo
+2000-03-04 custom "autobean.share.policy" Assets:NonExistent:Foo
+    share-Alice: 1
+
+2000-03-05 custom "autobean.share.policy" Assets:NonExistent
+    share-Alice: 1
+
+; no applicable policy
+2000-04-01 open Assets:Bar
+2000-04-01 *
+    Assets:Foo                               -100.00 USD
+    Assets:Bar                                100.00 USD
+
+2000-04-02 custom "autobean.share.proportionate" Assets:Bar
+
+; invalid proportionate assertion
+2000-05-01 custom "autobean.share.proportionate" 123
+2000-05-01 custom "autobean.share.proportionate" Assets:Bar 456
+
+; proportionate assertion on inactive account
+2000-06-01 custom "autobean.share.proportionate" Assets:NonExistent
+    share-Alice: 1
+
+2000-06-01 custom "autobean.share.proportionate" Assets:Existent:Foo
+    share-Alice: 1

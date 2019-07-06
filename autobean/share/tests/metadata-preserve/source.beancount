@@ -1,0 +1,18 @@
+2000-01-01 custom "autobean.share.policy" "default"
+    share-Alice: 2
+    share-Bob: 3
+
+2000-01-01 open Assets:BankOfBean:JointAccount
+    share-Alice: 2
+    share-Bob: 3
+    foo: "abc"
+
+2000-01-01 open Expenses:Bean
+    bar: TRUE
+
+2000-01-01 *
+    baz: 123
+    Assets:BankOfBean:JointAccount           -100.00 USD
+        qux: "abc"
+    Expenses:Bean                             100.00 USD
+        quux: TRUE

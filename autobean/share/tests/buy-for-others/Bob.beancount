@@ -1,0 +1,23 @@
+2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Expenses:Bean
+2000-01-01 open Liabilities:Payable
+2000-01-01 open Assets:Receivable:Alice
+2000-01-01 open Assets:Receivable:Bob
+2000-01-01 open Assets:Receivable:Charlie
+
+2000-01-01 *
+    Assets:BankOfBean:JointAccount            -50.00 USD
+    Liabilities:Payable                        50.00 USD
+
+2000-01-02 *
+    Assets:BankOfBean:JointAccount            -50.00 USD
+    Expenses:Bean                              40.00 USD
+    Liabilities:Payable                        10.00 USD
+
+2000-01-03 *
+    Assets:BankOfBean:JointAccount            -50.00 USD
+    Liabilities:Payable                        50.00 USD
+
+2000-01-04 *
+    Assets:BankOfBean:JointAccount            -50.00 USD
+    Liabilities:Payable                        50.00 USD

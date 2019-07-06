@@ -1,0 +1,21 @@
+2000-01-01 custom "autobean.share.policy" "default"
+    share-Alice: 1
+    share-Bob: 1
+
+; by default not recursive
+2000-01-01 open Assets:BankOfBean
+    share-Alice: 2
+    share-Bob: 3
+
+2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Expenses:Bean
+2000-01-01 open Expenses:Bean:Soybean
+
+2000-01-01 custom "autobean.share.policy" Expenses:Bean
+    share-Alice: 1
+    share-Bob: 1
+    share_recursive: FALSE
+
+2000-01-01 *
+    Assets:BankOfBean:JointAccount           -100.00 USD
+    Expenses:Bean:Soybean                     100.00 USD
