@@ -1,3 +1,3 @@
-from autobean.share.plugin import plugin as share
+from autobean.share.plugin import plugin
 
-__plugins__ = [share]
+__plugins__ = [plugin]
