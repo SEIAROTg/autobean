@@ -1,0 +1,5 @@
+2000-01-01 custom "autobean.xcheck" 1
+2000-01-01 custom "autobean.xcheck" 1 2
+2000-01-01 custom "autobean.xcheck" 1 2 3
+2000-01-01 custom "autobean.xcheck" Assets:Foo 123
+2000-01-01 custom "autobean.xcheck" "" "foo.beancount"

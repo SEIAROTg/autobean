@@ -1,0 +1,1 @@
+statement.beancount:12:Missing transaction

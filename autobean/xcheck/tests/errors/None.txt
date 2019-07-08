@@ -1,0 +1,5 @@
+source.beancount:1:Cross check expects 2 arguments but 1 are given
+source.beancount:2:Cross check expects an account and a path as arguments
+source.beancount:3:Cross check expects 2 arguments but 3 are given
+source.beancount:4:Cross check expects an account and a path as arguments
+source.beancount:5:Cross check expects an account and a path as arguments
