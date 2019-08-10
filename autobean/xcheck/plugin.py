@@ -1,6 +1,7 @@
 from typing import List, Dict, Tuple, Iterator, Optional
 from collections import namedtuple
 import os.path
+import datetime
 from beancount.core.data import Directive, Custom, Transaction
 from beancount import loader
 import beancount.core.account
@@ -46,8 +47,8 @@ class CrossCheckPlugin:
         if stmt_errors:
             self.errors += stmt_errors
             return
-        transactions = list(filter_related_transactions(entries, account))
-        stmt_transactions = list(filter_related_transactions(stmt_entries, 'Assets:Account', account))
+        transactions = list(filter_related_transactions(entries, account, entry.date))
+        stmt_transactions = list(filter_related_transactions(stmt_entries, 'Assets:Account', entry.date, account))
         same, missings1, missings2 = compare_entries(transactions, stmt_transactions)
         for missing in missings1:
             self.error(CrossCheckError(
@@ -62,9 +63,9 @@ class CrossCheckPlugin:
         self.errors.append(error)
 
 
-def filter_related_transactions(entries: List[Directive], account: str, rename_account: Optional[str] = None) -> Iterator[Transaction]:
+def filter_related_transactions(entries: List[Directive], account: str, date: datetime.date, rename_account: Optional[str] = None) -> Iterator[Transaction]:
     for entry in entries:
-        if isinstance(entry, Transaction):
+        if isinstance(entry, Transaction) and entry.date < date:
             postings = []
             for posting in entry.postings:
                 if posting.account == account:

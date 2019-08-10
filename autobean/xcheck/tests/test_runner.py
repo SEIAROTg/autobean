@@ -25,5 +25,13 @@ def test_unexpected(util: PluginTestUtil):
     util.assert_errors('unexpected')
 
 
+def test_ignore_future_missing(util: PluginTestUtil):
+    util.assert_results('ignore-future-missing')
+
+
+def test_ignore_future_unexpected(util: PluginTestUtil):
+    util.assert_results('ignore-future-unexpected')
+
+
 def test_errors(util: PluginTestUtil):
     util.assert_errors('errors')
