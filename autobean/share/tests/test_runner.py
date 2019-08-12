@@ -69,5 +69,17 @@ def test_check_before_transform(util: PluginTestUtil):
     util.assert_loading_errors('check-before-transform')
 
 
+def test_include_None(util: PluginTestUtil):
+    util.assert_results('include-None', [None, 'Alice'])
+
+
+def test_include_Alice(util: PluginTestUtil):
+    util.assert_results('include-Alice', [None, 'Alice'])
+
+
+def test_include_with_plugin(util: PluginTestUtil):
+    util.assert_results('include-with-plugin', [None, 'Alice'])
+
+
 def test_errors(util: PluginTestUtil):
     util.assert_errors('errors', [None, 'Alice', 'Bob'])

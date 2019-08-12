@@ -1,20 +1,29 @@
 from typing import Optional, List, Dict, Tuple, Set
 from decimal import Decimal
 from collections import namedtuple, defaultdict
+import os.path
 import beancount.core.account
+import beancount.loader
 from beancount.core import interpolate, realization, inventory
 from beancount.core.data import Transaction, Posting, Custom, Open, Close, Balance, Directive
 from beancount.ops import validation
 from autobean.share import utils
 from autobean.share.policy import Policy
+from autobean.share.include_context import include_context
 
 
 def plugin(entries: List[Directive], options: Dict, viewpoint: Optional[str] = None) -> Tuple[List[Directive], List]:
+    is_included = include_context[0]
+    if is_included:
+        return entries, []
+    include_context[0] = True
     errors = validation.validate(entries, options, extra_validations=validation.HARDCORE_VALIDATIONS)
     if errors:
         return entries, errors
     plugin = SharingPlugin(options, viewpoint)
-    return plugin.process(entries)
+    ret = plugin.process(entries)
+    include_context[0] = is_included
+    return ret
 
 
 AccountNotFoundError = namedtuple('AccountNotFoundError', 'source message entry')
@@ -25,7 +34,7 @@ ProportionateError = namedtuple('ProportionateError', 'source message entry')
 TOLERANCE = Decimal(1e-6)
 
 
-class SharingPlugin():
+class SharingPlugin:
     viewpoint: str
     entries: List[Directive]
     errors: List
@@ -45,8 +54,18 @@ class SharingPlugin():
         self.real_root = realization.RealAccount('')
 
     def process(self, entries: List[Directive]) -> Tuple[List[Directive], List]:
-        # Process entries
+        # Pre-process entries for include directive
+        included_entries = []
         for entry in entries:
+            if utils.is_include_directive(entry):
+                entries_local, errors_local = self.preprocess_include_directive(entry)
+                included_entries.extend(entries_local)
+                self.errors.extend(errors_local)
+            else:
+                included_entries.append(entry)
+
+        # Process entries
+        for entry in included_entries:
             if utils.is_share_policy_directive(entry):
                 self.process_share_policy_definition(entry)
             elif utils.is_proportionate_assertion_directive(entry):
@@ -66,6 +85,32 @@ class SharingPlugin():
             else:
                 self.entries.append(entry)
         return self.entries, self.errors
+
+    def preprocess_include_directive(self, entry: Custom):
+        if len(entry.values) < 1 or len(entry.values) > 2:
+            self.error(InvalidDirectiveError(
+                entry.meta, 'autobean.share.include directive expects 1 or 2 arguments but {} are given'.format(len(entry.values)), entry
+            ))
+            return [], []
+        if len(entry.values) == 1 and entry.values[0].dtype is str:
+            filename, viewpoint = entry.values[0].value, None
+        elif len(entry.values) == 2 and entry.values[0].dtype is str and entry.values[1].dtype is str:
+            filename, viewpoint = entry.values[0].value, entry.values[1].value
+        else:
+            self.error(InvalidDirectiveError(
+                entry.meta, 'autobean.share.include directive should be supplied with a filename and an optional viewpoint', entry
+            ))
+            return [], []
+        filename = os.path.join(os.path.dirname(entry.meta['filename']), filename)
+        entries, errors, options = beancount.loader.load_file(filename, extra_validations=validation.HARDCORE_VALIDATIONS)
+        if errors:
+            errors = [
+                error if error.source['lineno'] else error._replace(source=entry.meta, entry=entry)
+                for error in errors
+            ]
+            return [], errors
+        plugin = SharingPlugin(options, viewpoint)
+        return plugin.process(entries)
 
     def process_proportionate(self, entry: Custom):
         if len(entry.values) != 1:
@@ -130,7 +175,7 @@ class SharingPlugin():
 
     def process_share_policy_definition(self, entry: Custom):
         if len(entry.values) != 1:
-            self.error(InvalidSharePolicyError(
+            self.error(InvalidDirectiveError(
                 entry.meta, 'Share policy definition expects 1 account or string argument but {} are given'.format(len(entry.values)), entry
             ))
         elif entry.values[0].dtype is beancount.core.account.TYPE:

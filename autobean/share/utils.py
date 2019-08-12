@@ -53,6 +53,10 @@ def is_proportionate_assertion_directive(entry: Directive):
     return isinstance(entry, Custom) and entry.type == 'autobean.share.proportionate'
 
 
+def is_include_directive(entry: Directive):
+    return isinstance(entry, Custom) and entry.type == 'autobean.share.include'
+
+
 def is_autobean_share_directive(entry: Directive):
     return isinstance(entry, Custom) and (entry.type.startswith('autobean.share.') or entry.type == 'autobean.share')
 

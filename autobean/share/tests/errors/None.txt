@@ -1,3 +1,7 @@
+source.beancount:76:autobean.share.include directive should be supplied with a filename and an optional viewpoint
+source.beancount:77:autobean.share.include directive should be supplied with a filename and an optional viewpoint
+source.beancount:78:autobean.share.include directive expects 1 or 2 arguments but 3 are given
+source.beancount:79:does not exist
 source.beancount:4:Share policy must be assigned a name or applied on an account
 source.beancount:7:Share policy definition expects 1 account or string argument but 2 are given
 source.beancount:10:Share policy definition expects 1 account or string argument but 2 are given
