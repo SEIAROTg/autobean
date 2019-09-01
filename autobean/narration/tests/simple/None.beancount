@@ -1,0 +1,44 @@
+2000-01-01 open Assets:BankOfBean
+2000-01-01 open Expenses:Bean
+
+2000-01-01 *
+    Assets:BankOfBean                        -100.00 USD
+    Expenses:Bean                             100.00 USD
+
+2000-01-02 * "foo"
+    Assets:BankOfBean                        -100.00 USD
+    Expenses:Bean                             100.00 USD
+
+2000-01-03 * "foo"
+    Assets:BankOfBean                        -100.00 USD
+        narration: "foo"
+    Expenses:Bean                             100.00 USD
+
+2000-01-04 * "foo | bar"
+    Assets:BankOfBean                        -100.00 USD
+        narration: "foo"
+    Expenses:Bean                             100.00 USD
+        narration: "bar"
+
+2000-01-04 * "foo | bar | baz"
+    Assets:BankOfBean                        -100.00 USD
+        narration: "bar"
+    Expenses:Bean                             100.00 USD
+        narration: "baz"
+
+2000-01-04 * "foo | bar"
+    Assets:BankOfBean                        -100.00 USD
+    Expenses:Bean                             100.00 USD
+        narration: "bar"
+
+2000-01-04 * "foo | bar"
+    Assets:BankOfBean                        -100.00 USD
+        narration: ""
+    Expenses:Bean                             100.00 USD
+        narration: "bar"
+
+2000-01-04 * "bar"
+    Assets:BankOfBean                        -100.00 USD
+        narration: ""
+    Expenses:Bean                             100.00 USD
+        narration: "bar"
