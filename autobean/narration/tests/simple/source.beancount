@@ -20,24 +20,24 @@
     Expenses:Bean                             100.00 USD
         narration: "bar"
 
-2000-01-04 * "foo"
+2000-01-05 * "foo"
     Assets:BankOfBean                        -100.00 USD
         narration: "bar"
     Expenses:Bean                             100.00 USD
         narration: "baz"
 
-2000-01-04 * "foo"
+2000-01-06 * "foo"
     Assets:BankOfBean                        -100.00 USD
     Expenses:Bean                             100.00 USD
         narration: "bar"
 
-2000-01-04 * "foo"
+2000-01-07 * "foo"
     Assets:BankOfBean                        -100.00 USD
         narration: ""
     Expenses:Bean                             100.00 USD
         narration: "bar"
 
-2000-01-04 * ""
+2000-01-08 * ""
     Assets:BankOfBean                        -100.00 USD
         narration: ""
     Expenses:Bean                             100.00 USD
