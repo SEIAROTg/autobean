@@ -1,0 +1,15 @@
+dist: xenial
+language: python
+python:
+  - "3.7"
+install:
+  - pip install -r requirements.txt
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./code-climate-reporter
+  - chmod +x ./code-climate-reporter
+before_script:
+  ./code-climate-reporter before-build
+script:
+  - pytest -sv --cov=./
+after_script:
+  - codecov
+  - ./code-climate-reporter after-build --exit-code $TRAVIS_TEST_RESULT
