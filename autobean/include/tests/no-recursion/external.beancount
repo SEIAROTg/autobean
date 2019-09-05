@@ -1,0 +1,8 @@
+2000-01-01 open Assets:BankOfBean
+2000-01-01 open Expenses:Bean
+
+2000-01-01 *
+    Assets:BankOfBean                        -100.00 USD
+    Expenses:Bean                             100.00 USD
+
+2000-01-02 custom "autobean.include" "foo.beancount"
