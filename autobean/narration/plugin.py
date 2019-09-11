@@ -19,7 +19,7 @@ def collect_transaction_filenames(entries: List[Directive]) -> Set[str]:
         if isinstance(entry, Transaction) and 'filename' in entry.meta)
 
 
-def merge_narration(entry: Directive, comment_narrations: Dict[str, Dict[int, str]]):
+def merge_narration(entry: Directive, comment_narrations: Dict[str, Dict[int, str]]) -> Directive:
     if not isinstance(entry, Transaction):
         return entry
     narrations = []
@@ -27,9 +27,11 @@ def merge_narration(entry: Directive, comment_narrations: Dict[str, Dict[int, st
         narrations.append(entry.narration)
     for posting in entry.postings:
         if posting.meta:
-            metadata_narration = posting.meta.get('narration')
+            narration = posting.meta.get('narration')
             comment_narration = comment_narrations.get(posting.meta.get('filename')).get(posting.meta.get('lineno'))
-            narration = metadata_narration if metadata_narration is not None else comment_narration
+            if narration is None and comment_narration:
+                posting.meta['narration'] = comment_narration
+                narration = comment_narration
             if narration:
                 narrations.append(narration.strip())
     return entry._replace(narration=' | '.join(narrations))

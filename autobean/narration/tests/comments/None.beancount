@@ -3,15 +3,19 @@
 
 2000-01-01 * "foo | bar | baz"
     Assets:BankOfBean                        -100.00 USD ;; bar
+        narration: "bar"
     Expenses:Bean                             100.00 USD ;; baz
+        narration: "baz"
 
 2000-01-02 * "foo"
     Assets:BankOfBean                        -100.00 USD ;; foo
+        narration: "foo"
     Expenses:Bean                             100.00 USD
 
 2000-01-03 * "bar"
     Assets:BankOfBean                        -100.00 USD ; foo
     Expenses:Bean                             100.00 USD ;; bar
+        narration: "bar"
 
 2000-01-04 * "foo"
     Assets:BankOfBean                        -100.00 USD ;; foo ; bar
@@ -24,6 +28,7 @@
 2000-01-06 * "foo"
     Assets:BankOfBean                        -100.00 USD ;; foo ;; bar
     Expenses:Bean                             100.00 USD
+        narration: "foo"
 
 2000-01-07 *
     Assets:BankOfBean                        -100.00 USD ; foo ; bar
