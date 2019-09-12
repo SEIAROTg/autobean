@@ -2,8 +2,6 @@
 2000-01-01 open Income:Farm
 2000-01-01 open Expenses:Bean
 
-2000-02-01 custom "autobean.xcheck" Assets:BankOfBean "statement.beancount"
-
 2000-01-02 *
     Assets:BankOfBean                          50.00 USD
     Income:Farm                               -50.00 USD
@@ -17,3 +15,5 @@
     Assets:BankOfBean                         -30.00 EUR
     Expenses:Bean                              30.00 USD
     Expenses:Bean                              30.00 EUR
+
+2000-02-01 custom "autobean.xcheck" "statement.beancount" 2000-01-01 Assets:BankOfBean

@@ -1,1 +1,0 @@
-statement.beancount:3:Balance failed for 'Assets:Account'

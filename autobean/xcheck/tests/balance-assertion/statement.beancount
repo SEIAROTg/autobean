@@ -1,3 +1,3 @@
-2000-01-01 open Assets:Account
+option "plugin_processing_mode" "raw"
 
-2000-01-02 balance Assets:Account             100.00 USD
+2000-01-02 balance Assets:BankOfBean          100.00 USD

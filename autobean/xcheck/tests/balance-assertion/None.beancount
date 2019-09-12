@@ -5,4 +5,6 @@
     Equity:Opening-Balances                  -100.00 USD
     Assets:BankOfBean                         100.00 USD
 
+2000-01-02 balance Assets:BankOfBean          100.00 USD
+
 2000-02-01 custom "autobean.xcheck" "statement.beancount" 2000-01-02

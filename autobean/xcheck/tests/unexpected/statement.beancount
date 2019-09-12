@@ -1,16 +1,9 @@
-2000-01-01 open Assets:Account
-2000-01-01 open Equity:Unknown
+2000-01-02 !
+    Assets:BankOfBean                          50.00 USD
 
 2000-01-02 !
-    Assets:Account                             50.00 USD
-    Equity:Unknown                            -50.00 USD
-
-2000-01-02 !
-    Assets:Account                           -100.00 USD
-    Equity:Unknown                            100.00 USD
+    Assets:BankOfBean                        -100.00 USD
 
 2000-01-03 !
-    Assets:Account                            -30.00 EUR
-    Assets:Account                            -30.00 USD
-    Equity:Unknown                             30.00 USD
-    Equity:Unknown                             30.00 EUR
+    Assets:BankOfBean                         -30.00 EUR
+    Assets:BankOfBean                         -30.00 USD

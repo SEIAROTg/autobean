@@ -10,7 +10,7 @@ def util() -> PluginTestUtil:
 
 
 def test_balance_assertion(util: PluginTestUtil):
-    util.assert_errors('balance-assertion')
+    util.assert_results('balance-assertion')
 
 
 def test_pass(util: PluginTestUtil):
@@ -25,12 +25,8 @@ def test_unexpected(util: PluginTestUtil):
     util.assert_errors('unexpected')
 
 
-def test_ignore_future_missing(util: PluginTestUtil):
-    util.assert_results('ignore-future-missing')
-
-
-def test_ignore_future_unexpected(util: PluginTestUtil):
-    util.assert_results('ignore-future-unexpected')
+def test_ignore_out_of_time_entries(util: PluginTestUtil):
+    util.assert_results('ignore-out-of-time-entries')
 
 
 def test_errors(util: PluginTestUtil):

@@ -1,1 +1,2 @@
-source.beancount:15:Unexpected transaction
+source.beancount:14:Unexpected posting
+source.beancount:18:Unexpected posting
