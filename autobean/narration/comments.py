@@ -1,5 +1,4 @@
 from typing import Dict, Optional
-import re
 
 
 def extract_from_file(filename: str) -> Dict[int, str]:

@@ -22,7 +22,6 @@ class IncludePlugin(PluginBase):
                 ret.extend(self.process_include_directive(entry))
             else:
                 ret.append(entry)
-        ret.sort(key=lambda e: e.date)
         return ret, self._errors
 
     def process_include_directive(self, entry: Custom) -> List[Directive]:
@@ -37,7 +36,7 @@ class IncludePlugin(PluginBase):
             ))
             return []
         path = entry.values[0].value
-        path = os.path.join(os.path.dirname(entry.meta['filename']), entry.values[0].value)
+        path = os.path.join(os.path.dirname(entry.meta['filename']), path)
         entries, errors, _ = loader.load_file(path)
-        self._errors += errors
+        self._loading_errors(errors, entry.meta, entry)
         return entries

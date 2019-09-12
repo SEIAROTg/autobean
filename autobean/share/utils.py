@@ -1,4 +1,4 @@
-from typing import Dict, Iterator
+from typing import Iterator
 from decimal import Decimal
 from beancount.core.data import Posting, Directive, Custom
 from beancount.core.amount import Amount, mul as amount_mul, div as amount_div
