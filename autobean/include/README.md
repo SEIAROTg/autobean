@@ -14,6 +14,8 @@ The built-in `include` directive merely includes the directives in external ledg
 ```beancount
 ; source.beancount
 
+plugin "autobean.include"
+
 2000-01-01 custom "autobean.include" "external.beancount"
 ```
 
