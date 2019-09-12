@@ -1,6 +1,6 @@
 # autobean.narration
 
-Generate transaction narration from posting narration.
+Generate transaction narration from posting narration and posting narration from comments.
 
 # Behavior
 
@@ -8,6 +8,7 @@ Generate transaction narration from posting narration.
 * All non-transaction directives will remain unchanged.
 * Posting narration will be taken from their `narration` metadata attributes (if present), or alternatively from inline comments starting with `;;` (if present and `narration` attribute is not present).
 * The `narration` attributes will not be removed by this plugin.
+* `narration` attributes will be generated on postings if their narration are extracted from comments.
 * Spaces at the start or the end of posting narrations will be trimmed.
 * In comment mode, narration is considered end at the first `;` and anything afterwards are treated as regular comments.
 
