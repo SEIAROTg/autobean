@@ -81,5 +81,9 @@ def test_include_with_plugin(util: PluginTestUtil):
     util.assert_results('include-with-plugin', [None, 'Alice'])
 
 
+def test_with_cost(util: PluginTestUtil):
+    util.assert_results('with-cost', [None, 'Alice', 'Bob'])
+
+
 def test_errors(util: PluginTestUtil):
     util.assert_errors('errors', [None, 'Alice', 'Bob'])

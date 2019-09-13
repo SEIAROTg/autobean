@@ -13,7 +13,8 @@ def amount_distrib(amount: Amount, weight: Decimal, total_weight: Decimal):
 def costspec_distrib(costspec: CostSpec, weight: Decimal, total_weight: Decimal):
     number_total = costspec.number_total
     if number_total is not None:
-        number_total = amount_distrib(costspec.number_total, weight, total_weight)
+        amount = Amount(number_total, costspec.currency)
+        number_total = amount_distrib(amount, weight, total_weight)
     return costspec._replace(
         number_total = number_total
     )
