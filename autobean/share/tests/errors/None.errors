@@ -1,0 +1,26 @@
+source.bean:76:autobean.share.include directive should be supplied with a filename and an optional viewpoint
+source.bean:77:autobean.share.include directive should be supplied with a filename and an optional viewpoint
+source.bean:78:autobean.share.include directive expects 1 or 2 arguments but 3 are given
+source.bean:79:does not exist
+source.bean:4:Share policy must be assigned a name or applied on an account
+source.bean:7:Share policy definition expects 1 account or string argument but 2 are given
+source.bean:10:Share policy definition expects 1 account or string argument but 2 are given
+source.bean:13:Policy name cannot be empty
+source.bean:16:Expect a name to share with
+source.bean:20:The name to share with must start with an uppercase letter
+source.bean:24:Expect definition of share policy
+source.bean:29:Mixed use of "share_policy" and "share-" attributes
+source.bean:33:Share policy "nonexistent" does not exist
+source.bean:33:Expect definition of share policy
+source.bean:36:Expect a weight of share in decimal
+source.bean:41:Account "Assets:NonExistent" is not found or inactive, as well as all its sub-accounts
+source.bean:45:Account "Assets:NonExistent" is not found or inactive
+source.bean:50:Account "Assets:NonExistent:Foo" is not found or inactive, as well as all its sub-accounts
+source.bean:53:Account "Assets:NonExistent" is not found or inactive, as well as all its sub-accounts
+source.bean:59:No applicable share policy to account "Assets:Foo"
+source.bean:60:No applicable share policy to account "Assets:Bar"
+source.bean:62:No applicable share policy to proportionate assertion on account "Assets:Bar"
+source.bean:65:Proportionate assertion must be applied on an account
+source.bean:66:Proportionate assertion expects 1 account argument but 2 are given
+source.bean:69:Account "Assets:NonExistent" is not found or inactive, as well as all its sub-accounts
+source.bean:72:Account "Assets:Existent:Foo" is not found or inactive, as well as all its sub-accounts

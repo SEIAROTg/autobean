@@ -1,5 +1,0 @@
-source.beancount:1:autobean.xcheck expects at least 2 arguments but 1 is given
-source.beancount:2:autobean.xcheck expects a path, a start date and zero or more accounts as arguments
-source.beancount:3:autobean.xcheck expects a path, a start date and zero or more accounts as arguments
-source.beancount:4:autobean.xcheck expects a path, a start date and zero or more accounts as arguments
-source.beancount:5:foo.beancount" does not exist

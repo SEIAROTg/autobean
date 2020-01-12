@@ -1,0 +1,5 @@
+2000-01-01 custom "autobean.xcheck" "foo.bean"
+2000-01-01 custom "autobean.xcheck" "foo.bean" 2000-01-01 ""
+2000-01-01 custom "autobean.xcheck" 1 2000-01-01
+2000-01-01 custom "autobean.xcheck" "foo.bean" 1
+2000-01-01 custom "autobean.xcheck" "foo.bean" 2000-01-01

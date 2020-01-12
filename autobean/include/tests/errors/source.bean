@@ -1,0 +1,2 @@
+2000-01-01 custom "autobean.include" "foo.bean" "bar.bean"
+2000-01-01 custom "autobean.include" 1

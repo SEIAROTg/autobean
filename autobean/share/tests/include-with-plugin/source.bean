@@ -1,4 +1,4 @@
 2000-01-01 custom "autobean.share.policy" "default"
     share-Alice: 1
 
-2000-01-01 custom "autobean.share.include" "include.beancount" "Alice"
+2000-01-01 custom "autobean.share.include" "_include.bean"

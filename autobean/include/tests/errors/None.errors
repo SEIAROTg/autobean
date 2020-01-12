@@ -1,0 +1,2 @@
+source.bean:1:autobean.include expects 1 argument but 2 are given
+source.bean:2:autobean.include expects a path as argument

@@ -1,2 +1,0 @@
-source.beancount:4:Invalid reference to unknown account
-source.beancount:4:Transaction does not balance

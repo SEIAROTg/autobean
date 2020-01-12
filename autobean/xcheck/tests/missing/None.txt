@@ -1,2 +1,0 @@
-statement.beancount:8:Missing posting
-statement.beancount:11:Missing posting

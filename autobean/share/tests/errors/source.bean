@@ -74,6 +74,6 @@
 
 ; invalid include
 2000-07-01 custom "autobean.share.include" 123
-2000-07-01 custom "autobean.share.include" "foo.beancount" 123
-2000-07-01 custom "autobean.share.include" "foo.beancount" "Alice" ""
-2000-07-01 custom "autobean.share.include" "foo.beancount"
+2000-07-01 custom "autobean.share.include" "foo.bean" 123
+2000-07-01 custom "autobean.share.include" "foo.bean" "Alice" ""
+2000-07-01 custom "autobean.share.include" "foo.bean"
