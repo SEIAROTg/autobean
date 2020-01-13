@@ -37,11 +37,20 @@ class PostingToCompare:
 
 
 class CrossCheckPlugin(PluginBase):
+    _includes: Set[str]
+
+    def __init__(self):
+        super().__init__()
+        self._includes = set()
+
     def process(self, entries: List[Directive], options: Dict) -> Tuple[List[Directive], List]:
+        self._includes = set(options['include'])
         generated_entries = []
         for entry in entries:
             if isinstance(entry, Custom) and entry.type == 'autobean.xcheck':
                 generated_entries += self.process_xcheck_directive(entry, entries)
+        # Allow tools to refresh data when included files are updated.
+        options['include'] = list(self._includes)
         return entries + generated_entries, self._errors
 
     def process_xcheck_directive(self, entry: Custom, entries: List[Directive]) -> List[Directive]:
@@ -82,6 +91,7 @@ class CrossCheckPlugin(PluginBase):
             self._error(CrossCheckError(
                 posting.posting.meta, 'Missing posting', posting.transaction
             ))
+        self._includes.add(path)
         return [entry for entry in stmt_entries if isinstance(entry, Balance)]
 
     @staticmethod

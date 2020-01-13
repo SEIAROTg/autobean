@@ -1,4 +1,4 @@
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Set
 from collections import namedtuple
 import os.path
 from beancount.core.data import Directive, Custom
@@ -15,13 +15,22 @@ InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entr
 
 
 class IncludePlugin(PluginBase):
+    _includes: Set[str]
+
+    def __init__(self):
+        super().__init__()
+        self._includes = set()
+
     def process(self, entries: List[Directive], options: Dict) -> Tuple[List[Directive], List]:
+        self._includes = set(options['include'])
         ret = []
         for entry in entries:
             if isinstance(entry, Custom) and entry.type == 'autobean.include':
                 ret.extend(self.process_include_directive(entry))
             else:
                 ret.append(entry)
+        # Allow tools to refresh data when included files are updated.
+        options['include'] = list(self._includes)
         return ret, self._errors
 
     def process_include_directive(self, entry: Custom) -> List[Directive]:
@@ -39,4 +48,5 @@ class IncludePlugin(PluginBase):
         path = os.path.join(os.path.dirname(entry.meta['filename']), path)
         entries, errors, _ = loader.load_file(path)
         self._loading_errors(errors, entry.meta, entry)
+        self._includes.add(path)
         return entries
