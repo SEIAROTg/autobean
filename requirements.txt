@@ -1,4 +1,7 @@
 beancount
+python-dateutil
+pyyaml
+requests
 
 pytest
 pytest-cov
