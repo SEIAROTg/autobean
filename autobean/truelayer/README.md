@@ -22,7 +22,9 @@ Import transactions from banks via [TrueLayer](https://truelayer.com/), an bank 
 
 # Usage
 
-After the initial setup, you will be able to import transactions with `bean-extract` command. The authorization should typically be valid for 90 days after which the command will prompt for a re-authorization.
+After the initial setup, you might want to edit the `.truelayer.yaml` file to map your bank accounts to beancount accounts, disable accounts you would like to ignore or set the timestamp to start import. See Config section below.
+
+With a proper config, you will be able to import transactions with `bean-extract` command. The authorization should typically be valid for 90 days after which the command will prompt for a re-authorization.
 
 # Config
 
@@ -30,7 +32,7 @@ After the initial setup, you will be able to import transactions with `bean-extr
 
 * `access_token`, `access_token_expiry_time`, `refresh_token`: TrueLayer OAuth credentials. Don't alter.
 * `accounts`, `cards`: Maps from account ids (don't alter) to accounts, which contain the following fields
-    * `beancount_account`: The corresponding beancount account name. Multiple accounts can be mapped into one beancount account.
+    * `beancount_account`: The corresponding beancount account name. Multiple accounts can be mapped into one beancount account. Balance assertions may not work correctly if they share common currencies.
     * `enabled`: If set to `false`, this account will be ignored.
     * `liability`: If set to `true`, the sign of account balance will be flipped.
     * `from`: A timestamp in seconds since which the transactions should be fetched.

@@ -8,12 +8,13 @@ import re
 import time
 import secrets
 import sys
-from typing import Text
+from typing import Text, List, Dict, Any
 import urllib.parse
 import webbrowser
 
 from beancount.core.amount import Amount
-from beancount.core.data import Transaction, Posting, new_metadata
+from beancount.core.data import Transaction, Posting, Balance, Directive, new_metadata
+from beancount.core import inventory
 from beancount.ingest import importer
 import dateutil.parser
 import requests
@@ -100,14 +101,14 @@ class _Extractor:
             config_account.setdefault('name', account['display_name'])
             config_account.setdefault(
                 'liability',
-                type_ == 'card' and account['card_type'] == 'CREDIT')
+                type_ == 'cards' and account['card_type'] == 'CREDIT')
             config_account.setdefault('enabled', True)
             config_account.setdefault('beancount_account', ':'.join([
                 'Liabilities' if config_account['liability'] else 'Assets',
                 escape_account_component(self._config.name),
                 escape_account_component(config_account['name'])
             ]))
-            config_account.setdefault('from', time.time() - 86400 * 90)
+            config_account.setdefault('from', int(time.time()) - 86400 * 90)
 
         self._config.dump()
 
@@ -116,23 +117,23 @@ class _Extractor:
             account_id: Text,
             account,
             type_: Text,
-            is_pending: bool):
+            is_pending: bool) -> List[Dict[Any, Any]]:
         url = {
             ('accounts', False): (
-                'https://api.truelayer.com/data/v1/accounts/{account_id}/transactions'),
+                f'https://api.truelayer.com/data/v1/accounts/{account_id}/transactions'),
             ('accounts', True): (
-                'https://api.truelayer.com/data/v1/accounts/{account_id}/transactions/pending'),
+                f'https://api.truelayer.com/data/v1/accounts/{account_id}/transactions/pending'),
             ('cards', False): (
-                'https://api.truelayer.com/data/v1/cards/{account_id}/transactions'),
+                f'https://api.truelayer.com/data/v1/cards/{account_id}/transactions'),
             ('cards', True): (
-                'https://api.truelayer.com/data/v1/cards/{account_id}/transactions/pending'),
+                f'https://api.truelayer.com/data/v1/cards/{account_id}/transactions/pending'),
         }
         log_transaction = 'pending transactions' if is_pending else 'transactions'
         logging.info(
             f'Fetching {log_transaction} for account {account["name"]} '
             f'({account_id}).')
         r = requests.get(
-            url[(type_, is_pending)].format(account_id=account_id),
+            url[(type_, is_pending)],
             headers=self._auth_headers,
             params={
                 'from': format_iso_datetime(account['from']),
@@ -145,38 +146,128 @@ class _Extractor:
             f'{account["name"]} ({account_id}).')
         return txns
 
-    def _fetch_all_transactions(self):
+    def _fetch_balances(
+            self,
+            account_id: Text,
+            account,
+            type_: Text) -> List[Dict[Any, Any]]:
+        url = {
+            'accounts': f'https://api.truelayer.com/data/v1/accounts/{account_id}/balance',
+            'cards': f'https://api.truelayer.com/data/v1/cards/{account_id}/balance',
+        }
+        logging.info(
+            f'Fetching balance for account {account["name"]} ({account_id}).')
+        r = requests.get(url[type_], headers=self._auth_headers)
+        balances = r.json().get('results', [])
+        logging.info(
+            f'Fetched {len(balances)} balance entries for account '
+            f'{account["name"]} ({account_id}).')
+        return balances
+
+
+    def _fetch_all_transactions(self) -> List[Directive]:
         entries = []
         for type_ in ACCOUNT_TYPES:
             for account_id, account in self._config.data[type_].items():
                 if not account['enabled']:
                     continue
-                truelayer_txns = []
-                for is_pending in (False, True):
-                    truelayer_txns.extend(self._fetch_transactions(
-                        account_id,
-                        account,
-                        type_,
-                        is_pending))
-                txns = [
-                    self._transform_transaction(
-                        truelayer_txn, account['beancount_account'])
+                truelayer_txns = self._fetch_transactions(
+                    account_id, account, type_, False)
+                time_txns = [
+                    (
+                        dateutil.parser.parse(truelayer_txn['timestamp']),
+                        self._transform_transaction(
+                            truelayer_txn, account['beancount_account']))
                     for truelayer_txn in truelayer_txns
                 ]
-                # produce balance
-                entries.extend(txns)
+                pending_truelayer_txns = self._fetch_transactions(
+                    account_id, account, type_, True)
+                pending_time_txns = [
+                    (
+                        dateutil.parser.parse(truelayer_txn['timestamp']),
+                        self._transform_transaction(
+                            truelayer_txn, account['beancount_account'], True))
+                    for truelayer_txn in pending_truelayer_txns
+                ]
+                entries.extend(txn for _, txn in time_txns)
+                entries.extend(txn for _, txn in pending_time_txns)
+
+                balances = self._fetch_balances(account_id, account, type_)
+                for balance in balances:
+                    entries.append(self._transform_balance(
+                        balance, account, time_txns, pending_time_txns))
         return entries
+
+    def _transform_balance(
+            self,
+            truelayer_balance,
+            account,
+            time_txns,
+            pending_time_txns):
+        """Transforms TrueLayer Balance to beancount Balance.
+        
+        Balance from TrueLayer can be effective at the middle of a day with
+        pending transactions ignored, while beancount balance assertions
+        must be applied at the beginning of a day and pending transactions
+        are taken into account.
+
+        It is not always possible to get pending transactions. If that is not
+        available balance assertions may have to be corrected retrospectively.
+        """
+
+        balance_time = dateutil.parser.parse(
+            truelayer_balance['update_timestamp'])
+        assertion_time = datetime.datetime.combine(
+            balance_time, datetime.time.min, balance_time.tzinfo)
+
+        txns_to_remove = [
+            txn
+            for t, txn in time_txns
+            if assertion_time <= t < balance_time
+        ]
+        inventory_to_remove = inventory.Inventory()
+        for txn in txns_to_remove:
+            for posting in txn.postings:
+                inventory_to_remove.add_position(posting)
+        amount_to_remove = inventory_to_remove.get_currency_units(
+            truelayer_balance['currency'])
+
+        txns_to_add = [
+            txn
+            for t, txn in pending_time_txns
+            if t < assertion_time
+        ]
+        inventory_to_add = inventory.Inventory()
+        for txn in txns_to_add:
+            for posting in txn.postings:
+                inventory_to_add.add_position(posting)
+        amount_to_add = inventory_to_add.get_currency_units(
+            truelayer_balance['currency'])
+        
+        number = abs(Decimal(str(truelayer_balance['current'])))
+        if account['liability']:
+            number = -number
+        number += amount_to_add.number
+        number -= amount_to_remove.number
+        return Balance(
+            meta=new_metadata('', 0),
+            date=assertion_time.date(),
+            account=account['beancount_account'],
+            amount=Amount(number, truelayer_balance['currency']),
+            tolerance=None,
+            diff_amount=None,
+        )
 
     def _transform_transaction(
             self,
             truelayer_txn,
             beancount_account: Text,
-            is_pending: bool=False):
+            is_pending: bool=False) -> Transaction:
         """Transforms TrueLayer Transaction to beancount Transaction."""
 
-        amount = abs(Decimal(str(truelayer_txn['amount'])))
+        number = abs(Decimal(str(truelayer_txn['amount'])))
         if truelayer_txn['transaction_type'] == 'DEBIT':
-            amount = -amount
+            number = -number
         elif truelayer_txn['transaction_type'] == 'CREDIT':
             pass
         else:
@@ -184,7 +275,7 @@ class _Extractor:
 
         posting = Posting(
             account=beancount_account,
-            units=Amount(amount, truelayer_txn['currency']),
+            units=Amount(number, truelayer_txn['currency']),
             cost=None,
             price=None,
             flag=None,
