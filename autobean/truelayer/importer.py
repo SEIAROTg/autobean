@@ -12,6 +12,7 @@ from typing import Text, List, Dict, Any
 import urllib.parse
 import webbrowser
 
+from autobean.utils import deduplicate
 from beancount.core.amount import Amount
 from beancount.core.data import Transaction, Posting, Balance, Directive, new_metadata
 from beancount.core import inventory
@@ -78,7 +79,8 @@ class _Extractor:
         for type_ in ACCOUNT_TYPES:
             self._update_accounts(type_)
         entries = self._fetch_all_transactions()
-        # TODO: dedup
+        if existing_entries:
+            entries = deduplicate.deduplicate(entries, existing_entries)
         return entries
 
     @property
