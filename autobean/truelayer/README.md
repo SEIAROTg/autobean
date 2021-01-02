@@ -1,6 +1,6 @@
 # autobean.truelayer
 
-Import transactions from banks via [TrueLayer](https://truelayer.com/), an bank API aggregator.
+Imports transactions from banks via [TrueLayer](https://truelayer.com/), an bank API aggregator.
 
 # Set up
 

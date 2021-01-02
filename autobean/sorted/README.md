@@ -1,6 +1,6 @@
 # autobean.truelayer
 
-Checks that transactions are in non descending order in each file.
+Checks that transactions are in non-descending order in each file.
 
 This helps manually locating a specific transaction and avoiding wrong date for copied transactions.
 

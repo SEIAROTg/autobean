@@ -11,7 +11,9 @@ A collection of plugins and scripts that help automating bookkeeping with [beanc
 
 ## components
 
-* [autobean.share](autobean/share): Manage shared accounts / transactions / postings with simple annotations and reuse joint ledgers among multiple parties.
-* [autobean.xcheck](autobean/xcheck): Cross-check against external ledgers.
-* [autobean.narration](autobean/narration): Generate transaction narration from posting narration and posting narration from comments.
-* [autobean.include](autobean/include): Include external beancount ledgers without disabling their plugins.
+* [autobean.share](autobean/share): Manages shared accounts / transactions / postings with simple annotations and reuses joint ledgers among multiple parties.
+* [autobean.xcheck](autobean/xcheck): Cross-checks against external ledgers.
+* [autobean.narration](autobean/narration): Generates transaction narration from posting narration and posting narration from comments.
+* [autobean.include](autobean/include): Includes external beancount ledgers without disabling their plugins.
+* [autobean.truelayer](autobean/truelayer): Imports transactions from banks via [TrueLayer](https://truelayer.com/), an bank API aggregator.
+* [autobean.sorted](autobean/sorted): Checks that transactions are in non-descending order in each file.
