@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import Iterator, Union
 from decimal import Decimal
 from beancount.core.data import Posting, Directive, Custom
 from beancount.core.amount import Amount, mul as amount_mul, div as amount_div
@@ -31,12 +31,11 @@ def posting_distrib(posting: Posting, weight: Decimal, total_weight: Decimal):
     )
 
 
-def get_residual_postings(residual: Inventory, account_rounding: str, negate: bool):
-    k = Decimal(-1 if negate else 1)
+def get_residual_postings(residual: Inventory, account_rounding: str):
     return [
         Posting(
             account=account_rounding,
-            units=amount_mul(position.units, k),
+            units=-position.units,
             cost=position.cost,
             price=None,
             flag=None,
@@ -62,6 +61,15 @@ def is_autobean_share_directive(entry: Directive):
     return isinstance(entry, Custom) and (entry.type.startswith('autobean.share.') or entry.type == 'autobean.share')
 
 
+def is_owner_directive(entry: Directive):
+    return isinstance(entry, Custom) and entry.type == 'autobean.share.owner'
+
+
+def is_subaccount(account: str):
+    lastseg = account.rsplit(':', 1)[1]
+    return lastseg.startswith('[') and lastseg.endswith(']')
+
+
 def ancestor_accounts(account: str) -> Iterator[str]:
     segs = account.split(':')
     while segs:
@@ -69,7 +77,9 @@ def ancestor_accounts(account: str) -> Iterator[str]:
         segs.pop()
 
 
-def strip_meta(entry: Directive):
+def strip_meta(entry: Union[Directive, Posting]):
+    if not entry.meta:
+        return entry
     meta = {
         k: v
         for k, v in entry.meta.items()

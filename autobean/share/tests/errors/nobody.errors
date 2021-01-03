@@ -1,7 +1,3 @@
-source.bean:76:autobean.share.include directive should be supplied with a filename and an optional viewpoint
-source.bean:77:autobean.share.include directive should be supplied with a filename and an optional viewpoint
-source.bean:78:autobean.share.include directive expects 1 or 2 arguments but 3 are given
-source.bean:79:does not exist
 source.bean:4:Share policy must be assigned a name or applied on an account
 source.bean:7:Share policy definition expects 1 account or string argument but 2 are given
 source.bean:10:Share policy definition expects 1 account or string argument but 2 are given
@@ -24,3 +20,6 @@ source.bean:65:Proportionate assertion must be applied on an account
 source.bean:66:Proportionate assertion expects 1 account argument but 2 are given
 source.bean:69:Account "Assets:NonExistent" is not found or inactive, as well as all its sub-accounts
 source.bean:72:Account "Assets:Existent:Foo" is not found or inactive, as well as all its sub-accounts
+source.bean:76:autobean.share.include expects a path as argument
+source.bean:77:autobean.share.include expects 1 argument but 2 are given
+source.bean:78:autobean/share/tests/errors/foo.bean" does not exist
