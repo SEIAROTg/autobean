@@ -1,8 +1,7 @@
-from typing import List, Dict, Tuple, Set
+from typing import List, Dict, Tuple, Set, Any
 from collections import namedtuple
 import os.path
-from beancount.core.data import Directive, Transaction, Custom, Open
-from beancount.ops import validation
+from beancount.core.data import Directive, Transaction, Custom, Open, new_metadata
 from beancount import loader
 from autobean.utils.error_logger import ErrorLogger
 from autobean.share import utils
@@ -16,16 +15,19 @@ from autobean.share.open_subaccounts import open_subaccounts
 InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entry')
 
 
-def process_ledger(entries: List[Directive], is_nobody: bool, includes: Set[str], logger: ErrorLogger) -> List[Directive]:
+def process_ledger(entries: List[Directive], is_nobody: bool, options: Dict[str, Any], logger: ErrorLogger) -> List[Directive]:
     # For nobody viewpoint, we still fill the residuals but ignore the
     # results so proportionate assertion works.
-    filled_entries = fill_residuals(entries, logger)
+    filled_entries = fill_residuals(entries, options, logger)
     if not is_nobody:
         entries = filled_entries
     else:
         entries = filter_out_share_meta(entries)
+    includes = set(options['include'])
     entries = process_included_files(entries, is_nobody, includes, logger)
     entries = filter_out_share_directives(entries)
+    # Allow tools to refresh data when included files are updated
+    options['include'][:] = list(includes)
     return entries
 
 
@@ -56,8 +58,8 @@ def process_include_directive(entry: Custom, is_nobody: bool, includes: Set[str]
     path = os.path.join(os.path.dirname(entry.meta['filename']), path)
     entries, errors, options = loader.load_file(path)
     logger.log_loading_errors(errors, entry)
+    entries = process_ledger(entries, is_nobody, options, logger)
     includes.update(set(options['include']))
-    entries = process_ledger(entries, is_nobody, includes, logger)
     return entries
 
 

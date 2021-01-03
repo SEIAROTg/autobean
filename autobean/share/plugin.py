@@ -10,21 +10,17 @@ from autobean.share.select_viewpoint import select_viewpoint
 
 
 def plugin(entries: List[Directive], options: Dict, viewpoint: str) -> Tuple[List[Directive], List]:
-    errors = validation.validate(entries, options)
-    if errors:
-        return entries, errors
-    includes = set(options['include'])
     is_top_level = include_context['is_top_level']
     if not is_top_level:
-        return entries, errors
+        return entries, []
     include_context['is_top_level'] = False
     logger = ErrorLogger()
-    entries = process_ledger(entries, viewpoint == 'nobody', includes, logger)
+    errors = validation.validate(entries, options)
+    logger.log_errors(errors)
+    entries = process_ledger(entries, viewpoint == 'nobody', options, logger)
     entries = map_residual_accounts(entries, logger)
     if viewpoint != 'nobody':
         entries = select_viewpoint(entries, viewpoint, logger)
     entries = open_subaccounts(entries, logger)
-    # Allow tools to refresh data when included files are updated
-    options['include'] = list(includes)
     include_context['is_top_level'] = True
     return entries, logger.errors

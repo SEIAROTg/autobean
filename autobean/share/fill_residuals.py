@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional, Tuple, Set
+from typing import List, Dict, Optional, Tuple, Set, Any
 from collections import namedtuple, defaultdict
 from decimal import Decimal
 from beancount.core.data import Directive, Open, Close, Custom, Transaction, Posting, new_metadata
@@ -9,8 +9,8 @@ from autobean.share.policy import Policy
 from autobean.share import utils
 
 
-def fill_residuals(entries: List[Directive], logger: ErrorLogger) -> List[Directive]:
-    plugin = FillResidualsPlugin(logger)
+def fill_residuals(entries: List[Directive], options: Dict[str, Any], logger: ErrorLogger) -> List[Directive]:
+    plugin = FillResidualsPlugin(options, logger)
     return plugin.process(entries)
 
 
@@ -29,7 +29,8 @@ class FillResidualsPlugin:
     real_root: realization.RealAccount
     open_accounts: Set[str]
 
-    def __init__(self, logger: ErrorLogger):
+    def __init__(self, options: Dict[str, Any], logger: ErrorLogger):
+        self.options = options
         self.logger = logger
         self.named_policies = defaultdict(Policy)
         self.account_policies = defaultdict(Policy)
@@ -116,10 +117,17 @@ class FillResidualsPlugin:
                     postings_by_party[party].append(split_posting)
                     postings.append(split_posting)
         # Create residual postings for each party and add up all postings into real accounts
+        # If the original transaction was not balanced we cannot produce anything here
+        original_residual = interpolate.compute_residual(entry.postings)
+        tolerances = interpolate.infer_tolerances(entry.postings, self.options)
+        if original_residual.is_small(tolerances):
+            subaccount_tmpl = '[Residuals]:[{}]'
+        else:
+            subaccount_tmpl = '[Error]:[{}]'
         for party, party_postings in postings_by_party.items():
             residual = interpolate.compute_residual(party_postings)
             # Use square brackets in account name to avoid collision with actual accounts
-            subaccount = '[Residuals]:[{}]'.format(party)
+            subaccount = subaccount_tmpl.format(party)
             postings += utils.get_residual_postings(residual, subaccount)
         # Finalize processed postings
         entry = utils.strip_meta(entry)
