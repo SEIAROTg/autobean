@@ -1,6 +1,6 @@
 from typing import List, Set, DefaultDict
 from collections import defaultdict
-from beancount.core.data import Directive, Transaction, Open
+from beancount.core.data import Directive, Transaction, Open, Close
 from autobean.utils.error_logger import ErrorLogger
 from autobean.share import utils
 
@@ -17,8 +17,8 @@ def open_subaccounts(entries: List[Directive], logger: ErrorLogger) -> List[Dire
                 subaccounts[account].add(posting.account)
     ret = []
     for entry in entries:
-        ret.append(entry)
-        if not isinstance(entry, Open):
+        if not isinstance(entry, Open) and not isinstance(entry, Close):
+            ret.append(entry)
             continue
         for subaccount in subaccounts[entry.account]:
             ret.append(entry._replace(account=subaccount))

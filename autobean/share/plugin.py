@@ -21,6 +21,7 @@ def plugin(entries: List[Directive], options: Dict, viewpoint: str) -> Tuple[Lis
     entries = map_residual_accounts(entries, logger)
     if viewpoint != 'nobody':
         entries = select_viewpoint(entries, viewpoint, logger)
-    entries = open_subaccounts(entries, logger)
+    if viewpoint == 'everyone':
+        entries = open_subaccounts(entries, logger)
     include_context['is_top_level'] = True
     return entries, logger.errors
