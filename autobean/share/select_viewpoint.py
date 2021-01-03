@@ -1,6 +1,6 @@
 from collections import namedtuple
 from typing import List, Optional
-from beancount.core.data import Directive, Balance, Transaction
+from beancount.core.data import Directive, Transaction, Balance, Pad
 from autobean.utils.error_logger import ErrorLogger
 from autobean.share import utils
 
@@ -12,7 +12,7 @@ DuplicatedOwnerError = namedtuple('InvalidDirectiveError', 'source message entry
 def select_viewpoint(entries: List[Directive], viewpoint: Optional[str], logger: ErrorLogger) -> List[Directive]:
     ret = []
     for entry in entries:
-        if isinstance(entry, Balance):
+        if isinstance(entry, Balance) or isinstance(entry, Pad):
             continue
         if isinstance(entry, Transaction):
             entry = process_transaction(entry, viewpoint)
