@@ -83,6 +83,9 @@ def strip_meta(entry: Union[Directive, Posting]):
     meta = {
         k: v
         for k, v in entry.meta.items()
-        if not k.startswith('share-') and k not in ['share_policy', 'share_recursive']
+        if not k.startswith('share-') and k not in (
+            'share_policy',
+            'share_recursive',
+            'share_prorata')
     }
     return entry._replace(meta=meta)

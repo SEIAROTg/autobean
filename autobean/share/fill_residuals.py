@@ -98,14 +98,38 @@ class FillResidualsPlugin:
 
     def process_close(self, entry: Close):
         self.open_accounts.remove(entry.account)
+    
+    def prorata_selector(self, posting: Posting) -> Optional[Tuple[int, str]]:
+        return (posting.account.split(':', 1)[0], posting.units.currency)
 
     def process_transaction(self, entry: Transaction) -> Transaction:
         transaction_policy = self.extract_policy(entry.meta, entry, required=False)
         # Split postings proportionately by party
         postings = []
         postings_by_party = defaultdict(list)
+        prorata_policies = {}
         for posting in entry.postings:
-            policy = self.get_posting_policy(posting, entry, transaction_policy)
+            prorata_selector = self.prorata_selector(posting)
+            if posting.meta and posting.meta.get('share_prorata', False) == True:
+                continue
+            policy = self.get_posting_policy(posting, entry, transaction_policy, ignore_error=True)
+            prorata_policy = prorata_policies.get(prorata_selector, None)
+            if not prorata_policy:
+                prorata_policy = Policy()
+                prorata_policy.total_weight = Decimal(0)
+                prorata_policies[prorata_selector] = prorata_policy
+            for party, share in policy.items():
+                if share:
+                    split_amount = utils.amount_distrib(posting.units, share, policy.total_weight)
+                    prorata_policy.setdefault(party, Decimal(0))
+                    prorata_policy[party] += split_amount.number
+                    prorata_policy.total_weight += split_amount.number
+
+        for posting in entry.postings:
+            if posting.meta and posting.meta.get('share_prorata', False) == True:
+                policy = prorata_policies[self.prorata_selector(posting)]
+            else:
+                policy = self.get_posting_policy(posting, entry, transaction_policy)
             for party, share in policy.items():
                 if share:
                     subaccount = posting.account + ':[{}]'.format(party)
@@ -226,16 +250,18 @@ class FillResidualsPlugin:
             if policy:
                 return policy
 
-    def get_posting_policy(self, posting: Posting, transaction: Transaction, transaction_policy: Optional[Policy]) -> Policy:
+    def get_posting_policy(self, posting: Posting, transaction: Transaction, transaction_policy: Optional[Policy], ignore_error: bool = False) -> Policy:
         policy = posting.meta and self.extract_policy(posting.meta, transaction, required=False) \
             or self.get_account_policy(posting.account) \
             or transaction_policy \
             or self.named_policies.get('default', None)
         if not policy:
-            self.logger.log_error(NoApplicablePolicyError(
-                posting.meta or transaction.meta, 'No applicable share policy to account "{}"'.format(posting.account), transaction
-            ))
-            return Policy()
+            if not ignore_error:
+                self.logger.log_error(NoApplicablePolicyError(
+                    posting.meta or transaction.meta, 'No applicable share policy to account "{}"'.format(posting.account), transaction
+                ))
+            policy = Policy()
+            policy.total_weight = 0
         return policy
 
     def extract_policy(self, meta: Dict, entry: Optional[Directive] = None, required: bool = True) -> Optional[Policy]:
