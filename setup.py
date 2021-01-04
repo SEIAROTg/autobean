@@ -24,5 +24,5 @@ setuptools.setup(
         'Development Status :: 3 - Alpha',
         'Topic :: Office/Business :: Financial :: Accounting',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.8',
 )

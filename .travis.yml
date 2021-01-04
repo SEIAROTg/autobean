@@ -1,7 +1,7 @@
 dist: xenial
 language: python
 python:
-  - "3.7"
+  - "3.8"
 install:
   - pip install -r requirements.txt
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./code-climate-reporter
