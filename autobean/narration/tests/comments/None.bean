@@ -1,7 +1,7 @@
 2000-01-01 open Assets:BankOfBean
 2000-01-01 open Expenses:Bean
 
-2000-01-01 * "foo | bar | baz"
+2000-01-01 * "foo"
     Assets:BankOfBean                        -100.00 USD ;; bar
         narration: "bar"
     Expenses:Bean                             100.00 USD ;; baz

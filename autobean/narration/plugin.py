@@ -23,8 +23,6 @@ def merge_narration(entry: Directive, comment_narrations: Dict[str, Dict[int, st
     if not isinstance(entry, Transaction):
         return entry
     narrations = []
-    if entry.narration:
-        narrations.append(entry.narration)
     for posting in entry.postings:
         if posting.meta:
             narration = posting.meta.get('narration')
@@ -34,4 +32,6 @@ def merge_narration(entry: Directive, comment_narrations: Dict[str, Dict[int, st
                 narration = comment_narration
             if narration:
                 narrations.append(narration.strip())
+    if entry.narration:
+        return entry
     return entry._replace(narration=' | '.join(narrations))
