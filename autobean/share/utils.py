@@ -70,6 +70,12 @@ def is_subaccount(account: str):
     return lastseg.startswith('[') and lastseg.endswith(']')
 
 
+def main_account(account: str):
+    if is_subaccount(account):
+        return account.rsplit(':', 1)[0]
+    return account
+
+
 def ancestor_accounts(account: str) -> Iterator[str]:
     segs = account.split(':')
     while segs:
