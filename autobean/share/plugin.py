@@ -18,10 +18,9 @@ def plugin(entries: List[Directive], options: Dict, viewpoint: str) -> Tuple[Lis
     errors = validation.validate(entries, options)
     logger.log_errors(errors)
     entries = process_ledger(entries, viewpoint == 'nobody', options, logger)
-    entries = map_residual_accounts(entries, logger)
     if viewpoint != 'nobody':
         entries = select_viewpoint(entries, viewpoint, logger)
-    if viewpoint == 'everyone':
-        entries = open_subaccounts(entries, logger)
+    entries = map_residual_accounts(entries, logger)
+    entries = open_subaccounts(entries, logger)
     include_context['is_top_level'] = True
     return entries, logger.errors

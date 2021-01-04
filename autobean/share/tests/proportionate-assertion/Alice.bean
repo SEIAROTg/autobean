@@ -1,7 +1,7 @@
 2000-01-01 open Assets:BankOfBean:JointAccount
 2000-01-01 open Expenses:Bean
 2000-01-01 open Income:Topup
-2000-01-01 open Assets:Receivable
+2000-01-01 open Assets:Receivable:TEST--Bob--
 
 2000-01-03 *
     Income:Topup                             -100.00 USD
@@ -14,4 +14,4 @@
 2000-01-08 *
     Assets:BankOfBean:JointAccount            -50.00 USD
     Expenses:Bean                             100.00 USD
-    Assets:Receivable                         -50.00 USD
+    Assets:Receivable:TEST--Bob--             -50.00 USD

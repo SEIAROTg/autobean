@@ -20,6 +20,8 @@ def open_subaccounts(entries: List[Directive], logger: ErrorLogger) -> List[Dire
         if not isinstance(entry, Open) and not isinstance(entry, Close):
             ret.append(entry)
             continue
+        if not entry.account in subaccounts:
+            ret.append(entry)
         for subaccount in subaccounts[entry.account]:
             ret.append(entry._replace(account=subaccount))
     return ret

@@ -1,8 +1,8 @@
 2000-01-01 open Assets:BankOfBean:JointAccount
 2000-01-01 open Expenses:Bean
 2000-01-01 open Expenses:Tax
-2000-01-01 open Expenses:Irrelevant
-2000-01-01 open Assets:Receivable
+2000-01-01 open Income:Irrelevant
+2000-01-01 open Assets:Receivable:TEST--Bob--
 
 2000-01-01 *
     Assets:BankOfBean:JointAccount               -48.00 USD
@@ -14,12 +14,12 @@
     Expenses:Bean                                 40.00 USD
     Expenses:Bean                                100.00 USD
     Expenses:Tax                                  28.00 USD
-    Assets:Receivable                            -72.00 USD
+    Assets:Receivable:TEST--Bob--                -72.00 USD
 
 2000-01-03 *
     Assets:BankOfBean:JointAccount               -56.00 USD
-    Expenses:Irrelevant                          -40.00 USD
+    Income:Irrelevant                            -40.00 USD
     Expenses:Bean                                 40.00 USD
     Expenses:Bean                                100.00 USD
     Expenses:Tax                                  28.00 USD
-    Assets:Receivable                            -72.00 USD
+    Assets:Receivable:TEST--Bob--                -72.00 USD

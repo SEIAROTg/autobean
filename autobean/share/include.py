@@ -8,7 +8,6 @@ from autobean.share import utils
 from autobean.share.include_context import include_context
 from autobean.share.fill_residuals import fill_residuals
 from autobean.share.select_viewpoint import select_viewpoint
-from autobean.share.map_residual_accounts import map_residual_accounts
 from autobean.share.open_subaccounts import open_subaccounts
 
 

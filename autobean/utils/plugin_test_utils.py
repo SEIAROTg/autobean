@@ -5,7 +5,7 @@ import copy
 from collections import namedtuple
 import pytest
 from beancount import loader
-from beancount.core.data import Directive
+from beancount.core.data import Directive, Transaction, Open, Close
 from beancount.parser import printer
 from autobean.utils.compare import compare_entries
 
@@ -24,6 +24,7 @@ def generate_tests(tests_path: str, plugin: Callable):
             source_entries, source_errors, options = source
             assert not source_errors
             entries, errors = apply_plugin(plugin, source_entries, options, plugin_arg)
+            entries = postprocess(entries)
             if expected_type == 'bean':
                 assert not errors, errors
                 assert_same_results(entries, expected)
@@ -115,6 +116,33 @@ def apply_plugin(
     if plugin_arg is None:
         return plugin(entries, options)
     return plugin(entries, options, plugin_arg)
+
+
+def postprocess_account(account: str) -> str:
+    """Replaces subaccount square brackets with hyphens.
+
+    This is to allow testdata to be parsed normally.
+    """
+    return account.replace('[', 'TEST--').replace(']', '--')
+
+
+def postprocess(entries: List[Directive]) -> List[Directive]:
+    ret = []
+    for entry in entries:
+        if isinstance(entry, Transaction):
+            postings = [
+                posting._replace(
+                    account=postprocess_account(posting.account))
+                for posting in entry.postings
+            ]
+            ret.append(entry._replace(postings=postings))
+        elif isinstance(entry, Open) or isinstance(entry, Close):
+            ret.append(entry._replace(
+                account=postprocess_account(entry.account)))
+        else:
+            ret.append(entry)
+
+    return ret
 
 
 def assert_results(self, testcase: str, plugin_options: Optional[List[Optional[str]]] = None):
