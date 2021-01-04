@@ -6,7 +6,7 @@ from beancount import loader
 from autobean.utils.error_logger import ErrorLogger
 from autobean.share import utils
 from autobean.share.include_context import include_context
-from autobean.share.fill_residuals import fill_residuals
+from autobean.share.split_postings import split_postings
 from autobean.share.select_viewpoint import select_viewpoint
 from autobean.share.open_subaccounts import open_subaccounts
 
@@ -17,7 +17,7 @@ InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entr
 def process_ledger(entries: List[Directive], is_nobody: bool, options: Dict[str, Any], logger: ErrorLogger) -> List[Directive]:
     # For nobody viewpoint, we still fill the residuals but ignore the
     # results so proportionate assertion works.
-    filled_entries = fill_residuals(entries, options, logger)
+    filled_entries = split_postings(entries, logger)
     if not is_nobody:
         entries = filled_entries
     else:
