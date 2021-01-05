@@ -4,7 +4,6 @@ from typing import List, Optional
 from beancount.core import amount
 from beancount.core.data import Directive, Transaction, Balance, Pad
 from autobean.utils.error_logger import ErrorLogger
-from autobean.share import utils
 
 
 InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entry')

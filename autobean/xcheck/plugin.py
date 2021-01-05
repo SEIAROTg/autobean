@@ -61,7 +61,7 @@ class CrossCheckPlugin(PluginBase):
             return []
         if entry.values[0].dtype is not str \
                 or entry.values[1].dtype is not datetime.date \
-                or any(arg.dtype is not beancount.core.account.TYPE for arg in entry.values[2:]):
+                or any(arg.dtype != beancount.core.account.TYPE for arg in entry.values[2:]):
             self._error(InvalidDirectiveError(
                 entry.meta, 'autobean.xcheck expects a path, a start date and zero or more accounts as arguments', entry
             ))

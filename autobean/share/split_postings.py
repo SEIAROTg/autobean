@@ -1,8 +1,8 @@
-from typing import List, Dict, Optional, Tuple, Set, Any
+from typing import List, Dict, Optional, Tuple, Set
 from collections import namedtuple, defaultdict
 from decimal import Decimal
-from beancount.core.data import Directive, Open, Close, Custom, Transaction, Posting, new_metadata
-from beancount.core import interpolate, realization, inventory
+from beancount.core.data import Directive, Open, Close, Custom, Transaction, Posting
+from beancount.core import realization, inventory
 import beancount.core.account
 from autobean.utils.error_logger import ErrorLogger
 from autobean.share.policy import Policy
@@ -60,7 +60,7 @@ class SplitPostingsPlugin:
             self.logger.log_error(InvalidDirectiveError(
                 entry.meta, 'Share policy definition expects 1 account or string argument but {} are given'.format(len(entry.values)), entry
             ))
-        elif entry.values[0].dtype is beancount.core.account.TYPE:
+        elif entry.values[0].dtype == beancount.core.account.TYPE:
             # account policy
             account = entry.values[0].value
             recursive = entry.meta.get('share_recursive', True)
@@ -151,7 +151,7 @@ class SplitPostingsPlugin:
                 entry.meta, 'Proportionate assertion expects 1 account argument but {} are given'.format(len(entry.values)), entry
             ))
             return
-        if entry.values[0].dtype is not beancount.core.account.TYPE:
+        if entry.values[0].dtype != beancount.core.account.TYPE:
             self.logger.log_error(InvalidDirectiveError(
                 entry.meta, 'Proportionate assertion must be applied on an account', entry
             ))

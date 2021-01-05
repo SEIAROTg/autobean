@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict, Tuple
+from typing import List, Dict, Tuple
 from beancount.core.data import Directive
 from beancount.ops import validation
 from autobean.utils.error_logger import ErrorLogger

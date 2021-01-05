@@ -1,7 +1,6 @@
 from collections import defaultdict, namedtuple
-from typing import List, Dict, Tuple, Set, Any
-from beancount.core.data import Directive, Transaction, Custom
-from autobean.narration import comments
+from typing import List, Dict, Tuple, Any
+from beancount.core.data import Directive, Custom
 
 
 InvalidDirectiveError = namedtuple('OutOfOrderDirectiveError', 'source message entry')

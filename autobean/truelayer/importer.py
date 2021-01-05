@@ -1,7 +1,6 @@
 import datetime
 from decimal import Decimal
 import http.server
-import json
 import logging
 import os
 import re
@@ -346,7 +345,7 @@ class _OAuthManager:
 
         logging.info('Attempt to request access token with regular OAuth flow.')
         code = self._request_code()
-        access_token = self._grant_access_token(code=code)
+        self._grant_access_token(code=code)
         logging.info('Successfully requested access token.')
 
     def _grant_access_token(self, code=None, refresh_token=None):

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from collections import namedtuple, defaultdict, deque, Counter
-import copy
 from datetime import timedelta
 from decimal import Decimal
 import functools

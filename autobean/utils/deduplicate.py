@@ -1,7 +1,6 @@
 from collections import Counter, defaultdict, deque
 import copy
 import datetime
-import re
 from typing import List
 
 from beancount.core.data import Transaction, Directive, iter_entry_dates, filter_txns
