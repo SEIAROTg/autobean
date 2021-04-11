@@ -67,11 +67,11 @@ def check_file_entries(entries: List[Directive]) -> List[Any]:
         if enabled:
             sorted_entries.append(entry)
 
-    global_best_i = None
+    global_best_i = -1
 
     for entry in sorted_entries:
         best = (1, -entry.date.toordinal())
-        prev = None
+        prev = -1
         for i, score in enumerate(scores):
             if sorted_entries[i].date <= entry.date:
                 current = (
@@ -82,13 +82,13 @@ def check_file_entries(entries: List[Directive]) -> List[Any]:
                     prev = i
         scores.append(best)
         prevs.append(prev)
-        if global_best_i is None or best > scores[global_best_i]:
+        if global_best_i == -1 or best > scores[global_best_i]:
             global_best_i = len(scores) - 1
     prevs.append(global_best_i)
 
     misplaced_entries = []
     i = len(prevs) - 1
-    while prevs[i] is not None:
+    while i >= 0:
         j = prevs[i]
         for k in range(i - 1, j, -1):
             misplaced_entries.append(sorted_entries[k])
