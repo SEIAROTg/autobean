@@ -8,7 +8,7 @@ with open('requirements.txt', 'r') as f:
 
 setuptools.setup(
     name='autobean',
-    version='0.1.1',
+    version='0.1.2',
     author='SEIAROTg',
     author_email='seiarotg@gmail.com',
     description='A collection of plugins and scripts that help automating bookkeeping with beancount',
