@@ -1,4 +1,4 @@
-# autobean.truelayer
+# autobean.sorted
 
 Checks that transactions are in non-descending order in each file.
 
