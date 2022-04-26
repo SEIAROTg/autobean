@@ -25,14 +25,18 @@ CONFIG_SUFFIX = '.truelayer.yaml'
 ACCOUNT_TYPES = ('accounts', 'cards')
 
 
-def escape_account_component(s):
+def escape_account_component(s: Text) -> Text:
     s = re.sub(r'\W', '', s)
     s = s[:1].upper() + s[1:]
     return s
 
 
-def format_iso_datetime(timestamp_s):
+def format_iso_datetime(timestamp_s: float) -> Text:
     return datetime.datetime.utcfromtimestamp(int(timestamp_s)).isoformat()
+
+
+def currency_to_decimal(currency: float) -> Decimal:
+    return Decimal(f'{currency:.2f}')
 
 
 class Importer(importer.ImporterProtocol):
@@ -245,7 +249,7 @@ class _Extractor:
         amount_to_add = inventory_to_add.get_currency_units(
             truelayer_balance['currency'])
         
-        number = abs(Decimal(str(truelayer_balance['current'])))
+        number = currency_to_decimal(truelayer_balance['current'])
         if account['liability']:
             number = -number
         number += amount_to_add.number
@@ -266,7 +270,7 @@ class _Extractor:
             is_pending: bool=False) -> Transaction:
         """Transforms TrueLayer Transaction to beancount Transaction."""
 
-        number = abs(Decimal(str(truelayer_txn['amount'])))
+        number = abs(currency_to_decimal(truelayer_txn['amount']))
         if truelayer_txn['transaction_type'] == 'DEBIT':
             number = -number
         elif truelayer_txn['transaction_type'] == 'CREDIT':
