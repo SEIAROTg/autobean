@@ -221,7 +221,7 @@ class _Extractor:
         """
 
         balance_time = dateutil.parser.parse(
-            truelayer_balance['update_timestamp'])
+            truelayer_balance['update_timestamp']).astimezone()
         assertion_time = datetime.datetime.combine(
             balance_time, datetime.time.min, balance_time.tzinfo)
 
@@ -291,7 +291,7 @@ class _Extractor:
             truelayer_txn['meta'].get('provider_merchant_name', None))
         return Transaction(
             meta=new_metadata('', 0),
-            date=dateutil.parser.parse(truelayer_txn['timestamp']).date(),
+            date=dateutil.parser.parse(truelayer_txn['timestamp']).astimezone().date(),
             flag='!' if is_pending else '*',
             payee=payee,
             narration=truelayer_txn['description'],
