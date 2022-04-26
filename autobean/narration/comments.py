@@ -13,4 +13,4 @@ def extract_from_file(filename: str) -> Dict[int, str]:
 
 def extract_from_line(s: str) -> Optional[str]:
     segs = s.strip().split(';')
-    return segs[2] if len(segs) > 2 and not segs[1] else None
+    return segs[2].strip() if len(segs) > 2 and not segs[1] else None
