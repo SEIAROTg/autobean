@@ -1,6 +1,5 @@
 # autobean
-
-[![travis](https://travis-ci.com/SEIAROTg/autobean.svg)](https://travis-ci.com/SEIAROTg/autobean)
+[![CircleCI](https://circleci.com/gh/SEIAROTg/autobean.svg?style=shield)](https://circleci.com/gh/SEIAROTg/autobean)
 [![pypi](https://img.shields.io/pypi/v/autobean)](https://pypi.org/project/autobean/)
 [![codecov](https://codecov.io/gh/SEIAROTg/autobean/branch/master/graph/badge.svg)](https://codecov.io/gh/SEIAROTg/autobean)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/SEIAROTg/autobean.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SEIAROTg/autobean/context:python)
@@ -16,7 +15,7 @@ A collection of plugins and scripts that help automating bookkeeping with [beanc
 * [autobean.xcheck](autobean/xcheck): Cross-checks against external ledgers.
 * [autobean.narration](autobean/narration): Generates transaction narration from posting narration and posting narration from comments.
 * [autobean.include](autobean/include): Includes external beancount ledgers without disabling their plugins.
-* [autobean.truelayer](autobean/truelayer): Imports transactions from banks via [TrueLayer](https://truelayer.com/), an bank API aggregator.
+* [autobean.truelayer](autobean/truelayer): Imports transactions from banks via [TrueLayer](https://truelayer.com/), a bank API aggregator.
 * [autobean.sorted](autobean/sorted): Checks that transactions are in non-descending order in each file.
 
 ## Install
