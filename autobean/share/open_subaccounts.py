@@ -1,12 +1,11 @@
-from typing import List, Set, DefaultDict
 from collections import defaultdict
 from beancount.core.data import Directive, Transaction, Open, Close
-from autobean.utils.error_logger import ErrorLogger
+from autobean.utils.error_lib import ErrorLogger
 from autobean.share import utils
 
 
-def open_subaccounts(entries: List[Directive], logger: ErrorLogger) -> List[Directive]:
-    subaccounts: DefaultDict[str, Set[str]] = defaultdict(set)
+def open_subaccounts(entries: list[Directive], logger: ErrorLogger) -> list[Directive]:
+    subaccounts: defaultdict[str, set[str]] = defaultdict(set)
     for entry in entries:
         if not isinstance(entry, Transaction):
             continue

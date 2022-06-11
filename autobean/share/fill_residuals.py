@@ -5,7 +5,7 @@ from beancount.core import interpolate
 from autobean.share import utils
 
 
-def fill_residuals(entries: List[Directive], options: Dict[str, Any]) -> List[Directive]:
+def fill_residuals(entries: list[Directive], options: dict[str, Any]) -> list[Directive]:
     ret = []
     for entry in entries:
         if not isinstance(entry, Transaction):

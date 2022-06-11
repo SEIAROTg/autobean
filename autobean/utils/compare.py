@@ -1,12 +1,14 @@
-from typing import List
 from collections import Counter
 from beancount.core import data
 from beancount.core.data import Directive
 from beancount.core.compare import hash_entry
 
 
-# This is similar to beancount.core.comparer.compare_entries but allows duplicated entries
-def compare_entries(entries1: List[Directive], entries2: List[Directive]):
+def compare_entries(entries1: list[Directive], entries2: list[Directive]) -> tuple[bool, list[Directive], list[Directive]]:
+    """Compares two lists of entries.
+
+    Similiar to beancount.core.comparer.compare_entries but allows duplicated entries
+    """
     hashes1 = {
         hash_entry(entry, exclude_meta=True): entry for entry in entries1}
     hashes2 = {

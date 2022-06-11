@@ -1,18 +1,14 @@
-from typing import List, Dict, Tuple, Set, Any, Optional
-from collections import namedtuple
+from typing import Any, Optional
 import os.path
 from beancount.core.data import Directive, Transaction, Custom, Open
 from beancount import loader
-from autobean.utils.error_logger import ErrorLogger
+from autobean.utils import error_lib
 from autobean.share import utils
 from autobean.share.split_postings import split_postings
 from autobean.share.link_accounts import link_accounts, Link
 
 
-InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entry')
-
-
-def process_ledger(entries: List[Directive], is_nobody: bool, options: Dict[str, Any], logger: ErrorLogger) -> List[Directive]:
+def process_ledger(entries: list[Directive], is_nobody: bool, options: dict[str, Any], logger: error_lib.ErrorLogger) -> list[Directive]:
     # For nobody viewpoint, we still fill the residuals but ignore the
     # results so proportionate assertion works.
     filled_entries = split_postings(entries, logger)
@@ -28,7 +24,7 @@ def process_ledger(entries: List[Directive], is_nobody: bool, options: Dict[str,
     return entries
 
 
-def process_included_files(entries: List[Directive], is_nobody: bool, includes: Set[str], logger: ErrorLogger) -> List[Directive]:
+def process_included_files(entries: list[Directive], is_nobody: bool, includes: set[str], logger: error_lib.ErrorLogger) -> list[Directive]:
     ret = []
     links = []
     entries_by_file = {}
@@ -50,15 +46,15 @@ def process_included_files(entries: List[Directive], is_nobody: bool, includes: 
 def process_include_directive(
         entry: Custom,
         is_nobody: bool,
-        includes: Set[str],
-        logger: ErrorLogger) -> Tuple[Optional[str], List[Directive]]:
+        includes: set[str],
+        logger: error_lib.ErrorLogger) -> tuple[Optional[str], list[Directive]]:
     if len(entry.values) != 1:
-        logger.log_error(InvalidDirectiveError(
+        logger.log_error(error_lib.InvalidDirectiveError(
             entry.meta, 'autobean.share.include expects 1 argument but {} are given'.format(len(entry.values)), entry
         ))
         return None, []
     if entry.values[0].dtype is not str:
-        logger.log_error(InvalidDirectiveError(
+        logger.log_error(error_lib.InvalidDirectiveError(
             entry.meta, 'autobean.share.include expects a path as argument', entry
         ))
         return None, []
@@ -71,14 +67,14 @@ def process_include_directive(
     return filename, entries
 
 
-def filter_out_share_directives(entries: List[Directive]) -> List[Directive]:
+def filter_out_share_directives(entries: list[Directive]) -> list[Directive]:
     return [
         entry
         for entry in entries
         if not utils.is_autobean_share_directive(entry)
     ]
 
-def filter_out_share_meta(entries: List[Directive]) -> List[Directive]:
+def filter_out_share_meta(entries: list[Directive]) -> list[Directive]:
     ret = []
     for entry in entries:
         entry = utils.strip_meta(entry)
@@ -91,7 +87,7 @@ def filter_out_share_meta(entries: List[Directive]) -> List[Directive]:
     return ret
     
 
-def deduplicate_opens(entries: List[Directive]) -> List[Directive]:
+def deduplicate_opens(entries: list[Directive]) -> list[Directive]:
     ret = []
     open_accounts = set()
     for entry in entries:

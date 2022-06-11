@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
 
-def extract_from_file(filename: str) -> Dict[int, str]:
+def extract_from_file(filename: str) -> dict[int, str]:
     ret = {}
     with open(filename) as f:
         for i, line in enumerate(f):

@@ -4,11 +4,11 @@ import autobean.utils.plugin_test_utils as utils
 
 
 @utils.generate_tests(os.path.dirname(__file__), plugin)
-def test():
+def test() -> None:
     pass
 
 
-def test_include_option():
+def test_include_option() -> None:
     test_path = os.path.join(os.path.dirname(__file__), 'pass')
     source_path = os.path.join(test_path, 'source.bean')
     statement_path = os.path.join(test_path, '_statement.bean')

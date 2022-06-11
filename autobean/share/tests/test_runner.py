@@ -4,5 +4,5 @@ from autobean.utils.plugin_test_utils import generate_tests
 
 
 @generate_tests(os.path.dirname(__file__), plugin)
-def test():
+def test() -> None:
     pass

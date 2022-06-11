@@ -1,35 +1,47 @@
-from typing import List, Dict, Optional, Tuple, Set
-from collections import namedtuple, defaultdict
+from tokenize import maybe
+from typing import Any, Optional
+from collections import defaultdict
 from decimal import Decimal
 from beancount.core.data import Directive, Open, Close, Custom, Transaction, Posting
 from beancount.core import realization, inventory
 import beancount.core.account
-from autobean.utils.error_logger import ErrorLogger
+from autobean.utils import error_lib
 from autobean.share.policy import Policy
 from autobean.share import utils
 
 
-def split_postings(entries: List[Directive], logger: ErrorLogger) -> List[Directive]:
+TOLERANCE = Decimal(1e-6)
+
+
+class AccountNotFoundError(error_lib.Error):
+    pass
+
+
+class NoApplicablePolicyError(error_lib.Error):
+    pass
+
+
+class InvalidSharePolicyError(error_lib.Error):
+    pass
+
+
+class ProportionateError(error_lib.Error):
+    pass
+
+
+def split_postings(entries: list[Directive], logger: error_lib.ErrorLogger) -> list[Directive]:
     plugin = SplitPostingsPlugin(logger)
     return plugin.process(entries)
 
 
-AccountNotFoundError = namedtuple('AccountNotFoundError', 'source message entry')
-NoApplicablePolicyError = namedtuple('NoApplicablePolicyError', 'source message entry')
-InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entry')
-InvalidSharePolicyError = namedtuple('InvalidSharePolicyError', 'source message entry')
-ProportionateError = namedtuple('ProportionateError', 'source message entry')
-TOLERANCE = Decimal(1e-6)
-
-
 class SplitPostingsPlugin:
-    logger: ErrorLogger
-    named_policies: Dict[str, Policy]
-    account_policies: Dict[Tuple[str, bool], Policy]  # (account, recursive) -> policy
+    logger: error_lib.ErrorLogger
+    named_policies: dict[str, Policy]
+    account_policies: dict[tuple[str, bool], Policy]  # (account, recursive) -> policy
     real_root: realization.RealAccount
-    open_accounts: Set[str]
+    open_accounts: set[str]
 
-    def __init__(self, logger: ErrorLogger):
+    def __init__(self, logger: error_lib.ErrorLogger):
         self.logger = logger
         self.named_policies = defaultdict(Policy)
         self.account_policies = defaultdict(Policy)
@@ -37,7 +49,7 @@ class SplitPostingsPlugin:
         self.open_accounts = set()
         super().__init__()
 
-    def process(self, entries: List[Directive]) -> List[Directive]:
+    def process(self, entries: list[Directive]) -> list[Directive]:
         ret = []
         for entry in entries:
             if utils.is_share_policy_directive(entry):
@@ -55,21 +67,21 @@ class SplitPostingsPlugin:
                 ret.append(entry)
         return ret
 
-    def process_share_policy_definition(self, entry: Custom):
+    def process_share_policy_definition(self, entry: Custom) -> None:
         if len(entry.values) != 1:
-            self.logger.log_error(InvalidDirectiveError(
+            self.logger.log_error(error_lib.InvalidDirectiveError(
                 entry.meta, 'Share policy definition expects 1 account or string argument but {} are given'.format(len(entry.values)), entry
             ))
         elif entry.values[0].dtype == beancount.core.account.TYPE:
             # account policy
-            account = entry.values[0].value
-            recursive = entry.meta.get('share_recursive', True)
+            account: str = entry.values[0].value
+            recursive: bool = entry.meta.get('share_recursive', True)
             if self.get_referenced_accounts(account, recursive, entry):
                 policy = self.extract_policy(entry.meta, entry)
                 self.account_policies[(account, recursive)].replace(policy)
         elif entry.values[0].dtype is str:
             # named policy
-            policy_name = entry.values[0].value
+            policy_name: str = entry.values[0].value
             if not policy_name:
                 self.logger.log_error(InvalidSharePolicyError(
                     entry.meta, 'Policy name cannot be empty', entry
@@ -88,24 +100,24 @@ class SplitPostingsPlugin:
 
     def process_open(self, entry: Open) -> Open:
         self.open_accounts.add(entry.account)
-        policy = self.extract_policy(entry.meta, entry, required=False)
+        policy = self.extract_policy_maybe(entry.meta, entry)
         if policy:
-            recursive = entry.meta.get('share_recursive', False)
+            recursive: bool = entry.meta.get('share_recursive', False)
             self.account_policies[(entry.account, recursive)] = policy
         open = utils.strip_meta(entry)
         return open
 
-    def process_close(self, entry: Close):
+    def process_close(self, entry: Close) -> None:
         self.open_accounts.remove(entry.account)
     
-    def prorata_selector(self, posting: Posting) -> Optional[Tuple[int, str]]:
+    def prorata_selector(self, posting: Posting) -> tuple[str, str]:
         return (posting.account.split(':', 1)[0], posting.units.currency)
 
     def process_transaction(self, entry: Transaction) -> Transaction:
-        transaction_policy = self.extract_policy(entry.meta, entry, required=False)
+        transaction_policy = self.extract_policy_maybe(entry.meta, entry)
         # Split postings proportionately by party
         postings = []
-        prorata_policies = {}
+        prorata_policies: dict[tuple[str, str], Policy] = {}
         for posting in entry.postings:
             prorata_selector = self.prorata_selector(posting)
             if posting.meta and posting.meta.get('share_prorata', False) == True:
@@ -145,14 +157,14 @@ class SplitPostingsPlugin:
         self.realize_transaction(entry)
         return entry
 
-    def process_proportionate(self, entry: Custom):
+    def process_proportionate(self, entry: Custom) -> None:
         if len(entry.values) != 1:
-            self.logger.log_error(InvalidDirectiveError(
+            self.logger.log_error(error_lib.InvalidDirectiveError(
                 entry.meta, 'Proportionate assertion expects 1 account argument but {} are given'.format(len(entry.values)), entry
             ))
             return
         if entry.values[0].dtype != beancount.core.account.TYPE:
-            self.logger.log_error(InvalidDirectiveError(
+            self.logger.log_error(error_lib.InvalidDirectiveError(
                 entry.meta, 'Proportionate assertion must be applied on an account', entry
             ))
             return
@@ -160,9 +172,10 @@ class SplitPostingsPlugin:
         recursive = entry.meta.get('share_recursive', True)
         accounts = self.get_referenced_accounts(account, recursive, entry)
         for account in accounts:
-            policy = self.extract_policy(entry.meta, entry, required=False) \
-                or self.get_account_policy(account) \
-                or self.named_policies.get('default', None)
+            policy = (
+                self.extract_policy_maybe(entry.meta, entry) 
+                or self.get_account_policy(account)
+                or self.named_policies.get('default'))
             if not policy:
                 self.logger.log_error(NoApplicablePolicyError(
                     entry.meta, 'No applicable share policy to proportionate assertion on account "{}"'.format(account), entry
@@ -201,12 +214,12 @@ class SplitPostingsPlugin:
                         entry.meta, 'Account "{}" is disproportionate'.format(account), entry
                     ))
 
-    def realize_transaction(self, entry: Transaction):
+    def realize_transaction(self, entry: Transaction) -> None:
         for posting in entry.postings:
             real_account = realization.get_or_create(self.real_root, posting.account)
             real_account.balance.add_position(posting)
 
-    def get_referenced_accounts(self, account: str, recursive: bool, entry: Directive):
+    def get_referenced_accounts(self, account: str, recursive: bool, entry: Directive) -> list[str]:
         if recursive:
             accounts = [
                 open_account
@@ -233,24 +246,25 @@ class SplitPostingsPlugin:
             policy = self.account_policies.get((account, True), None)
             if policy:
                 return policy
+        return None
 
     def get_posting_policy(self, posting: Posting, transaction: Transaction, transaction_policy: Optional[Policy], ignore_error: bool = False) -> Policy:
-        policy = posting.meta and self.extract_policy(posting.meta, transaction, required=False) \
-            or self.get_account_policy(posting.account) \
-            or transaction_policy \
-            or self.named_policies.get('default', None)
+        policy = (
+            posting.meta and self.extract_policy_maybe(posting.meta, transaction) 
+            or self.get_account_policy(posting.account)
+            or transaction_policy
+            or self.named_policies.get('default', None))
         if not policy:
             if not ignore_error:
                 self.logger.log_error(NoApplicablePolicyError(
                     posting.meta or transaction.meta, 'No applicable share policy to account "{}"'.format(posting.account), transaction
                 ))
             policy = Policy()
-            policy.total_weight = 0
+            policy.total_weight = Decimal(0)
         return policy
 
-    def extract_policy(self, meta: Dict, entry: Optional[Directive] = None, required: bool = True) -> Optional[Policy]:
+    def extract_policy_maybe(self, meta: dict[str, Any], entry: Optional[Directive] = None) -> Optional[Policy]:
         policy = Policy()
-        total_weight = 0
         found = False
         for k, v in meta.items():
             if k.startswith('share-'):
@@ -270,8 +284,7 @@ class SplitPostingsPlugin:
                 else:
                     found = True
                     policy[party_name] = v
-                    total_weight += v
-        policy.total_weight = total_weight
+                    policy.total_weight += v
         if 'share_policy' in meta:
             if found:
                 self.logger.log_error(InvalidSharePolicyError(
@@ -284,8 +297,13 @@ class SplitPostingsPlugin:
             else:
                 found = True
                 policy = self.named_policies[meta['share_policy']]
-        if required and not found:
-            self.logger.log_error(InvalidSharePolicyError(
-                meta, 'Expect definition of share policy', entry
-            ))
-        return policy if found or required else None
+        return policy if found else None
+
+    def extract_policy(self, meta: dict[str, Any], entry: Optional[Directive] = None) -> Policy:
+        maybe_policy = self.extract_policy_maybe(meta, entry)
+        if maybe_policy is not None:
+            return maybe_policy
+        self.logger.log_error(InvalidSharePolicyError(
+            meta, 'Expect definition of share policy', entry,
+        ))
+        return Policy()

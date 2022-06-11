@@ -1,10 +1,13 @@
 from collections import Counter, defaultdict, deque
 import copy
 import datetime
-from typing import List
+from typing import Iterable
 
 from beancount.core.data import Transaction, Directive, iter_entry_dates, filter_txns
 from beancount.ingest.extract import DUPLICATE_META
+
+
+_Node = tuple[bool, Directive]  # (is_new_entry, entry)
 
 
 def guess_transaction_duplicated(
@@ -17,10 +20,10 @@ def guess_transaction_duplicated(
     the two transactions.
     """
 
-    relevant_accounts = set(
+    relevant_accounts = {
         posting.account
         for posting in new_transaction.postings
-    )
+    }
     relevant_existing_data = Counter(
         (posting.account, posting.units)
         for posting in existing_transaction.postings
@@ -35,9 +38,9 @@ def guess_transaction_duplicated(
 
 
 def deduplicate(
-        new_entries: List[Directive],
-        existing_entries: List[Directive],
-        window_days: int = 10) -> List[Directive]:
+        new_entries: list[Directive],
+        existing_entries: list[Directive],
+        window_days: int = 10) -> list[Directive]:
     """De-duplicate entries.
 
     A new non-transaction entry is considered connected to an existing entry
@@ -80,8 +83,8 @@ def deduplicate(
                 if new_entry == existing_entry:
                     matcher.add_edge(id(new_entry), id(existing_entry))
     
-    duplicates = set()
-    possibly_duplicates = set()
+    duplicates: set[Directive] = set()
+    possibly_duplicates: set[Directive] = set()
 
     matches = matcher.matches()
     for subgraph in matcher.subgraphs():
@@ -106,23 +109,23 @@ def deduplicate(
 
 
 class _Matcher:
-    def __init__(self):
-        self._new_nodes = set()
-        self._edges = defaultdict(set)
+    def __init__(self) -> None:
+        self._new_nodes: set[_Node] = set()
+        self._edges: defaultdict[_Node, set[_Node]] = defaultdict(set)
 
-    def add_edge(self, new_entry, existing_entry):
+    def add_edge(self, new_entry: Directive, existing_entry: Directive) -> None:
         new_node = (True, new_entry)
         existing_node = (False, existing_entry)
         self._new_nodes.add(new_node)
         self._edges[new_node].add(existing_node)
         self._edges[existing_node].add(new_node)
 
-    def matches(self):
+    def matches(self) -> set[_Node]:
         matches = set()
         for new_node in self._new_nodes:
             if new_node in matches:
                 continue
-            q = deque()
+            q: deque[_Node] = deque()
             q.append(new_node)
             visited = set()
             while q:
@@ -138,13 +141,13 @@ class _Matcher:
                     q.append(v)
         return matches
 
-    def subgraphs(self):
+    def subgraphs(self) -> Iterable[set[_Node]]:
         visited = set()
         for new_node in self._new_nodes:
             if new_node in visited:
                 continue
             subgraph_nodes = set()
-            q = deque()
+            q: deque[_Node] = deque()
             q.append(new_node)
             while q:
                 u = q.popleft()

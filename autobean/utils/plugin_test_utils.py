@@ -1,44 +1,68 @@
-from typing import List, Optional, Tuple, Dict, Callable, Union
+import dataclasses
+from typing import Any, Callable, NamedTuple, Optional, Union
 import os
 import sys
 import copy
-from collections import namedtuple
 import pytest
 from beancount import loader
 from beancount.core.data import Directive, Transaction, Open, Close
 from beancount.parser import printer
+from autobean.utils import error_lib
 from autobean.utils.compare import compare_entries
 
 
-Ledger = Tuple[List[Directive], List, Dict]
-ExpectedError = namedtuple('ExpectedError', 'filename lineno message')
-Expected = Union[Ledger, List[ExpectedError]]
-TestcaseArg = namedtuple('Testcase', 'source plugin_arg expected_type expected')
+Ledger = tuple[list[Directive], list[error_lib.Error], dict[str, Any]]
+NonParameterizedPlugin = Callable[[list[Directive], dict[str, Any]], tuple[list[Directive], list[error_lib.Error]]]
+ParameterizedPlugin = Callable[[list[Directive], dict[str, Any], str], tuple[list[Directive], list[error_lib.Error]]]
+Plugin = Union[NonParameterizedPlugin, ParameterizedPlugin]
+
+class ExpectedError(NamedTuple):
+    filename: str
+    lineno: int
+    message: str
 
 
-def generate_tests(tests_path: str, plugin: Callable):
+@dataclasses.dataclass(frozen=True)
+class Testcase:
+    source: Ledger
+    plugin_arg: Optional[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class ResultTestcase(Testcase):
+    expected_entries: list[Directive]
+
+
+@dataclasses.dataclass(frozen=True)
+class ErrorTestcase(Testcase):
+    expected_errors: list[ExpectedError]
+
+
+def generate_tests(tests_path: str, plugin: Plugin) -> Callable[[Callable[[], None]], Callable[[Testcase], None]]:
     ids, args = collect_testcases(tests_path)
-    def decorator(func):
+    def decorator(func: Callable[[], None]) -> Callable[[Testcase], None]:
 
-        def test(source: Ledger, plugin_arg: Optional[str], expected_type: str, expected: Expected):
-            source_entries, source_errors, options = source
+        def test(testcase: Testcase) -> None:
+            source_entries, source_errors, options = testcase.source
             assert not source_errors
-            entries, errors = apply_plugin(plugin, source_entries, options, plugin_arg)
+            entries, errors = apply_plugin(plugin, source_entries, options, testcase.plugin_arg)
             entries = postprocess(entries)
-            if expected_type == 'bean':
+            if isinstance(testcase, ResultTestcase):
                 assert not errors, errors
-                assert_same_results(entries, expected)
-            elif expected_type == 'errors':
-                assert_same_errors(errors, expected)
+                assert_same_results(entries, testcase.expected_entries)
+            elif isinstance(testcase, ErrorTestcase):
+                assert_same_errors(errors, testcase.expected_errors)
+            else:
+                assert False, f'Unknown testcase type {type(testcase)}'
             func()
 
-        return pytest.mark.parametrize('source,plugin_arg,expected_type,expected', args, ids=ids)(test)
+        return pytest.mark.parametrize('testcase', args, ids=ids)(test)
     return decorator
 
 
-def collect_testcases(tests_path: str) -> Tuple[List[str], List[TestcaseArg]]:
-    ids = []
-    args = []
+def collect_testcases(tests_path: str) -> tuple[list[str], list[Testcase]]:
+    ids: list[str] = []
+    testcases: list[Testcase] = []
     suites = os.listdir(tests_path)
     for suite in suites:
         full_path = os.path.join(tests_path, suite)
@@ -53,24 +77,26 @@ def collect_testcases(tests_path: str) -> Tuple[List[str], List[TestcaseArg]]:
             segs = filename.rsplit('.', 2)
             if len(segs) != 2:
                 continue
+            plugin_arg: Optional[str]
             plugin_arg, expected_type = segs
             if plugin_arg == 'source' or plugin_arg.startswith('.') or plugin_arg.startswith('_'):
                 continue
             if plugin_arg == 'None':
                 plugin_arg = None
             output_path = os.path.join(full_path, filename)
+            testcase: Testcase
             if expected_type == 'bean':  # expect results
-                expected = load_ledger(output_path)[0]
+                testcase = ResultTestcase(source=copy.deepcopy(source), plugin_arg=plugin_arg, expected_entries=load_ledger(output_path)[0])
             elif expected_type == 'errors':  # expect plugin errors
-                expected = load_expected_errors(output_path)
+                testcase = ErrorTestcase(source=copy.deepcopy(source), plugin_arg=plugin_arg, expected_errors=load_expected_errors(output_path))
             else:
                 continue
             if plugin_arg in plugin_args:
                 raise Exception(f'Multiple output files for "{plugin_arg}" in "{full_path}"')
             plugin_args.add(plugin_arg)
             ids.append(f'{suite} ({plugin_arg})')
-            args.append(TestcaseArg(copy.deepcopy(source), plugin_arg, expected_type, expected))
-    return ids, args
+            testcases.append(testcase)
+    return ids, testcases
 
 
 def load_ledger(path: str) -> Ledger:
@@ -78,7 +104,7 @@ def load_ledger(path: str) -> Ledger:
     return entries, errors, options
 
 
-def load_expected_errors(path: str) -> List[ExpectedError]:
+def load_expected_errors(path: str) -> list[ExpectedError]:
     with open(path) as f:
         errors = f.readlines()
     rets = []
@@ -88,7 +114,7 @@ def load_expected_errors(path: str) -> List[ExpectedError]:
     return rets
 
 
-def assert_same_results(actuals: List[Directive], expecteds: List[Directive]):
+def assert_same_results(actuals: list[Directive], expecteds: list[Directive]) -> None:
     same, missings1, missings2 = compare_entries(actuals, expecteds)
     for missing in missings1:
         print('Unexpected entry:', file=sys.stderr)
@@ -99,7 +125,7 @@ def assert_same_results(actuals: List[Directive], expecteds: List[Directive]):
     assert same
 
 
-def assert_same_errors(actuals: List, expecteds: List[ExpectedError]):
+def assert_same_errors(actuals: list[error_lib.Error], expecteds: list[ExpectedError]) -> None:
     assert len(actuals) == len(expecteds)
     for actual, expected in zip(actuals, expecteds):
         assert os.path.basename(actual.source['filename']) == expected.filename
@@ -109,9 +135,9 @@ def assert_same_errors(actuals: List, expecteds: List[ExpectedError]):
 
 def apply_plugin(
         plugin: Callable,
-        entries: List[Directive],
-        options: Dict,
-        plugin_arg: Optional[str]) -> Tuple[List[Directive], List]:
+        entries: list[Directive],
+        options: dict[str, Any],
+        plugin_arg: Optional[str]) -> tuple[list[Directive], list[error_lib.Error]]:
 
     if plugin_arg is None:
         return plugin(entries, options)
@@ -126,7 +152,7 @@ def postprocess_account(account: str) -> str:
     return account.replace('[', 'TEST--').replace(']', '--')
 
 
-def postprocess(entries: List[Directive]) -> List[Directive]:
+def postprocess(entries: list[Directive]) -> list[Directive]:
     ret = []
     for entry in entries:
         if isinstance(entry, Transaction):
@@ -143,14 +169,3 @@ def postprocess(entries: List[Directive]) -> List[Directive]:
             ret.append(entry)
 
     return ret
-
-
-def assert_results(self, testcase: str, plugin_options: Optional[List[Optional[str]]] = None):
-    entries, options = self.load_source(testcase)
-    if plugin_options is None:
-        plugin_options = [None]
-    for plugin_option in plugin_options:
-        actual, errors = self.invoke_plugin(entries, options, plugin_option)
-        assert not errors
-        expected = self.load_results(testcase, plugin_option)
-        self.assert_same_results(actual, expected)

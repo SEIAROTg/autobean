@@ -1,14 +1,14 @@
 import re
 from typing import List
 from beancount.core.data import Directive, Transaction
-from autobean.utils.error_logger import ErrorLogger
+from autobean.utils.error_lib import ErrorLogger
 
 
 RESIDUAL_ACCOUNT = 'Assets:Receivable'
 ERROR_ACCOUNT = 'Equity:Error'
 
 
-def map_residual_accounts(entries: List[Directive], logger: ErrorLogger) -> List[Directive]:
+def map_residual_accounts(entries: list[Directive], logger: ErrorLogger) -> list[Directive]:
     ret = []
     for entry in entries:
         if not isinstance(entry, Transaction):

@@ -1,16 +1,11 @@
-from collections import namedtuple
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 from beancount.core import amount
 from beancount.core.data import Directive, Transaction, Balance, Pad
-from autobean.utils.error_logger import ErrorLogger
+from autobean.utils import error_lib
 
 
-InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entry')
-DuplicatedOwnerError = namedtuple('InvalidDirectiveError', 'source message entry')
-
-
-def select_viewpoint(entries: List[Directive], viewpoint: Optional[str], logger: ErrorLogger) -> List[Directive]:
+def select_viewpoint(entries: list[Directive], viewpoint: str, logger: error_lib.ErrorLogger) -> list[Directive]:
     ret = []
     for entry in entries:
         if isinstance(entry, Balance) or isinstance(entry, Pad):
@@ -46,3 +41,4 @@ def process_transaction(entry: Transaction, viewpoint: str) -> Optional[Transact
             flag=entry.flag if relevant else 'T',
             postings=postings,
         )
+    return None

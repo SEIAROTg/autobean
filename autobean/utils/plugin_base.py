@@ -1,19 +1,8 @@
-from typing import List
-from beancount.loader import LoadError
-from beancount.core.data import Meta, Directive
+from autobean.utils import error_lib
 
 
 class PluginBase:
-    _errors: List
+    _error_logger: error_lib.ErrorLogger
 
-    def __init__(self):
-        self._errors = []
-
-    def _error(self, error):
-        self._errors.append(error)
-
-    def _loading_errors(self, errors: List, meta: Meta, entry: Directive):
-        for error in errors:
-            if isinstance(error, LoadError):
-                error = error._replace(source=meta, entry=entry)
-            self._errors.append(error)
+    def __init__(self) -> None:
+        self._error_logger = error_lib.ErrorLogger()

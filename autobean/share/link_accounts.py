@@ -1,46 +1,49 @@
 from dataclasses import dataclass
-from collections import namedtuple, defaultdict, deque, Counter
+from collections import defaultdict, deque, Counter
 from datetime import timedelta
 from decimal import Decimal
-import functools
-from typing import Dict, List, Iterable, Tuple, Optional
+from typing import Any, Iterable, Optional
 from beancount.core import amount
 from beancount.core.data import Directive, Transaction, Custom, filter_txns, iter_entry_dates
 from beancount.core.account import TYPE as ACCOUNT_TYPE
-from autobean.utils.error_logger import ErrorLogger
+from autobean.utils import error_lib
 from autobean.share import utils
 
 
-InvalidDirectiveError = namedtuple('InvalidDirectiveError', 'source message entry')
-UnresolvedLinkError = namedtuple('UnresolvedLinkError', 'source message entry')
+class UnresolvedLinkError(error_lib.Error):
+    pass
 
 
 @dataclass(repr=False, frozen=True)
 class Link:
     directive: Custom
 
-    @functools.cached_property
-    def _values(self) -> Tuple[str, str, str, str]:
-        return tuple(v.value for v in self.directive.values)
+    def __post_init__(self) -> None:
+        (
+            self._filename,
+            self._account,
+            self._complement_filename,
+            self._complement_account,
+        ) = self.directive.values
 
     @property
     def filename(self) -> str:
-        return self._values[0]
+        return self._filename
 
     @property
     def account(self) -> str:
-        return self._values[1]
+        return self._account
     
     @property
     def complement_filename(self) -> str:
-        return self._values[2]
+        return self._complement_filename
     
     @property
     def complement_account(self) -> str:
-        return self._values[3]
+        return self._complement_account
 
     def __repr__(self) -> str:
-        return str(self._values)
+        return str(tuple(self.directive.values))
     
     def valid(self) -> bool:
         if len(self.directive.values) != 4:
@@ -52,9 +55,9 @@ class Link:
 
 
 def link_accounts(
-        entries_by_file: Dict[str, List[Directive]],
+        entries_by_file: dict[str, list[Directive]],
         links: Iterable[Link],
-        logger: ErrorLogger) -> List[Directive]:
+        logger: error_lib.ErrorLogger) -> list[Directive]:
 
     _check_links(entries_by_file, links, logger)
     edges = _build_graph(entries_by_file, links, logger)
@@ -62,13 +65,13 @@ def link_accounts(
 
 
 def _check_links(
-        entries_by_file: Dict[str, List[Directive]],
+        entries_by_file: dict[str, list[Directive]],
         links: Iterable[Link],
-        logger: ErrorLogger):
+        logger: error_lib.ErrorLogger) -> None:
     all_endpoints = set()
     for link in links:
         if not link.valid():
-            logger.log_error(InvalidDirectiveError(
+            logger.log_error(error_lib.InvalidDirectiveError(
                 link.directive.meta,
                 'autobean.share.link expects {filename} {account} '
                 '{complement filename} {complement account} as arguments',
@@ -81,13 +84,13 @@ def _check_links(
         ]
         for ep in endpoints:
             if ep in all_endpoints:
-                logger.log_error(InvalidDirectiveError(
+                logger.log_error(error_lib.InvalidDirectiveError(
                     link.directive.meta,
                     f'Account {ep[1]} in {ep[0]} has multiple links',
                     link.directive,
                 ))
             if ep[0] not in entries_by_file:
-                logger.log_error(InvalidDirectiveError(
+                logger.log_error(error_lib.InvalidDirectiveError(
                     link.directive.meta,
                     f'Ledger {ep[0]} was not included with '
                     f'"autobean.share.include" from this ledger',
@@ -97,9 +100,9 @@ def _check_links(
 
 
 def _build_graph(
-        entries_by_file: Dict[str, List[Directive]],
+        entries_by_file: dict[str, list[Directive]],
         links: Iterable[Link],
-        logger: ErrorLogger) -> Dict[int, List[Tuple[Transaction, str]]]:
+        logger: error_lib.ErrorLogger) -> dict[int, list[tuple[Transaction, str]]]:
 
     day = timedelta(days=1)
     edges = defaultdict(list) # id(txn) -> [(complement txn, account)]
@@ -175,9 +178,9 @@ def _build_graph(
 
 
 def _resolve_links(
-        entries_by_file: Dict[str, List[Directive]],
-        edges: Dict[int, List[Tuple[Transaction, str]]],
-        logger: ErrorLogger) -> List[Directive]:
+        entries_by_file: dict[str, list[Directive]],
+        edges: dict[int, list[tuple[Transaction, str]]],
+        logger: error_lib.ErrorLogger) -> list[Directive]:
     ret = []
     all_visited = set()
     bad = set()
@@ -213,7 +216,7 @@ def _resolve_links(
 def _transaction_feature(
         entry: Transaction,
         account: str,
-        negated: bool) -> Tuple[Optional[str], Counter]:
+        negated: bool) -> tuple[Optional[str], Counter]:
     link_key = entry.meta.get('share_link_key', None)
 
     posting_features = []
@@ -229,16 +232,16 @@ def _transaction_feature(
 
 
 def merge_transactions(
-        txns: List[Transaction],
-        edges: Dict[int, Tuple[Transaction, str]],
-        logger: ErrorLogger) -> Optional[Transaction]:
+        txns: list[Transaction],
+        edges: dict[int, list[tuple[Transaction, str]]],
+        logger: error_lib.ErrorLogger) -> Optional[Transaction]:
     date = None
     flag = None
     payee = None
     narration = ''
-    tags = set()
-    links = set()
-    meta = {}
+    tags: set[str] = set()
+    links: set[str] = set()
+    meta: dict[str, Any] = {}
     postings = []
     compatible = True
     last_txn = None
@@ -257,7 +260,7 @@ def merge_transactions(
             compatible = False
         narration = narration or txn.narration
         for k, v in txn.meta.items():
-            mv = meta.get(k, None)
+            mv = meta.get(k)
             meta[k] = mv or v
             if mv and mv != v and k not in ('filename', 'lineno'):
                 compatible = False
@@ -269,7 +272,7 @@ def merge_transactions(
             if utils.main_account(posting.account) not in accounts_to_remove:
                 postings.append(posting)
 
-    if not compatible:
+    if not compatible and last_txn:
         logger.log_error(UnresolvedLinkError(
             last_txn.meta,
             'Transaction and its complement do not agree on flag, payee, '

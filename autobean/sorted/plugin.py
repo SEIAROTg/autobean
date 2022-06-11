@@ -1,16 +1,17 @@
-from collections import defaultdict, namedtuple
-from typing import List, Dict, Tuple, Any
+from typing import Any
+from collections import defaultdict
 from beancount.core.data import Directive, Custom
+from autobean.utils import error_lib
 
 
-InvalidDirectiveError = namedtuple('OutOfOrderDirectiveError', 'source message entry')
-OutOfOrderDirectiveError = namedtuple('OutOfOrderDirectiveError', 'source message entry')
+class OutOfOrderDirectiveError(error_lib.Error):
+    pass
 
 
-def plugin(entries: List[Directive], options: Dict) -> Tuple[List[Directive], List[Any]]:
-    entries_by_file = defaultdict(list)
-    ignored_files = set()
-    errors = []
+def plugin(entries: list[Directive], options: dict[str, Any]) -> tuple[list[Directive], list[error_lib.Error]]:
+    entries_by_file: defaultdict[str | None, list[Directive]] = defaultdict(list)
+    ignored_files: set[str] = set()
+    errors: list[error_lib.Error] = []
     for entry in entries:
         # Plugin-generated entries may not have associated file or line number.
         # We ignore entries in either case.
@@ -21,7 +22,7 @@ def plugin(entries: List[Directive], options: Dict) -> Tuple[List[Directive], Li
             should_append = True
             if is_enabling_directive(entry):
                 if len(entry.values) != 1 or entry.values[0].dtype != bool:
-                    errors.append(InvalidDirectiveError(
+                    errors.append(error_lib.InvalidDirectiveError(
                         entry.meta,
                         'autobean.sorted.enabled directive accepts a single '
                         'boolean argument',
@@ -42,7 +43,7 @@ def is_enabling_directive(entry: Directive) -> bool:
     return isinstance(entry, Custom) and entry.type == 'autobean.sorted.enabled'
 
 
-def check_file_entries(entries: List[Directive]) -> List[Any]:
+def check_file_entries(entries: list[Directive]) -> list[error_lib.Error]:
     """Checks entries are in order and finds out-of-order entries.
 
     We find a longest non-descending subsequence and assumes all other
@@ -56,7 +57,7 @@ def check_file_entries(entries: List[Directive]) -> List[Any]:
 
     prevs = []
     # [(length, -maxdate)]
-    scores = []
+    scores: list[tuple[int, int]] = []
 
     sorted_entries = []
     enabled = True
@@ -94,7 +95,7 @@ def check_file_entries(entries: List[Directive]) -> List[Any]:
             misplaced_entries.append(sorted_entries[k])
         i = j
 
-    errors = []
+    errors: list[error_lib.Error] = []
     for misplaced_entry in misplaced_entries[::-1]:
         errors.append(OutOfOrderDirectiveError(
             misplaced_entry.meta,

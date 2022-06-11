@@ -7,7 +7,7 @@ import re
 import time
 import secrets
 import sys
-from typing import Text, List, Dict, Any
+from typing import Any, Optional
 import urllib.parse
 import webbrowser
 
@@ -16,6 +16,7 @@ from beancount.core.amount import Amount
 from beancount.core.data import Transaction, Posting, Balance, Directive, new_metadata
 from beancount.core import inventory
 from beancount.ingest import importer
+from beancount.ingest import cache
 import dateutil.parser
 import requests
 import yaml
@@ -25,13 +26,13 @@ CONFIG_SUFFIX = '.truelayer.yaml'
 ACCOUNT_TYPES = ('accounts', 'cards')
 
 
-def escape_account_component(s: Text) -> Text:
+def escape_account_component(s: str) -> str:
     s = re.sub(r'\W', '', s)
     s = s[:1].upper() + s[1:]
     return s
 
 
-def format_iso_datetime(timestamp_s: float) -> Text:
+def format_iso_datetime(timestamp_s: float) -> str:
     return datetime.datetime.utcfromtimestamp(int(timestamp_s)).isoformat()
 
 
@@ -41,34 +42,34 @@ def currency_to_decimal(currency: float) -> Decimal:
 
 class Importer(importer.ImporterProtocol):
 
-    def __init__(self, client_id: Text, client_secret: Text):
+    def __init__(self, client_id: str, client_secret: str):
         self._client_id = client_id
         self._client_secret = client_secret
 
-    def name(self):
+    def name(self) -> str:
         return 'autobean.truelayer'
 
-    def identify(self, file):
+    def identify(self, file: cache._FileMemo) -> bool:
         return file.name.endswith(CONFIG_SUFFIX)
 
-    def extract(self, file, existing_entries=None):
+    def extract(self, file: cache._FileMemo, existing_entries: list[Directive] = None) -> list[Directive]:
         config = _Config(self._client_id, self._client_secret, file)
         extractor = _Extractor(config)
         return extractor.extract(existing_entries)
 
 
 class _Config:
-    def __init__(self, client_id, client_secret, file):
+    def __init__(self, client_id: str, client_secret: str, file: cache._FileMemo):
         self.client_id = client_id
         self.client_secret = client_secret
         self.data = yaml.safe_load(file.contents()) or {}
         self._filename = file.name
 
     @property
-    def name(self):
+    def name(self) -> str:
         return os.path.basename(self._filename).rsplit(CONFIG_SUFFIX, 1)[0]
 
-    def dump(self):
+    def dump(self) -> None:
         with open(self._filename, 'w') as f:
             yaml.safe_dump(self.data, f)
 
@@ -78,7 +79,7 @@ class _Extractor:
         self._config = config
         self._oauth_manager = _OAuthManager(config)
 
-    def extract(self, existing_entries=None):
+    def extract(self, existing_entries: Optional[list[Directive]] = None) -> list[Directive]:
         for type_ in ACCOUNT_TYPES:
             self._update_accounts(type_)
         entries = self._fetch_all_transactions()
@@ -87,12 +88,12 @@ class _Extractor:
         return entries
 
     @property
-    def _auth_headers(self):
+    def _auth_headers(self) -> dict[str, str]:
         return {
             'Authorization': f'Bearer {self._oauth_manager.access_token}'
         }
 
-    def _update_accounts(self, type_: Text):
+    def _update_accounts(self, type_: str) -> None:
         url = {
             'accounts': 'https://api.truelayer.com/data/v1/accounts',
             'cards': 'https://api.truelayer.com/data/v1/cards',
@@ -119,10 +120,10 @@ class _Extractor:
 
     def _fetch_transactions(
             self,
-            account_id: Text,
-            account,
-            type_: Text,
-            is_pending: bool) -> List[Dict[Any, Any]]:
+            account_id: str,
+            account: dict[str, Any],
+            type_: str,
+            is_pending: bool) -> list[dict[str, Any]]:
         url = {
             ('accounts', False): (
                 f'https://api.truelayer.com/data/v1/accounts/{account_id}/transactions'),
@@ -153,9 +154,9 @@ class _Extractor:
 
     def _fetch_balances(
             self,
-            account_id: Text,
-            account,
-            type_: Text) -> List[Dict[Any, Any]]:
+            account_id: str,
+            account: dict[str, Any],
+            type_: str) -> list[dict[str, Any]]:
         url = {
             'accounts': f'https://api.truelayer.com/data/v1/accounts/{account_id}/balance',
             'cards': f'https://api.truelayer.com/data/v1/cards/{account_id}/balance',
@@ -170,8 +171,8 @@ class _Extractor:
         return balances
 
 
-    def _fetch_all_transactions(self) -> List[Directive]:
-        entries = []
+    def _fetch_all_transactions(self) -> list[Directive]:
+        entries: list[Directive] = []
         for type_ in ACCOUNT_TYPES:
             for account_id, account in self._config.data[type_].items():
                 if not account['enabled']:
@@ -205,10 +206,11 @@ class _Extractor:
 
     def _transform_balance(
             self,
-            truelayer_balance,
-            account,
-            time_txns,
-            pending_time_txns):
+            truelayer_balance: dict[str, Any],
+            account: dict[str, Any],
+            time_txns: list[tuple[datetime.datetime, Transaction]],
+            pending_time_txns: list[tuple[datetime.datetime, Transaction]],
+    ) -> Balance:
         """Transforms TrueLayer Balance to beancount Balance.
         
         Balance from TrueLayer can be effective at the middle of a day with
@@ -265,9 +267,9 @@ class _Extractor:
 
     def _transform_transaction(
             self,
-            truelayer_txn,
-            beancount_account: Text,
-            is_pending: bool=False) -> Transaction:
+            truelayer_txn: dict[str, Any],
+            beancount_account: str,
+            is_pending: bool = False) -> Transaction:
         """Transforms TrueLayer Transaction to beancount Transaction."""
 
         number = abs(currency_to_decimal(truelayer_txn['amount']))
@@ -310,7 +312,7 @@ class _OAuthManager:
         self._config = config
     
     @property
-    def access_token(self):
+    def access_token(self) -> str:
         access_token = self._get_valid_access_token()
         if access_token:
             return access_token
@@ -324,7 +326,7 @@ class _OAuthManager:
             return access_token
         raise RuntimeError('Unable to get a valid access token.')
 
-    def _get_valid_access_token(self):
+    def _get_valid_access_token(self) -> Optional[str]:
         """Get access token from config file."""
 
         access_token = self._config.data.get('access_token')
@@ -332,8 +334,9 @@ class _OAuthManager:
         now = int(time.time())
         if access_token and expiry_time and expiry_time > now:
             return access_token
+        return None
 
-    def _refresh_access_token(self):
+    def _refresh_access_token(self) -> None:
         """Refresh access token with refresh token."""
 
         logging.info('Attempt to refresh access token.')
@@ -344,7 +347,7 @@ class _OAuthManager:
             return
         self._grant_access_token(refresh_token=refresh_token)
 
-    def _request_access_token(self):
+    def _request_access_token(self) -> None:
         """Get access token with regular OAuth flow."""
 
         logging.info('Attempt to request access token with regular OAuth flow.')
@@ -352,7 +355,7 @@ class _OAuthManager:
         self._grant_access_token(code=code)
         logging.info('Successfully requested access token.')
 
-    def _grant_access_token(self, code=None, refresh_token=None):
+    def _grant_access_token(self, code: Optional[str] = None, refresh_token: Optional[str] = None) -> None:
         """Grant access token with code or refresh_token."""
 
         logging.info('Attempt to grant access token.')
@@ -365,7 +368,7 @@ class _OAuthManager:
             req['redirect_uri'] = self.REDIRECT_URI
             req['code'] = code
         elif refresh_token:
-            req['grant_type'] = 'refresh_token',
+            req['grant_type'] = 'refresh_token'
             req['refresh_token'] = refresh_token
         else:
             assert False
@@ -383,7 +386,7 @@ class _OAuthManager:
         self._config.dump()
         logging.info('Successfully granted access token.')
 
-    def _request_code(self):
+    def _request_code(self) -> str:
         """Get the code to redeem access token with regular OAuth flow."""
 
         state = secrets.token_urlsafe(16)
@@ -391,20 +394,20 @@ class _OAuthManager:
         auth_link = None
 
         class HttpHandler(http.server.BaseHTTPRequestHandler):
-            def do_POST(self):
+            def do_POST(self) -> None:
                 logging.info('OAuth response received.')
                 length = int(self.headers.get('Content-Length'))
                 body = self.rfile.read(length).decode('utf-8')
-                data = urllib.parse.parse_qs(body)
-                received_state = data.get('state', [None])[0]
-                received_code = data.get('code', [None])[0]
+                data = dict(urllib.parse.parse_qsl(body))
+                received_state = data.get('state')
+                received_code = data.get('code')
 
                 if received_code and received_state == state:
                     nonlocal code
                     code = received_code
                     self.send_response(200)
                     response = b'You can now close this tab.\n'
-                    self.send_header('Content-Type', 'text/plain')
+                    self.send_header('Content-Type', 'str/plain')
                     self.send_header('Content-Length', str(len(response)))
                     self.end_headers()
                     self.wfile.write(response)
@@ -414,6 +417,7 @@ class _OAuthManager:
                     elif not received_code:
                         logging.warning('OAuth response misses code.')
                     self.send_response(302)
+                    assert auth_link
                     self.send_header('Location', auth_link)
 
         httpd = http.server.HTTPServer((self.ADDRESS, self.PORT), HttpHandler)
@@ -437,7 +441,7 @@ class _OAuthManager:
         httpd.server_close()
         return code
 
-    def _build_auth_link(self, state):
+    def _build_auth_link(self, state: str) -> str:
         qs = urllib.parse.urlencode({
             'response_type': 'code',
             'response_mode': 'form_post',
