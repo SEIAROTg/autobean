@@ -2,3 +2,4 @@ beancount
 python-dateutil
 pyyaml
 requests
+lark

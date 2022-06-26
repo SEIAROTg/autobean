@@ -1,0 +1,26 @@
+file: (_NL* directive)* _NL*
+?directive: option
+          | include
+          | plugin
+
+// Directive labels
+OPTION:       "option"
+INCLUDE:      "include"
+PLUGIN:       "plugin"
+
+option:       OPTION ESCAPED_STRING ESCAPED_STRING
+include:      INCLUDE ESCAPED_STRING
+plugin:       PLUGIN ESCAPED_STRING [ESCAPED_STRING]
+
+ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
+INDENT.10: /^[ \t]+(?=[^ \t\r\n;])/m
+WS_INLINE: /[ \t]+/
+_NL: /\r*\n/
+COMMENT: /;.*/
+
+%ignore WS_INLINE
+%ignore COMMENT
+
+// TODO: remove once INDENT is referenced elsewhere.
+// This is here to ensure INDENT takes precedence over WS_INLINE
+_unused: INDENT
