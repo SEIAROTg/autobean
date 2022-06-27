@@ -35,7 +35,7 @@ class Token:
     @property
     def raw_text(self) -> str:
         return self._raw_text
-    
+
     @raw_text.setter
     def raw_text(self, value: str) -> None:
         self._update_raw_text(value)
@@ -45,7 +45,7 @@ class Token:
         self._raw_text = value
         if self.store_handle:
             self.store_handle.store.update(self)
-    
+
     def get_next(self) -> Optional['Token']:
         handle = _check_store_handle(self)
         return handle.store.get_next(self)
@@ -88,7 +88,8 @@ class TokenStore:
                 raise ValueError('Token already in a store.')
         store = TokenStore()
         for token in tokens:
-            token.store_handle = _Handle(store=store, index=0, position=Position(0, 0, 0))
+            token.store_handle = _Handle(
+                store=store, index=0, position=Position(0, 0, 0))
         store._tokens.extend(tokens)
         store._update_token_handles()
         return store
@@ -108,7 +109,8 @@ class TokenStore:
         self._end = position
 
     def _insert(self, token: Token, index: int) -> None:
-        token.store_handle = _Handle(store=self, index=index, position=Position(0, 0, 0))
+        token.store_handle = _Handle(
+            store=self, index=index, position=Position(0, 0, 0))
         self._tokens.insert(index, token)
         self._update_token_handles(index)
 

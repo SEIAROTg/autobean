@@ -26,11 +26,11 @@ class RawModel(abc.ABC):
 class RawTokenModel(token_store_lib.Token, RawModel):
     def __init__(self, raw_text: str) -> None:
         super().__init__(raw_text)
-    
+
     @property
     def token_store(self) -> Optional[token_store_lib.TokenStore]:
         return self.store_handle.store if self.store_handle else None
-    
+
     @property
     def first_token(self) -> Optional[token_store_lib.Token]:
         return self
@@ -44,7 +44,7 @@ class RawTreeModel(RawModel):
     def __init__(self, token_store: token_store_lib.TokenStore) -> None:
         super().__init__()
         self._token_store = token_store
-    
+
     @property
     def token_store(self) -> token_store_lib.TokenStore:
         return self._token_store
@@ -80,7 +80,8 @@ class EscapedString(RawTokenModel):
         '\\': '\\',
     }
     __ESCAPE_PATTERN = re.compile(r'[\\"]')
-    __ESCAPE_PATTERN_AGGRESSIVE = re.compile('|'.join(map(re.escape, __ESCAPE_MAP.keys())))
+    __ESCAPE_PATTERN_AGGRESSIVE = re.compile(
+        '|'.join(map(re.escape, __ESCAPE_MAP.keys())))
     __UNESCAPE_MAP = {value: key for key, value in __ESCAPE_MAP.items()}
     __UNESCAPE_PATTERN = re.compile(r'\\(.)')
 
@@ -100,7 +101,7 @@ class EscapedString(RawTokenModel):
     @property
     def raw_text(self) -> str:
         return super().raw_text
-    
+
     @raw_text.setter
     def raw_text(self, value: str) -> None:
         self._update_raw_text(value)
@@ -160,7 +161,7 @@ class Option(RawTreeModel):
     @property
     def first_token(self) -> token_store_lib.Token:
         return self._label
-    
+
     @property
     def last_token(self) -> token_store_lib.Token:
         return self._value
@@ -168,7 +169,7 @@ class Option(RawTreeModel):
     @property
     def raw_key(self) -> EscapedString:
         return self._key
-    
+
     @property
     def raw_value(self) -> EscapedString:
         return self._value
@@ -187,15 +188,15 @@ class Include(RawTreeModel):
         super().__init__(token_store)
         self._label = label
         self._filename = filename
-    
+
     @property
     def first_token(self) -> token_store_lib.Token:
         return self._label
-    
+
     @property
     def last_token(self) -> token_store_lib.Token:
         return self._filename
-    
+
     @property
     def raw_filename(self) -> EscapedString:
         return self._filename
@@ -219,7 +220,7 @@ class Plugin(RawTreeModel):
     @property
     def first_token(self) -> token_store_lib.Token:
         return self._label
-    
+
     @property
     def last_token(self) -> token_store_lib.Token:
         return self._config or self._name
@@ -227,7 +228,7 @@ class Plugin(RawTreeModel):
     @property
     def raw_name(self) -> EscapedString:
         return self._name
-    
+
     @property
     def raw_config(self) -> Optional[EscapedString]:
         return self._config
@@ -244,7 +245,7 @@ class File(RawTreeModel):
     @property
     def first_token(self) -> Optional[token_store_lib.Token]:
         return self._token_store.get_first()
-    
+
     @property
     def last_token(self) -> Optional[token_store_lib.Token]:
         return self._token_store.get_last()

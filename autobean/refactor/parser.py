@@ -42,12 +42,13 @@ class Parser:
 
     def parse_token(self, text: str, target: Type[_T]) -> _T:
         """Parses one token.
-        
+
         This is a separate method to ease typing and support ignored tokens.
         """
         tokens = list(self._lark.lex(text, dont_ignore=True))
         if not tokens:
-            raise exceptions.UnexpectedToken(lark.Token('$END', '', 0, 1, 1), {target.RULE})
+            raise exceptions.UnexpectedToken(
+                lark.Token('$END', '', 0, 1, 1), {target.RULE})
         if tokens[0].type != target.RULE:
             raise exceptions.UnexpectedToken(tokens[0], {target.RULE})
         if len(tokens) > 1:
