@@ -1,5 +1,5 @@
 import abc
-import json
+import re
 from typing import ClassVar, Optional, Type, TypeVar
 from autobean.refactor import token_store as token_store_lib
 
@@ -69,13 +69,24 @@ def _tree_model(cls: _U) -> _U:
 @_token_model
 class EscapedString(RawTokenModel):
     RULE = 'ESCAPED_STRING'
+    # See: https://github.com/beancount/beancount/blob/d841487ccdda04c159de86b1186e7c2ea997a3e2/beancount/parser/tokens.c#L102
+    __ESCAPE_MAP = {
+        '\n': 'n',
+        '\t': 't',
+        '\r': 'r',
+        '\f': 'f',
+        '\b': 'b',
+        '"': '"',
+        '\\': '\\',
+    }
+    __ESCAPE_PATTERN = re.compile(r'[\\"]')
+    __ESCAPE_PATTERN_AGGRESSIVE = re.compile('|'.join(map(re.escape, __ESCAPE_MAP.keys())))
+    __UNESCAPE_MAP = {value: key for key, value in __ESCAPE_MAP.items()}
+    __UNESCAPE_PATTERN = re.compile(r'\\(.)')
 
     def __init__(self, raw_text: str) -> None:
         super().__init__(raw_text)
-        self.__decode_value(raw_text)
-
-    def __decode_value(self, raw_text: str) -> None:
-        self._value = self.raw_text[1:-1].encode('raw_unicode_escape').decode('unicode_escape')
+        self._value = self.unescape(self.raw_text[1:-1])
 
     @property
     def value(self) -> str:
@@ -84,7 +95,7 @@ class EscapedString(RawTokenModel):
     @value.setter
     def value(self, value: str) -> None:
         self._value = value
-        self._update_raw_text(json.dumps(value, ensure_ascii=False))
+        self._update_raw_text(f'"{self.escape(value)}"')
 
     @property
     def raw_text(self) -> str:
@@ -93,7 +104,22 @@ class EscapedString(RawTokenModel):
     @raw_text.setter
     def raw_text(self, value: str) -> None:
         self._update_raw_text(value)
-        self.__decode_value(value)
+        self._value = self.unescape(self.raw_text[1:-1])
+
+    @classmethod
+    def escape(cls, s: str, aggressive: bool = False) -> str:
+        pattern = cls.__ESCAPE_PATTERN_AGGRESSIVE if aggressive else cls.__ESCAPE_PATTERN
+        return re.sub(
+            pattern,
+            lambda c: '\\' + cls.__ESCAPE_MAP[c.group(0)],
+            s)
+
+    @classmethod
+    def unescape(cls, s: str) -> str:
+        return re.sub(
+            cls.__UNESCAPE_PATTERN,
+            lambda c: cls.__UNESCAPE_MAP.get(c.group(1), c.group(1)),
+            s)
 
 
 @_token_model

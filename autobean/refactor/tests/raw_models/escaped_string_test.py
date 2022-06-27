@@ -12,10 +12,12 @@ class TestEscapedString:
             ('"foo"', 'foo'),
             ('"\'\'"', "''"),
             (r'"\""', '"'),
+            (r'"\\"', '\\'),
             (r'"你好"', '你好'),
-            (r'"\u4f60\u597d"', '你好'),
+            (r'"\u4f60\u597d"', 'u4f60u597d'),
             (r'"multiple\nlines"', 'multiple\nlines'),
-            ('"multiple\nlines"', 'multiple\nlines'),
+            (r'"multiple\nlines"', 'multiple\nlines'),
+            (r'"\\\\n"', '\\\\n'),
         ],
     )
     def test_parse_success(self, text: str, value: str, parser: parser_lib.Parser) -> None:
