@@ -3,6 +3,7 @@ from lark import exceptions
 import pytest
 from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from autobean.refactor.tests.raw_models import conftest
 
 
 class TestPlugin:
@@ -38,3 +39,8 @@ class TestPlugin:
     def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
             parser.parse(text, raw_models.Plugin)
+
+    def test_set_raw_name(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        plugin = parser.parse('plugin  "name"    "config"', raw_models.Plugin)
+        plugin.raw_name = parser.parse_token('"new_name"', raw_models.EscapedString)
+        assert print_model(plugin) == 'plugin  "new_name"    "config"'

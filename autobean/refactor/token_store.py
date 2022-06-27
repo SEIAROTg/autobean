@@ -64,6 +64,12 @@ def _check_store_handle(token: Token) -> _Handle:
     return token.store_handle
 
 
+def _attach_token(token: Token, handle: _Handle) -> None:
+    if token.store_handle:
+        raise ValueError('Token already in a store.')
+    token.store_handle = handle
+
+
 def _token_size(token: Token) -> Position:
     return Position(
         position=len(token.raw_text),
@@ -109,8 +115,8 @@ class TokenStore:
         self._end = position
 
     def _insert(self, token: Token, index: int) -> None:
-        token.store_handle = _Handle(
-            store=self, index=index, position=Position(0, 0, 0))
+        _attach_token(token, _Handle(
+            store=self, index=index, position=Position(0, 0, 0)))
         self._tokens.insert(index, token)
         self._update_token_handles(index)
 
@@ -130,10 +136,18 @@ class TokenStore:
         handle = _check_store_handle(token)
         self._update_token_handles(handle.index + 1)
 
+    def replace(self, token: Token, repl: Token) -> None:
+        handle = _check_store_handle(token)
+        token.store_handle = None
+        _attach_token(repl, handle)
+        self._tokens[handle.index] = repl
+        self._update_token_handles(handle.index + 1)
+
     def remove(self, token: Token) -> None:
         handle = _check_store_handle(token)
         self._tokens.pop(handle.index)
         self._update_token_handles(handle.index)
+        token.store_handle = None
 
     def get_position(self, token: Token) -> Position:
         handle = _check_store_handle(token)
@@ -181,6 +195,6 @@ class TokenStore:
     def __len__(self) -> int:
         return len(self._tokens)
 
-    @property
+    @ property
     def size(self) -> int:
         return self._end.position

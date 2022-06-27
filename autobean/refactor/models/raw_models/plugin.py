@@ -37,6 +37,11 @@ class Plugin(base.RawTreeModel):
     def raw_name(self) -> escaped_string.EscapedString:
         return self._name
 
+    @raw_name.setter
+    def raw_name(self, name: escaped_string.EscapedString) -> None:
+        self._token_store.replace(self._name, name)
+        self._name = name
+
     @property
     def raw_config(self) -> Optional[escaped_string.EscapedString]:
         return self._config

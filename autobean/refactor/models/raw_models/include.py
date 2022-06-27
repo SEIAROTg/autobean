@@ -28,3 +28,8 @@ class Include(base.RawTreeModel):
     @property
     def raw_filename(self) -> escaped_string.EscapedString:
         return self._filename
+
+    @raw_filename.setter
+    def raw_filename(self, filename: escaped_string.EscapedString) -> None:
+        self._token_store.replace(self._filename, filename)
+        self._filename = filename

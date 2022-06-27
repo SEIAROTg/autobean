@@ -36,6 +36,16 @@ class Option(base.RawTreeModel):
     def raw_key(self) -> escaped_string.EscapedString:
         return self._key
 
+    @raw_key.setter
+    def raw_key(self, key: escaped_string.EscapedString) -> None:
+        self._token_store.replace(self._key, key)
+        self._key = key
+
     @property
     def raw_value(self) -> escaped_string.EscapedString:
         return self._value
+    
+    @raw_value.setter
+    def raw_value(self, value: escaped_string.EscapedString) -> None:
+        self._token_store.replace(self._value, value)
+        self._value = value

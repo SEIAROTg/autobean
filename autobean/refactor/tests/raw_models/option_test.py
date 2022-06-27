@@ -2,6 +2,7 @@ from lark import exceptions
 import pytest
 from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from . import conftest
 
 
 class TestOption:
@@ -31,3 +32,13 @@ class TestOption:
     def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
             parser.parse(text, raw_models.Option)
+
+    def test_set_raw_key(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        option = parser.parse('option  "key"    "value"', raw_models.Option)
+        option.raw_key = parser.parse_token('"new_key"', raw_models.EscapedString)
+        assert print_model(option) == 'option  "new_key"    "value"'
+
+    def test_set_raw_value(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        option = parser.parse('option  "key"    "value"', raw_models.Option)
+        option.raw_value = parser.parse_token('"new_value"', raw_models.EscapedString)
+        assert print_model(option) == 'option  "key"    "new_value"'
