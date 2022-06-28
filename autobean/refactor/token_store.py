@@ -46,10 +46,6 @@ class Token:
         if self.store_handle:
             self.store_handle.store.update(self)
 
-    def get_next(self) -> Optional['Token']:
-        handle = _check_store_handle(self)
-        return handle.store.get_next(self)
-
 
 @dataclasses.dataclass(eq=False)
 class _Handle:

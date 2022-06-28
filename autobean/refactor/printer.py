@@ -12,5 +12,6 @@ def print_model(model: raw_models.RawModel, file: _T) -> _T:
         file.write(current.raw_text)
         if current is last:
             break
-        current = current.get_next()
+        assert model.token_store
+        current = model.token_store.get_next(current)
     return file
