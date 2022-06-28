@@ -1,6 +1,7 @@
 from lark import exceptions
 import pytest
 from autobean.refactor import parser as parser_lib
+from autobean.refactor.models import easy_models
 from autobean.refactor.models import raw_models
 from . import conftest
 
@@ -36,4 +37,11 @@ class TestOption:
         new_filename = parser.parse_token('"new_filename"', raw_models.EscapedString)
         include.raw_filename = new_filename
         assert include.raw_filename is new_filename
+        assert print_model(include) == 'include  "new_filename"'
+
+    def test_set_filename(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        include = parser.parse('include  "filename"', easy_models.Include)
+        assert include.filename == 'filename'
+        include.filename = 'new_filename'
+        assert include.filename == 'new_filename'
         assert print_model(include) == 'include  "new_filename"'

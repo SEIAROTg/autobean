@@ -1,17 +1,39 @@
-from typing import Callable, Generic, Type, TypeVar, Optional
+import abc
+from typing import Callable, Generic, Type, TypeVar, Optional, overload
 from autobean.refactor import token_store as token_store_lib
 from . import base
 
 _T = TypeVar('_T', bound=base.RawTokenModel)
 _U = TypeVar('_U', bound=base.RawTreeModel)
+_Self = TypeVar('_Self', bound='_base_property')  # TODO: replace with PEP 673 Self once supported
+_B = TypeVar('_B')
 
 
-class required_token_property(Generic[_T, _U]):
+class _base_property(Generic[_B, _U], abc.ABC):
+    @abc.abstractmethod
+    def _get(self, instance: _U) -> _B:
+        ...
+
+    @overload
+    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> _B:
+        ...
+
+    @overload
+    def __get__(self: _Self, instance: None, owner: Type[_U]) -> _Self:
+        ...
+
+    def __get__(self: _Self, instance: Optional[_U], owner: Optional[Type[_U]] = None) -> _B | _Self:
+        del owner
+        if instance is None:
+            return self
+        return self._get(instance)
+    
+
+class required_token_property(_base_property[_T, _U]):
     def __init__(self, inner: Callable[[_U], _T]):
         self._attr = '_' + inner.__name__
 
-    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> _T:
-        del owner
+    def _get(self, instance: _U) -> _T:
         value = getattr(instance, self._attr)
         assert value
         return value
@@ -24,14 +46,13 @@ class required_token_property(Generic[_T, _U]):
         setattr(instance, self._attr, value)
 
 
-class optional_token_property(Generic[_T, _U]):
+class optional_token_property(_base_property[Optional[_T], _U]):
     def __init__(self, inner: Callable[[_U], Optional[_T]]):
         self._attr = '_' + inner.__name__
         self._fcreator = lambda s, _: None
         self._fremover = lambda s, _: None
 
-    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[_T]:
-        del owner
+    def _get(self, instance: _U) -> Optional[_T]:
         value = getattr(instance, self._attr)
         return value
 

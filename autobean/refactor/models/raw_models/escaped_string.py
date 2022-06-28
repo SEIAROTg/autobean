@@ -25,6 +25,10 @@ class EscapedString(base.RawTokenModel):
         super().__init__(raw_text)
         self._value = self.unescape(self.raw_text[1:-1])
 
+    @classmethod
+    def from_value(cls, value: str) -> 'EscapedString':
+        return cls(f'"{cls.escape(value)}"')
+
     @property
     def value(self) -> str:
         return self._value

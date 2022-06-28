@@ -1,6 +1,7 @@
 from lark import exceptions
 import pytest
 from autobean.refactor import parser as parser_lib
+from autobean.refactor.models import easy_models
 from autobean.refactor.models import raw_models
 from . import conftest
 
@@ -40,12 +41,26 @@ class TestOption:
         assert option.raw_key is new_key
         assert print_model(option) == 'option  "new_key"    "value"'
 
+    def test_set_key(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        option = parser.parse('option  "key"    "value"', easy_models.Option)
+        assert option.key == 'key'
+        option.key = 'new_key'
+        assert option.key == 'new_key'
+        assert print_model(option) == 'option  "new_key"    "value"'
+
     def test_set_raw_value(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         option = parser.parse('option  "key"    "value"', raw_models.Option)
         new_value = parser.parse_token('"new_value"', raw_models.EscapedString)
         option.raw_value = new_value
         assert option.raw_value is new_value
         assert print_model(option) == 'option  "key"    "new_value"'
+
+    def test_set_value(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        option = parser.parse('option  "key"    "value"', easy_models.Option)
+        assert option.key == 'key'
+        option.key = 'new_key'
+        assert option.key == 'new_key'
+        assert print_model(option) == 'option  "new_key"    "value"'
 
     def test_noop_set_raw_key(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         option = parser.parse('option  "key"    "value"', raw_models.Option)
@@ -58,7 +73,7 @@ class TestOption:
         option = parser.parse('option  "key" "value"', raw_models.Option)
         with pytest.raises(ValueError):
             option.raw_key = option.raw_value
-    
+
     def test_reuse_inactive_token(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         option = parser.parse('option  "key"    "value"', raw_models.Option)
         initial_key = option.raw_key
@@ -66,4 +81,3 @@ class TestOption:
         option.raw_key = initial_key
         assert option.raw_key is initial_key
         assert print_model(option) == 'option  "key"    "value"'
-    
