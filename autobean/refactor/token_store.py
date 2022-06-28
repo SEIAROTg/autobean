@@ -1,6 +1,6 @@
 import bisect
 import dataclasses
-from typing import Any, Iterable, Iterator, Optional
+from typing import Any, Collection, Iterable, Iterator, Optional
 
 
 @dataclasses.dataclass(frozen=True)
@@ -64,12 +64,6 @@ def _check_store_handle(token: Token) -> _Handle:
     return token.store_handle
 
 
-def _attach_token(token: Token, handle: _Handle) -> None:
-    if token.store_handle:
-        raise ValueError('Token already in a store.')
-    token.store_handle = handle
-
-
 def _token_size(token: Token) -> Position:
     return Position(
         position=len(token.raw_text),
@@ -114,40 +108,40 @@ class TokenStore:
             position += _token_size(token)
         self._end = position
 
-    def _insert(self, token: Token, index: int) -> None:
-        _attach_token(token, _Handle(
-            store=self, index=index, position=Position(0, 0, 0)))
-        self._tokens.insert(index, token)
-        self._update_token_handles(index)
+    def _splice(self, tokens: Collection[Token], start: int, end: int) -> None:
+        for token in tokens:
+            handle = token.store_handle
+            if handle and not (handle.store is self and start <= handle.index <= end):
+                raise ValueError('Token already in a store.')
+        for token in tokens:
+            token.store_handle = _Handle(store=self, index=0, position=Position(0, 0, 0))
+        self._tokens[start:end] = tokens
+        self._update_token_handles(start)
 
-    def insert_after(self, ref: Optional[Token], token: Token) -> None:
-        if ref is None:
-            self._insert(token, len(self._tokens))
-        else:
-            self._insert(token, _check_store_handle(ref).index + 1)
+    def splice(self, tokens: Collection[Token], ref: Optional[Token], del_end: Optional[Token] = None) -> None:
+        start = _check_store_handle(ref).index if ref else 0
+        end = _check_store_handle(del_end).index + 1 if del_end else start
+        self._splice(tokens, start, end)
 
-    def insert_before(self, ref: Optional[Token], token: Token) -> None:
+    def insert_after(self, ref: Optional[Token], tokens: Collection[Token]) -> None:
         if ref is None:
-            self._insert(token, 0)
+            start = 0
         else:
-            self._insert(token, _check_store_handle(ref).index)
+            start = _check_store_handle(ref).index + 1
+        self._splice(tokens, start, start)
+
+    def insert_before(self, ref: Optional[Token], tokens: Collection[Token]) -> None:
+        self.splice(tokens, ref)
 
     def update(self, token: Token) -> None:
         handle = _check_store_handle(token)
         self._update_token_handles(handle.index + 1)
 
     def replace(self, token: Token, repl: Token) -> None:
-        handle = _check_store_handle(token)
-        token.store_handle = None
-        _attach_token(repl, handle)
-        self._tokens[handle.index] = repl
-        self._update_token_handles(handle.index + 1)
+        self.splice([repl], token, token)
 
-    def remove(self, token: Token) -> None:
-        handle = _check_store_handle(token)
-        self._tokens.pop(handle.index)
-        self._update_token_handles(handle.index)
-        token.store_handle = None
+    def remove(self, start: Token, end: Optional[Token] = None) -> None:
+        self.splice([], start, end or start)
 
     def get_position(self, token: Token) -> Position:
         handle = _check_store_handle(token)

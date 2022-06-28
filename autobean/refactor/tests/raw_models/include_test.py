@@ -33,5 +33,7 @@ class TestOption:
 
     def test_set_raw_filename(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         include = parser.parse('include  "filename"', raw_models.Include)
-        include.raw_filename = parser.parse_token('"new_filename"', raw_models.EscapedString)
+        new_filename = parser.parse_token('"new_filename"', raw_models.EscapedString)
+        include.raw_filename = new_filename
+        assert include.raw_filename is new_filename
         assert print_model(include) == 'include  "new_filename"'

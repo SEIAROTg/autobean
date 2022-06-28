@@ -35,10 +35,35 @@ class TestOption:
 
     def test_set_raw_key(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         option = parser.parse('option  "key"    "value"', raw_models.Option)
-        option.raw_key = parser.parse_token('"new_key"', raw_models.EscapedString)
+        new_key = parser.parse_token('"new_key"', raw_models.EscapedString)
+        option.raw_key = new_key
+        assert option.raw_key is new_key
         assert print_model(option) == 'option  "new_key"    "value"'
 
     def test_set_raw_value(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         option = parser.parse('option  "key"    "value"', raw_models.Option)
-        option.raw_value = parser.parse_token('"new_value"', raw_models.EscapedString)
+        new_value = parser.parse_token('"new_value"', raw_models.EscapedString)
+        option.raw_value = new_value
+        assert option.raw_value is new_value
         assert print_model(option) == 'option  "key"    "new_value"'
+
+    def test_noop_set_raw_key(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        option = parser.parse('option  "key"    "value"', raw_models.Option)
+        initial_key = option.raw_key
+        option.raw_key = option.raw_key
+        assert option.raw_key is initial_key
+        assert print_model(option) == 'option  "key"    "value"'
+
+    def test_reuse_active_token(self, parser: parser_lib.Parser) -> None:
+        option = parser.parse('option  "key" "value"', raw_models.Option)
+        with pytest.raises(ValueError):
+            option.raw_key = option.raw_value
+    
+    def test_reuse_inactive_token(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        option = parser.parse('option  "key"    "value"', raw_models.Option)
+        initial_key = option.raw_key
+        option.raw_key = parser.parse_token('"new_key"', raw_models.EscapedString)
+        option.raw_key = initial_key
+        assert option.raw_key is initial_key
+        assert print_model(option) == 'option  "key"    "value"'
+    

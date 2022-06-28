@@ -42,5 +42,7 @@ class TestPlugin:
 
     def test_set_raw_name(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
         plugin = parser.parse('plugin  "name"    "config"', raw_models.Plugin)
-        plugin.raw_name = parser.parse_token('"new_name"', raw_models.EscapedString)
+        new_name = parser.parse_token('"new_name"', raw_models.EscapedString)
+        plugin.raw_name = new_name
+        assert plugin.raw_name is new_name
         assert print_model(plugin) == 'plugin  "new_name"    "config"'
