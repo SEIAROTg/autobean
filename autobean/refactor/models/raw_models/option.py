@@ -1,6 +1,7 @@
 from autobean.refactor import token_store as token_store_lib
 from . import base
 from . import escaped_string
+from . import internal
 
 
 @base.token_model
@@ -21,8 +22,8 @@ class Option(base.RawTreeModel):
     ):
         super().__init__(token_store)
         self._label = label
-        self._key = key
-        self._value = value
+        self.raw_key = key
+        self.raw_value = value
 
     @property
     def first_token(self) -> token_store_lib.Token:
@@ -30,22 +31,12 @@ class Option(base.RawTreeModel):
 
     @property
     def last_token(self) -> token_store_lib.Token:
-        return self._value
+        return self.raw_value
 
-    @property
+    @internal.required_token_property
     def raw_key(self) -> escaped_string.EscapedString:
-        return self._key
+        pass
 
-    @raw_key.setter
-    def raw_key(self, key: escaped_string.EscapedString) -> None:
-        self._token_store.replace(self._key, key)
-        self._key = key
-
-    @property
+    @internal.required_token_property
     def raw_value(self) -> escaped_string.EscapedString:
-        return self._value
-    
-    @raw_value.setter
-    def raw_value(self, value: escaped_string.EscapedString) -> None:
-        self._token_store.replace(self._value, value)
-        self._value = value
+        pass

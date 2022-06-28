@@ -1,6 +1,7 @@
 from autobean.refactor import token_store as token_store_lib
 from . import base
 from . import escaped_string
+from . import internal
 
 
 @base.token_model
@@ -15,7 +16,7 @@ class Include(base.RawTreeModel):
     def __init__(self, token_store: token_store_lib.TokenStore, label: IncludeLabel, filename: escaped_string.EscapedString):
         super().__init__(token_store)
         self._label = label
-        self._filename = filename
+        self.raw_filename = filename
 
     @property
     def first_token(self) -> token_store_lib.Token:
@@ -23,13 +24,8 @@ class Include(base.RawTreeModel):
 
     @property
     def last_token(self) -> token_store_lib.Token:
-        return self._filename
+        return self.raw_filename
 
-    @property
+    @internal.required_token_property
     def raw_filename(self) -> escaped_string.EscapedString:
-        return self._filename
-
-    @raw_filename.setter
-    def raw_filename(self, filename: escaped_string.EscapedString) -> None:
-        self._token_store.replace(self._filename, filename)
-        self._filename = filename
+        pass

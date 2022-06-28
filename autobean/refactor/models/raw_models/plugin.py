@@ -2,6 +2,7 @@ from typing import Optional
 from autobean.refactor import token_store as token_store_lib
 from . import base
 from . import escaped_string
+from . import internal
 
 
 @base.token_model
@@ -22,7 +23,7 @@ class Plugin(base.RawTreeModel):
     ):
         super().__init__(token_store)
         self._label = label
-        self._name = name
+        self.raw_name = name
         self._config = config
 
     @property
@@ -31,16 +32,11 @@ class Plugin(base.RawTreeModel):
 
     @property
     def last_token(self) -> token_store_lib.Token:
-        return self._config or self._name
+        return self._config or self.raw_name
 
-    @property
+    @internal.required_token_property
     def raw_name(self) -> escaped_string.EscapedString:
-        return self._name
-
-    @raw_name.setter
-    def raw_name(self, name: escaped_string.EscapedString) -> None:
-        self._token_store.replace(self._name, name)
-        self._name = name
+        pass
 
     @property
     def raw_config(self) -> Optional[escaped_string.EscapedString]:
