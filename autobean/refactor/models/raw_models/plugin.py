@@ -19,12 +19,12 @@ class Plugin(base.RawTreeModel):
             token_store: token_store_lib.TokenStore,
             label: PluginLabel,
             name: escaped_string.EscapedString,
-            config: Optional[escaped_string.EscapedString]
+            config: Optional[escaped_string.EscapedString],
     ):
         super().__init__(token_store)
         self._label = label
         self.raw_name = name
-        self._config = config
+        self.raw_config = config
 
     @property
     def first_token(self) -> token_store_lib.Token:
@@ -32,12 +32,20 @@ class Plugin(base.RawTreeModel):
 
     @property
     def last_token(self) -> token_store_lib.Token:
-        return self._config or self.raw_name
+        return self.raw_config or self.raw_name
 
     @internal.required_token_property
     def raw_name(self) -> escaped_string.EscapedString:
         pass
 
-    @property
-    def raw_config(self) -> Optional[escaped_string.EscapedString]:
-        return self._config
+    @internal.optional_token_property
+    def raw_config(self) -> escaped_string.EscapedString:
+        pass
+
+    @raw_config.creator
+    def __raw_config_creator(self, config: escaped_string.EscapedString) -> None:
+        self.token_store.insert_after(self.raw_name, [base.Whitespace(' '), config])
+    
+    @raw_config.remover
+    def __raw_config_remover(self, current: escaped_string.EscapedString) -> None:
+        internal.remove_with_left_whitespace(self.token_store, current)

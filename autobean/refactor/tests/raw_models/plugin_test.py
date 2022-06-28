@@ -46,3 +46,29 @@ class TestPlugin:
         plugin.raw_name = new_name
         assert plugin.raw_name is new_name
         assert print_model(plugin) == 'plugin  "new_name"    "config"'
+
+    def test_set_raw_config(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        plugin = parser.parse('plugin  "name"    "config"', raw_models.Plugin)
+        new_config = parser.parse_token('"new_config"', raw_models.EscapedString)
+        plugin.raw_config = new_config
+        assert plugin.raw_config is new_config
+        assert print_model(plugin) == 'plugin  "name"    "new_config"'
+
+    def test_remove_raw_config(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        plugin = parser.parse('plugin  "name"    "config"', raw_models.Plugin)
+        plugin.raw_config = None
+        assert plugin.raw_config is None
+        assert print_model(plugin) == 'plugin  "name"'
+
+    def test_noop_remove_raw_config(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        plugin = parser.parse('plugin  "name"', raw_models.Plugin)
+        plugin.raw_config = None
+        assert plugin.raw_config is None
+        assert print_model(plugin) == 'plugin  "name"'
+
+    def test_create_raw_config(self, parser: parser_lib.Parser, print_model: conftest.PrintModel) -> None:
+        plugin = parser.parse('plugin  "name"', raw_models.Plugin)
+        new_config = parser.parse_token('"new_config"', raw_models.EscapedString)
+        plugin.raw_config = new_config
+        assert plugin.raw_config is new_config
+        assert print_model(plugin) == 'plugin  "name" "new_config"'
