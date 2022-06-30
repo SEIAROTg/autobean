@@ -9,3 +9,5 @@ from .null import *
 from .bool import *
 from .date import *
 from .currency import *
+from .tag import *
+from .link import *
