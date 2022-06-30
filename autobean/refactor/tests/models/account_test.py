@@ -20,7 +20,7 @@ class TestAccount:
     def test_parse_success(self, text: str, parser: parser_lib.Parser) -> None:
         token = parser.parse_token(text, raw_models.Account)
         assert token.raw_text == text
-        assert token.name == text
+        assert token.value == text
 
     @pytest.mark.parametrize(
         'text', [
@@ -35,10 +35,10 @@ class TestAccount:
         token = parser.parse_token('Assets:Foo', raw_models.Account)
         token.raw_text = 'Liabilities:Foo'
         assert token.raw_text == 'Liabilities:Foo'
-        assert token.name == 'Liabilities:Foo'
+        assert token.value == 'Liabilities:Foo'
 
-    def test_set_name(self, parser: parser_lib.Parser) -> None:
+    def test_set_value(self, parser: parser_lib.Parser) -> None:
         token = parser.parse_token('Assets:Foo', raw_models.Account)
-        token.name = 'Liabilities:Foo'
-        assert token.name == 'Liabilities:Foo'
+        token.value = 'Liabilities:Foo'
+        assert token.value == 'Liabilities:Foo'
         assert token.raw_text == 'Liabilities:Foo'

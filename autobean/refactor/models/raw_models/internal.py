@@ -29,7 +29,7 @@ class _base_property(Generic[_B, _U], abc.ABC):
         if instance is None:
             return self
         return self._get(instance)
-    
+
 
 class required_token_property(_base_property[_T, _U]):
     def __init__(self, inner: Callable[[_U], _T]):
@@ -103,7 +103,7 @@ class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):
     @property
     def raw_text(self) -> str:
         return super().raw_text
-    
+
     @raw_text.setter
     def raw_text(self, raw_text: str) -> None:
         self._update_raw_text(raw_text)
@@ -112,12 +112,12 @@ class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):
     @property
     def value(self) -> _V:
         return self._value
-    
+
     @value.setter
     def value(self, value: _V) -> None:
         self._value = value
         self._raw_text = self._format_value(value)
-    
+
     @classmethod
     @abc.abstractmethod
     def _parse_value(cls, raw_text: str) -> _V:
@@ -127,3 +127,13 @@ class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):
     @abc.abstractmethod
     def _format_value(cls, value: _V) -> str:
         pass
+
+
+class SimpleSingleValueRawTokenModel(SingleValueRawTokenModel[str]):
+    @classmethod
+    def _parse_value(cls, raw_text: str) -> str:
+        return raw_text
+
+    @classmethod
+    def _format_value(cls, value: str) -> str:
+        return value
