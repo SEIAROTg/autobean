@@ -1,9 +1,10 @@
 import re
 from . import base
+from . import internal
 
 
 @base.token_model
-class EscapedString(base.RawTokenModel):
+class EscapedString(internal.SingleValueRawTokenModel[str]):
     RULE = 'ESCAPED_STRING'
     # See: https://github.com/beancount/beancount/blob/d841487ccdda04c159de86b1186e7c2ea997a3e2/beancount/parser/tokens.c#L102
     __ESCAPE_MAP = {
@@ -21,35 +22,13 @@ class EscapedString(base.RawTokenModel):
     __UNESCAPE_MAP = {value: key for key, value in __ESCAPE_MAP.items()}
     __UNESCAPE_PATTERN = re.compile(r'\\(.)')
 
-    def __init__(self, raw_text: str, value: str) -> None:
-        super().__init__(raw_text)
-        self._value = value
-
     @classmethod
-    def from_raw_text(cls, raw_text: str) -> 'EscapedString':
-        return cls(raw_text, cls.unescape(raw_text[1:-1]))
-
+    def _parse_value(cls, raw_text: str) -> str:
+        return cls.unescape(raw_text[1:-1])
+    
     @classmethod
-    def from_value(cls, value: str) -> 'EscapedString':
-        return cls(f'"{cls.escape(value)}"', value)
-
-    @property
-    def value(self) -> str:
-        return self._value
-
-    @value.setter
-    def value(self, value: str) -> None:
-        self._value = value
-        self._update_raw_text(f'"{self.escape(value)}"')
-
-    @property
-    def raw_text(self) -> str:
-        return super().raw_text
-
-    @raw_text.setter
-    def raw_text(self, raw_text: str) -> None:
-        self._update_raw_text(raw_text)
-        self._value = self.unescape(raw_text[1:-1])
+    def _format_value(cls, value: str) -> str:
+        return f'"{cls.escape(value)}"'
 
     @classmethod
     def escape(cls, s: str, aggressive: bool = False) -> str:
