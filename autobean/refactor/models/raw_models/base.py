@@ -2,6 +2,8 @@ import abc
 from typing import ClassVar, Optional, Type, TypeVar
 from autobean.refactor import token_store as token_store_lib
 
+_T = TypeVar('_T', bound='RawTokenModel')
+
 
 class RawModel(abc.ABC):
     RULE: ClassVar[str]
@@ -25,6 +27,10 @@ class RawModel(abc.ABC):
 class RawTokenModel(token_store_lib.Token, RawModel):
     def __init__(self, raw_text: str) -> None:
         super().__init__(raw_text)
+
+    @classmethod
+    def from_raw_text(cls: Type[_T], raw_text: str) -> _T:
+        return cls(raw_text)
 
     @property
     def token_store(self) -> Optional[token_store_lib.TokenStore]:
@@ -51,16 +57,16 @@ class RawTreeModel(RawModel):
 
 TOKEN_MODELS: list[Type[RawTokenModel]] = []
 TREE_MODELS: list[Type[RawTreeModel]] = []
-_T = TypeVar('_T', bound=Type[RawTokenModel])
-_U = TypeVar('_U', bound=Type[RawTreeModel])
+_V = TypeVar('_V', bound=Type[RawTokenModel])
+_W = TypeVar('_W', bound=Type[RawTreeModel])
 
 
-def token_model(cls: _T) -> _T:
+def token_model(cls: _V) -> _V:
     TOKEN_MODELS.append(cls)
     return cls
 
 
-def tree_model(cls: _U) -> _U:
+def tree_model(cls: _W) -> _W:
     TREE_MODELS.append(cls)
     return cls
 

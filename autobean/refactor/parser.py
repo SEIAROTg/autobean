@@ -53,7 +53,7 @@ class Parser:
             raise exceptions.UnexpectedToken(tokens[0], {target.RULE})
         if len(tokens) > 1:
             raise exceptions.UnexpectedToken(tokens[1], {'$END'})
-        return target(tokens[0].value)
+        return target.from_raw_text(tokens[0].value)
 
     def parse(self, text: str, target: Type[_U]) -> _U:
         tokens = list(self._lark.lex(text, dont_ignore=True))
@@ -65,7 +65,7 @@ class Parser:
         token_models: list[token_store_lib.Token] = []
         token_to_model = {}
         for token in tokens:
-            token_model = self._token_models[token.type](token.value)
+            token_model = self._token_models[token.type].from_raw_text(token.value)
             token_models.append(token_model)
             token_to_model[token] = token_model
 

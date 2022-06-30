@@ -5,6 +5,10 @@ from . import base
 class Account(base.RawTokenModel):
     RULE = 'ACCOUNT'
 
+    @classmethod
+    def from_name(cls, name: str) -> 'Account':
+        return cls.from_raw_text(name)
+
     @property
     def name(self) -> str:
         return self.raw_text

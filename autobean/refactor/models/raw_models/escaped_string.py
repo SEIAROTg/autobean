@@ -21,13 +21,17 @@ class EscapedString(base.RawTokenModel):
     __UNESCAPE_MAP = {value: key for key, value in __ESCAPE_MAP.items()}
     __UNESCAPE_PATTERN = re.compile(r'\\(.)')
 
-    def __init__(self, raw_text: str) -> None:
+    def __init__(self, raw_text: str, value: str) -> None:
         super().__init__(raw_text)
-        self._value = self.unescape(self.raw_text[1:-1])
+        self._value = value
+
+    @classmethod
+    def from_raw_text(cls, raw_text: str) -> 'EscapedString':
+        return cls(raw_text, cls.unescape(raw_text[1:-1]))
 
     @classmethod
     def from_value(cls, value: str) -> 'EscapedString':
-        return cls(f'"{cls.escape(value)}"')
+        return cls(f'"{cls.escape(value)}"', value)
 
     @property
     def value(self) -> str:
@@ -43,9 +47,9 @@ class EscapedString(base.RawTokenModel):
         return super().raw_text
 
     @raw_text.setter
-    def raw_text(self, value: str) -> None:
-        self._update_raw_text(value)
-        self._value = self.unescape(self.raw_text[1:-1])
+    def raw_text(self, raw_text: str) -> None:
+        self._update_raw_text(raw_text)
+        self._value = self.unescape(raw_text[1:-1])
 
     @classmethod
     def escape(cls, s: str, aggressive: bool = False) -> str:
