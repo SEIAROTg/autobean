@@ -21,6 +21,12 @@ COMMENT: /;.*/
 %ignore WS_INLINE
 %ignore COMMENT
 
-// TODO: remove once INDENT is referenced elsewhere.
-// This is here to ensure INDENT takes precedence over WS_INLINE
-_unused: INDENT
+// TODO: remove once tokens are referenced elsewhere.
+_unused: INDENT | ACCOUNT
+
+// Account
+// See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
+_NON_ASCII: /[^\x00-\x7f]/
+_ACCOUNT_TYPE: (/[A-Z]/ | _NON_ASCII) (/[A-Za-z0-9\-]/ | _NON_ASCII)*
+_ACCOUNT_NAME: (/[A-Z0-9]/ | _NON_ASCII) (/[A-Za-z0-9\-]/ | _NON_ASCII)*
+ACCOUNT: _ACCOUNT_TYPE (":" _ACCOUNT_NAME)+
