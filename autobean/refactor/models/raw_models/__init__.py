@@ -14,3 +14,5 @@ from .link import *
 from .asterisk import *
 from .txn import *
 from .flag import *
+from .posting_flag import *
+from .transaction_flag import *

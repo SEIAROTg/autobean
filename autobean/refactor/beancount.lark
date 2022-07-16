@@ -12,6 +12,9 @@ option:       OPTION ESCAPED_STRING ESCAPED_STRING
 include:      INCLUDE ESCAPED_STRING
 plugin:       PLUGIN ESCAPED_STRING [ESCAPED_STRING]
 
+posting_flag:      FLAG | ASTERISK
+transaction_flag:  FLAG | ASTERISK | TXN
+
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
 INDENT.10: /^[ \t]+(?=[^ \t\r\n;])/m
 WS_INLINE: /[ \t]+/
