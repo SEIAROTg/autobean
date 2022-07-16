@@ -13,3 +13,4 @@ from .tag import *
 from .link import *
 from .posting_flag import *
 from .transaction_flag import *
+from .number import *

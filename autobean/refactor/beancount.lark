@@ -24,7 +24,7 @@ COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 %ignore COMMENT_LINE
 
 // TODO: remove once tokens are referenced elsewhere.
-_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | POSTING_FLAG | TRANSACTION_FLAG
+_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | POSTING_FLAG | TRANSACTION_FLAG | NUMBER
 
 // Account
 // See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
@@ -61,3 +61,6 @@ LINK: /\^[A-Za-z0-9-_\/.]+/
 // See: https://github.com/beancount/beancount/commit/d2d0a35e629408c9ce364eea5601839f8f582208
 POSTING_FLAG: /[*!&#?%PSTCURM]/
 TRANSACTION_FLAG: POSTING_FLAG | "txn"
+
+// Number
+NUMBER: (/([0-9]{1,3})(,[0-9]{3})+/ | /[0-9]+/) [/\.[0-9]*/]
