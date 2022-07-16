@@ -16,6 +16,10 @@ class TestCurrency:
             '/NQH21',
             '/NQH21_QNEG21C13100',
             'C345',
+            # These are technically invalid currencies but it's difficult to reject them under contextual lexer.
+            'TRUE',
+            'FALSE',
+            'NULL',
         ],
     )
     def test_parse_success(self, text: str, parser: parser_lib.Parser) -> None:
@@ -29,9 +33,6 @@ class TestCurrency:
             '/CAC_',
             'C_',
             'V',  # it is valid in v3 syntax
-            'TRUE',
-            'FALSE',
-            'NULL',
             'Asset',
         ],
     )

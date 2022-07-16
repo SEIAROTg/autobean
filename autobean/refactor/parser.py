@@ -1,7 +1,9 @@
+import copy
 import pathlib
 from typing import Iterator, Optional, Type, TypeVar
 import lark
 from lark import exceptions
+from lark import lexer
 from lark import load_grammar
 from autobean.refactor import token_store as token_store_lib
 from autobean.refactor.models import raw_models
@@ -48,7 +50,11 @@ class Parser:
 
         This is a separate method to ease typing and support ignored tokens.
         """
-        tokens = list(self._lark.lex(text, dont_ignore=True))
+        lexer_conf = copy.deepcopy(self._lark.parser.lexer_conf)
+        lexer_conf.terminals = [lexer_conf.terminals_by_name[target.RULE]]
+        basic_lexer = lexer.BasicLexer(lexer_conf)
+        lexer_thread = lexer.LexerThread.from_text(basic_lexer, text)
+        tokens = list(lexer_thread.lex(None))
         if not tokens:
             raise exceptions.UnexpectedToken(
                 lark.Token('$END', '', 0, 1, 1), {target.RULE})

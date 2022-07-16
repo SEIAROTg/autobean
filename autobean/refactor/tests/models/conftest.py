@@ -1,4 +1,3 @@
-from ast import Call
 import io
 from typing import Callable
 import pytest

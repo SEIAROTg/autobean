@@ -12,9 +12,6 @@ option:       OPTION ESCAPED_STRING ESCAPED_STRING
 include:      INCLUDE ESCAPED_STRING
 plugin:       PLUGIN ESCAPED_STRING [ESCAPED_STRING]
 
-posting_flag:      FLAG | ASTERISK
-transaction_flag:  FLAG | ASTERISK | TXN
-
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
 INDENT: /^[ \t]+(?=[^ \t\r\n])/m
 WS_INLINE: /(?<!^)[ \t]+/m | /^[ \t]+(?=\r|$)/m
@@ -27,7 +24,7 @@ COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 %ignore COMMENT_LINE
 
 // TODO: remove once tokens are referenced elsewhere.
-_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | ASTERISK | TXN | FLAG
+_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | POSTING_FLAG | TRANSACTION_FLAG
 
 // Account
 // See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
@@ -58,14 +55,9 @@ TAG: /#[A-Za-z0-9-_\/.]+/
 // Link
 LINK: /\^[A-Za-z0-9-_\/.]+/
 
-// Asterisk
-ASTERISK: "*"
-
-// TXN
-TXN: "txn"
-
 // Flag
 // This is v2 syntax. v3 has a different syntax due to support of single-letter currency:
 // (v3) FLAG: /[!&#?%]/ | /'[A-Z]/
 // See: https://github.com/beancount/beancount/commit/d2d0a35e629408c9ce364eea5601839f8f582208
-FLAG: /[!&#?%PSTCURM]/
+POSTING_FLAG: /[*!&#?%PSTCURM]/
+TRANSACTION_FLAG: POSTING_FLAG | "txn"
