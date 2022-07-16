@@ -87,5 +87,10 @@ class Whitespace(RawTokenModel):
 
 
 @token_model
-class Comment(RawTokenModel):
-    RULE = 'COMMENT'
+class InlineComment(RawTokenModel):
+    RULE = 'COMMENT_INLINE'
+
+
+@token_model
+class LineComment(RawTokenModel):
+    RULE = 'COMMENT_LINE'

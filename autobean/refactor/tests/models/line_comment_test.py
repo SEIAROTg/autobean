@@ -14,20 +14,21 @@ class TestComment:
             ';',
             ';"',
             ';""',
+            ' ;foo',
+            ';foo\n',
+            ' ;foo\n',
         ],
     )
     def test_parse_success(self, text: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token(text, raw_models.Comment)
+        token = parser.parse_token(text, raw_models.LineComment)
         assert token.raw_text == text
 
     @pytest.mark.parametrize(
         'text', [
-            ' ;foo',
-            ';foo\n',
             '\n;foo',
             '',
         ],
     )
     def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            parser.parse_token(text, raw_models.Comment)
+            parser.parse_token(text, raw_models.LineComment)

@@ -16,13 +16,15 @@ posting_flag:      FLAG | ASTERISK
 transaction_flag:  FLAG | ASTERISK | TXN
 
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
-INDENT.10: /^[ \t]+(?=[^ \t\r\n;])/m
-WS_INLINE: /[ \t]+/
+INDENT: /^[ \t]+(?=[^ \t\r\n])/m
+WS_INLINE: /(?<!^)[ \t]+/m | /^[ \t]+(?=\r|$)/m
 _NL: /\r*\n/
-COMMENT: /;.*/
+COMMENT_INLINE: /;[^\r\n]*$/m
+COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 
 %ignore WS_INLINE
-%ignore COMMENT
+%ignore COMMENT_INLINE
+%ignore COMMENT_LINE
 
 // TODO: remove once tokens are referenced elsewhere.
 _unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | ASTERISK | TXN | FLAG

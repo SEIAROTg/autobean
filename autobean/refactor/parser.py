@@ -1,5 +1,5 @@
 import pathlib
-from typing import Iterable, Iterator, Optional, Type, TypeVar
+from typing import Iterator, Optional, Type, TypeVar
 import lark
 from lark import exceptions
 from lark import load_grammar
@@ -16,13 +16,15 @@ with open(pathlib.Path(__file__).parent / 'beancount.lark') as f:
         source=f.name,
         import_paths=[],
         global_keep_all_tokens=False)
+    _IGNORED_TOKENS = frozenset(_GRAMMAR.ignore)
+    _GRAMMAR.ignore.clear()
 
 
-def _postlex(tokens: Iterable[lark.Token]) -> Iterator[lark.Token]:
-    for token in tokens:
-        if token.type in _GRAMMAR.ignore:
-            continue
-        yield token
+class PostLex(lark.lark.PostLex):
+    always_accept = _IGNORED_TOKENS
+
+    def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
+        return stream
 
 
 class Parser:
@@ -36,7 +38,8 @@ class Parser:
             tree_models: list[Type[raw_models.RawTreeModel]],
     ):
         start = ['_unused'] + [model.RULE for model in tree_models]
-        self._lark = lark.Lark(_GRAMMAR, parser='lalr', start=start)
+        self._lark = lark.Lark(
+            _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLex(), start=start)
         self._token_models = {model.RULE: model for model in token_models}
         self._tree_models = {model.RULE: model for model in tree_models}
 
@@ -56,9 +59,13 @@ class Parser:
         return target.from_raw_text(tokens[0].value)
 
     def parse(self, text: str, target: Type[_U]) -> _U:
-        tokens = list(self._lark.lex(text, dont_ignore=True))
-        parser = self._lark.parse_interactive(start=target.RULE)
-        for token in _postlex(tokens):
+        parser = self._lark.parse_interactive(text=text, start=target.RULE)
+        tokens = []
+
+        for token in parser.lexer_thread.lex(parser.parser_state):
+            tokens.append(token)
+            if token.type in _IGNORED_TOKENS:
+                continue
             parser.feed_token(token)
         tree = parser.feed_eof()
 
