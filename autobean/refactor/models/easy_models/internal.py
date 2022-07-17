@@ -7,7 +7,7 @@ _U = TypeVar('_U', bound=base.RawTreeModel)
 
 
 class required_string_property(Generic[_U]):
-    def __init__(self, inner_property: internal.required_token_property[escaped_string.EscapedString, _U]):
+    def __init__(self, inner_property: internal.required_node_property[escaped_string.EscapedString, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> str:
@@ -18,7 +18,7 @@ class required_string_property(Generic[_U]):
 
 
 class optional_string_property(Generic[_U]):
-    def __init__(self, inner_property: internal.optional_token_property[escaped_string.EscapedString, _U]):
+    def __init__(self, inner_property: internal.optional_node_property[escaped_string.EscapedString, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[str]:

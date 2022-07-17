@@ -1,10 +1,10 @@
 import abc
-from typing import Callable, Generic, Type, TypeVar, Optional, overload
+from typing import Callable, Generic, Type, TypeVar, Optional, Union, overload
 from autobean.refactor import token_store as token_store_lib
 from . import base
 
-_T = TypeVar('_T', bound=base.RawTokenModel)
 _U = TypeVar('_U', bound=base.RawTreeModel)
+_TU = TypeVar('_TU', bound=Union[base.RawTokenModel, base.RawTreeModel])
 _Self = TypeVar('_Self', bound='_base_property')  # TODO: replace with PEP 673 Self once supported
 _B = TypeVar('_B')
 _V = TypeVar('_V')
@@ -31,34 +31,59 @@ class _base_property(Generic[_B, _U], abc.ABC):
         return self._get(instance)
 
 
-class required_token_property(_base_property[_T, _U]):
-    def __init__(self, inner: Callable[[_U], _T]):
+def _destruct_tree_model(model: _U) -> list[token_store_lib.Token]:
+    if (
+            model.first_token is not model.token_store.get_first() or
+            model.last_token is not model.token_store.get_last()):
+        raise ValueError('Cannot reuse node. Consider making a copy.')
+    if not model.first_token or not model.last_token:
+        raise ValueError('Cannot destruct empty node.')
+    return model.token_store.remove(model.first_token, model.last_token)
+
+
+def _replace_node(node: _TU, repl: _TU) -> None:
+    if not node.token_store:
+        raise ValueError('Cannot replace a free token.')
+    if node is repl:
+        return
+    tokens: list[token_store_lib.Token]
+    if isinstance(repl, base.RawTokenModel):
+        tokens = [repl]
+    elif isinstance(repl, base.RawTreeModel):
+        tokens = _destruct_tree_model(repl)
+    else:
+        assert False
+    node.token_store.splice(tokens, node.first_token, node.last_token)
+
+
+class required_node_property(_base_property[_TU, _U]):
+    def __init__(self, inner: Callable[[_U], _TU]):
         self._attr = '_' + inner.__name__
 
-    def _get(self, instance: _U) -> _T:
+    def _get(self, instance: _U) -> _TU:
         value = getattr(instance, self._attr)
         assert value
         return value
 
-    def __set__(self, instance: _U, value: _T) -> None:
+    def __set__(self, instance: _U, value: _TU) -> None:
         assert value
         if hasattr(instance, self._attr):
             current = self.__get__(instance)
-            instance.token_store.replace(current, value)
+            _replace_node(current, value)
         setattr(instance, self._attr, value)
 
 
-class optional_token_property(_base_property[Optional[_T], _U]):
-    def __init__(self, inner: Callable[[_U], Optional[_T]]):
+class optional_node_property(_base_property[Optional[_TU], _U]):
+    def __init__(self, inner: Callable[[_U], Optional[_TU]]):
         self._attr = '_' + inner.__name__
         self._fcreator = lambda s, _: None
         self._fremover = lambda s, _: None
 
-    def _get(self, instance: _U) -> Optional[_T]:
+    def _get(self, instance: _U) -> Optional[_TU]:
         value = getattr(instance, self._attr)
         return value
 
-    def __set__(self, instance: _U, value: Optional[_T]) -> None:
+    def __set__(self, instance: _U, value: Optional[_TU]) -> None:
         if hasattr(instance, self._attr):
             current = self.__get__(instance)
             if current is None and value is not None:
@@ -66,14 +91,14 @@ class optional_token_property(_base_property[Optional[_T], _U]):
             elif current is not None and value is None:
                 self._fremover(instance, current)
             elif current is not None and value is not None:
-                instance.token_store.replace(current, value)
+                _replace_node(current, value)
         setattr(instance, self._attr, value)
 
-    def remover(self, fremover: Callable[[_U, _T], None]) -> None:
+    def remover(self, fremover: Callable[[_U, _TU], None]) -> None:
         # second argument of fremover is for easier type checking
         self._fremover = fremover
 
-    def creator(self, fcreator: Callable[[_U, _T], None]) -> None:
+    def creator(self, fcreator: Callable[[_U, _TU], None]) -> None:
         self._fcreator = fcreator
 
 

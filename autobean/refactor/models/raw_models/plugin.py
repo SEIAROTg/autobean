@@ -34,11 +34,11 @@ class Plugin(base.RawTreeModel):
     def last_token(self) -> token_store_lib.Token:
         return self.raw_config or self.raw_name
 
-    @internal.required_token_property
+    @internal.required_node_property
     def raw_name(self) -> escaped_string.EscapedString:
         pass
 
-    @internal.optional_token_property
+    @internal.optional_node_property
     def raw_config(self) -> escaped_string.EscapedString:
         pass
 

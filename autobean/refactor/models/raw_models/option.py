@@ -33,10 +33,10 @@ class Option(base.RawTreeModel):
     def last_token(self) -> token_store_lib.Token:
         return self.raw_value
 
-    @internal.required_token_property
+    @internal.required_node_property
     def raw_key(self) -> escaped_string.EscapedString:
         pass
 
-    @internal.required_token_property
+    @internal.required_node_property
     def raw_value(self) -> escaped_string.EscapedString:
         pass

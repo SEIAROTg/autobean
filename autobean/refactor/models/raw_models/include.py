@@ -26,6 +26,6 @@ class Include(base.RawTreeModel):
     def last_token(self) -> token_store_lib.Token:
         return self.raw_filename
 
-    @internal.required_token_property
+    @internal.required_node_property
     def raw_filename(self) -> escaped_string.EscapedString:
         pass

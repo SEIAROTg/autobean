@@ -104,20 +104,24 @@ class TokenStore:
             position += _token_size(token)
         self._end = position
 
-    def _splice(self, tokens: Collection[Token], start: int, end: int) -> None:
+    def _splice(self, tokens: Collection[Token], start: int, end: int) -> list[Token]:
         for token in tokens:
             handle = token.store_handle
             if handle and not (handle.store is self and start <= handle.index <= end):
                 raise ValueError('Token already in a store.')
+        removed = self._tokens[start:end]
+        for token in removed:
+            token.store_handle = None
         for token in tokens:
             token.store_handle = _Handle(store=self, index=0, position=Position(0, 0, 0))
         self._tokens[start:end] = tokens
         self._update_token_handles(start)
+        return removed
 
-    def splice(self, tokens: Collection[Token], ref: Optional[Token], del_end: Optional[Token] = None) -> None:
+    def splice(self, tokens: Collection[Token], ref: Optional[Token], del_end: Optional[Token] = None) -> list[Token]:
         start = _check_store_handle(ref).index if ref else 0
         end = _check_store_handle(del_end).index + 1 if del_end else start
-        self._splice(tokens, start, end)
+        return self._splice(tokens, start, end)
 
     def insert_after(self, ref: Optional[Token], tokens: Collection[Token]) -> None:
         if ref is None:
@@ -136,8 +140,8 @@ class TokenStore:
     def replace(self, token: Token, repl: Token) -> None:
         self.splice([repl], token, token)
 
-    def remove(self, start: Token, end: Optional[Token] = None) -> None:
-        self.splice([], start, end or start)
+    def remove(self, start: Token, end: Optional[Token] = None) -> list[Token]:
+        return self.splice([], start, end or start)
 
     def get_position(self, token: Token) -> Position:
         handle = _check_store_handle(token)
