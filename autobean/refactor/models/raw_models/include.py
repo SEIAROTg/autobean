@@ -4,12 +4,13 @@ from . import escaped_string
 from . import internal
 
 
-@base.token_model
-class IncludeLabel(base.RawTokenModel):
+
+@internal.token_model
+class IncludeLabel(internal.SimpleRawTokenModel):
     RULE = 'INCLUDE'
 
 
-@base.tree_model
+@internal.tree_model
 class Include(base.RawTreeModel):
     RULE = 'include'
 

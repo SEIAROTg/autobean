@@ -1,9 +1,8 @@
 import decimal
-from . import base
 from . import internal
 
 
-@base.token_model
+@internal.token_model
 class Number(internal.SingleValueRawTokenModel[decimal.Decimal]):
     RULE = 'NUMBER'
 

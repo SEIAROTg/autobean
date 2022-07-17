@@ -4,12 +4,12 @@ from . import escaped_string
 from . import internal
 
 
-@base.token_model
-class OptionLabel(base.RawTokenModel):
+@internal.token_model
+class OptionLabel(internal.SimpleRawTokenModel):
     RULE = 'OPTION'
 
 
-@base.tree_model
+@internal.tree_model
 class Option(base.RawTreeModel):
     RULE = 'option'
 

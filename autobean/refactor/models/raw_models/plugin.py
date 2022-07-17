@@ -1,16 +1,18 @@
 from typing import Optional
 from autobean.refactor import token_store as token_store_lib
 from . import base
+from . import editor
+from . import punctuation
 from . import escaped_string
 from . import internal
 
 
-@base.token_model
-class PluginLabel(base.RawTokenModel):
+@internal.token_model
+class PluginLabel(internal.SimpleRawTokenModel):
     RULE = 'PLUGIN'
 
 
-@base.tree_model
+@internal.tree_model
 class Plugin(base.RawTreeModel):
     RULE = 'plugin'
 
@@ -44,8 +46,8 @@ class Plugin(base.RawTreeModel):
 
     @raw_config.creator
     def __raw_config_creator(self, config: escaped_string.EscapedString) -> None:
-        self.token_store.insert_after(self.raw_name, [base.Whitespace(' '), config])
+        self.token_store.insert_after(self.raw_name, [punctuation.Whitespace(' '), config])
     
     @raw_config.remover
     def __raw_config_remover(self, current: escaped_string.EscapedString) -> None:
-        internal.remove_with_left_whitespace(self.token_store, current)
+        editor.remove_with_left_whitespace(self.token_store, current)

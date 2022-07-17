@@ -1,10 +1,9 @@
 import re
 import datetime
-from . import base
 from . import internal
 
 
-@base.token_model
+@internal.token_model
 class Date(internal.SingleValueRawTokenModel[datetime.date]):
     RULE = 'DATE'
 

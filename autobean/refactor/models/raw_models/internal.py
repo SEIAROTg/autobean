@@ -3,12 +3,27 @@ from typing import Callable, Generic, Type, TypeVar, Optional, Union, overload
 from autobean.refactor import token_store as token_store_lib
 from . import base
 
+_TT = TypeVar('_TT', bound=Type[base.RawTokenModel])
+_UT = TypeVar('_UT', bound=Type[base.RawTreeModel])
 _U = TypeVar('_U', bound=base.RawTreeModel)
 _TU = TypeVar('_TU', bound=Union[base.RawTokenModel, base.RawTreeModel])
 _Self = TypeVar('_Self', bound='_base_property')  # TODO: replace with PEP 673 Self once supported
 _B = TypeVar('_B')
 _V = TypeVar('_V')
 _S = TypeVar('_S', bound='SingleValueRawTokenModel')
+
+TOKEN_MODELS: list[Type[base.RawTokenModel]] = []
+TREE_MODELS: list[Type[base.RawTreeModel]] = []
+
+
+def token_model(cls: _TT) -> _TT:
+    TOKEN_MODELS.append(cls)
+    return cls
+
+
+def tree_model(cls: _UT) -> _UT:
+    TREE_MODELS.append(cls)
+    return cls
 
 
 class _base_property(Generic[_B, _U], abc.ABC):
@@ -102,14 +117,9 @@ class optional_node_property(_base_property[Optional[_TU], _U]):
         self._fcreator = fcreator
 
 
-def remove_with_left_whitespace(token_store: token_store_lib.TokenStore, model: base.RawModel) -> None:
-    start = model.first_token
-    if start:
-        prev = token_store.get_prev(start)
-        if isinstance(prev, base.Whitespace):
-            start = prev
-    end = model.last_token
-    token_store.splice((), start, end)
+class SimpleRawTokenModel(base.RawTokenModel):
+    def __init__(self, raw_text: str) -> None:
+        super().__init__(raw_text)
 
 
 class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):

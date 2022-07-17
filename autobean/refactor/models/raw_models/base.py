@@ -55,42 +55,4 @@ class RawTreeModel(RawModel):
         return self._token_store
 
 
-TOKEN_MODELS: list[Type[RawTokenModel]] = []
-TREE_MODELS: list[Type[RawTreeModel]] = []
-_V = TypeVar('_V', bound=Type[RawTokenModel])
-_W = TypeVar('_W', bound=Type[RawTreeModel])
 
-
-def token_model(cls: _V) -> _V:
-    TOKEN_MODELS.append(cls)
-    return cls
-
-
-def tree_model(cls: _W) -> _W:
-    TREE_MODELS.append(cls)
-    return cls
-
-
-@token_model
-class Newline(RawTokenModel):
-    RULE = '_NL'
-
-
-@token_model
-class Indent(RawTokenModel):
-    RULE = 'INDENT'
-
-
-@token_model
-class Whitespace(RawTokenModel):
-    RULE = 'WS_INLINE'
-
-
-@token_model
-class InlineComment(RawTokenModel):
-    RULE = 'COMMENT_INLINE'
-
-
-@token_model
-class LineComment(RawTokenModel):
-    RULE = 'COMMENT_LINE'

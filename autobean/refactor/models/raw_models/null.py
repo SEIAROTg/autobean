@@ -1,6 +1,6 @@
-from . import base
+from . import internal
 
 
-@base.token_model
-class Null(base.RawTokenModel):
+@internal.token_model
+class Null(internal.SimpleRawTokenModel):
     RULE = 'NULL'

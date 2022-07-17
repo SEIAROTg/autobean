@@ -1,9 +1,8 @@
 import re
-from . import base
 from . import internal
 
 
-@base.token_model
+@internal.token_model
 class EscapedString(internal.SingleValueRawTokenModel[str]):
     RULE = 'ESCAPED_STRING'
     # See: https://github.com/beancount/beancount/blob/d841487ccdda04c159de86b1186e7c2ea997a3e2/beancount/parser/tokens.c#L102

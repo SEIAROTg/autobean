@@ -1,8 +1,7 @@
-from . import base
 from . import internal
 
 
-@base.token_model
+@internal.token_model
 class Tag(internal.SingleValueRawTokenModel[str]):
     RULE = 'TAG'
 

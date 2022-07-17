@@ -1,9 +1,10 @@
 from typing import Optional
 from autobean.refactor import token_store as token_store_lib
 from . import base
+from . import internal
 
 
-@base.tree_model
+@internal.tree_model
 class File(base.RawTreeModel):
     RULE = 'file'
 
