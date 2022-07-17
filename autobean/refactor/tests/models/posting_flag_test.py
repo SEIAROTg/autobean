@@ -12,6 +12,7 @@ class TestPostingFlag(base.BaseTestModel):
     def test_parse_success(self, text: str) -> None:
         flag = self._parser.parse_token(text, raw_models.PostingFlag)
         assert flag.raw_text == text
+        self.check_deepcopy_token(flag)
 
     @pytest.mark.parametrize(
         'text', [

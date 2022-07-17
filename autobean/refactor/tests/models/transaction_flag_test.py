@@ -13,6 +13,7 @@ class TestTransactionFlag(base.BaseTestModel):
         flag = self._parser.parse_token(text, raw_models.TransactionFlag)
         assert flag.raw_text == text
         assert flag.value == text
+        self.check_deepcopy_token(flag)
 
     def test_parse_success_txn(self) -> None:
         flag = self._parser.parse_token('txn', raw_models.TransactionFlag)

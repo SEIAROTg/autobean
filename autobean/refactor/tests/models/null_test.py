@@ -9,6 +9,7 @@ class TestNull(base.BaseTestModel):
     def test_parse_success(self) -> None:
         token = self._parser.parse_token('NULL', raw_models.Null)
         assert token.raw_text == 'NULL'
+        self.check_deepcopy_token(token)
 
     @pytest.mark.parametrize(
         'text', [

@@ -19,6 +19,8 @@ class TestOption(base.BaseTestModel):
         assert option.raw_key.value == key
         assert option.raw_value.value == value
         assert option.last_token is option.raw_value
+        self.check_deepcopy_tree(option)
+        self.check_reattach_tree(option)
 
     @pytest.mark.parametrize(
         'text', [

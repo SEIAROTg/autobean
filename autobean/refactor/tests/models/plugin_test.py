@@ -27,6 +27,8 @@ class TestPlugin(base.BaseTestModel):
             assert plugin.raw_config
             assert plugin.raw_config.value == config
             assert plugin.last_token is plugin.raw_config
+        self.check_deepcopy_tree(plugin)
+        self.check_reattach_tree(plugin)
 
     @pytest.mark.parametrize(
         'text', [

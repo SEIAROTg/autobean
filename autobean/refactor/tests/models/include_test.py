@@ -18,6 +18,8 @@ class TestInclude(base.BaseTestModel):
         assert include.first_token.raw_text == 'include'
         assert include.raw_filename.value == filename
         assert include.last_token is include.raw_filename
+        self.check_deepcopy_tree(include)
+        self.check_reattach_tree(include)
 
     @pytest.mark.parametrize(
         'text', [

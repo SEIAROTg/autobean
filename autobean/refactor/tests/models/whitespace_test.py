@@ -18,6 +18,7 @@ class TestWhitespace(base.BaseTestModel):
     def test_parse_success(self, text: str) -> None:
         token = self._parser.parse_token(text, raw_models.Whitespace)
         assert token.raw_text == text
+        self.check_deepcopy_token(token)
 
     @pytest.mark.parametrize(
         'text', [

@@ -19,7 +19,8 @@ class TestIgnored(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str) -> None:
-        self._parser.parse(text, raw_models.File)
+        file = self._parser.parse(text, raw_models.File)
+        self.check_deepcopy_tree(file)
 
     @pytest.mark.parametrize(
         'text', [

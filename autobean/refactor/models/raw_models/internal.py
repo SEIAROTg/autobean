@@ -1,12 +1,15 @@
 import abc
-from typing import Callable, Generic, Type, TypeVar, Optional, Union, overload
+from typing import Callable, Generic, Type, TypeVar, Optional, Union, final, overload
 from . import base
 
 _TT = TypeVar('_TT', bound=Type[base.RawTokenModel])
 _UT = TypeVar('_UT', bound=Type[base.RawTreeModel])
 _U = TypeVar('_U', bound=base.RawTreeModel)
 _TU = TypeVar('_TU', bound=Union[base.RawTokenModel, base.RawTreeModel])
-_Self = TypeVar('_Self', bound='_base_property')  # TODO: replace with PEP 673 Self once supported
+# TODO: replace with PEP 673 Self once supported
+_SelfBaseProperty = TypeVar('_SelfBaseProperty', bound='_base_property')
+_SelfSimpleRawTokenModel = TypeVar('_SelfSimpleRawTokenModel', bound='SimpleRawTokenModel')
+_SelfSingleValueRawTokenModel = TypeVar('_SelfSingleValueRawTokenModel', bound='SingleValueRawTokenModel')
 _B = TypeVar('_B')
 _V = TypeVar('_V')
 _S = TypeVar('_S', bound='SingleValueRawTokenModel')
@@ -35,10 +38,10 @@ class _base_property(Generic[_B, _U], abc.ABC):
         ...
 
     @overload
-    def __get__(self: _Self, instance: None, owner: Type[_U]) -> _Self:
+    def __get__(self: _SelfBaseProperty, instance: None, owner: Type[_U]) -> _SelfBaseProperty:
         ...
 
-    def __get__(self: _Self, instance: Optional[_U], owner: Optional[Type[_U]] = None) -> _B | _Self:
+    def __get__(self: _SelfBaseProperty, instance: Optional[_U], owner: Optional[Type[_U]] = None) -> _B | _SelfBaseProperty:
         del owner
         if instance is None:
             return self
@@ -85,6 +88,9 @@ class required_node_property(_base_property[_TU, _U]):
             _replace_node(current, value)
         setattr(instance, self._attr, value)
 
+    def reset(self, instance: _U, value: _TU) -> None:
+        setattr(instance, self._attr, value)
+
 
 class optional_node_property(_base_property[Optional[_TU], _U]):
     def __init__(self, inner: Callable[[_U], Optional[_TU]]):
@@ -114,13 +120,21 @@ class optional_node_property(_base_property[Optional[_TU], _U]):
     def creator(self, fcreator: Callable[[_U, _TU], None]) -> None:
         self._fcreator = fcreator
 
+    def reset(self, instance: _U, value: Optional[_TU]) -> None:
+        setattr(instance, self._attr, value)
+
 
 class SimpleRawTokenModel(base.RawTokenModel):
+    @final
     def __init__(self, raw_text: str) -> None:
         super().__init__(raw_text)
 
+    def _clone(self: _SelfSimpleRawTokenModel) -> _SelfSimpleRawTokenModel:
+        return type(self)(self.raw_text)
+
 
 class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):
+    @final
     def __init__(self, raw_text: str, value: _V) -> None:
         super().__init__(raw_text)
         self._value = value
@@ -160,6 +174,9 @@ class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):
     @abc.abstractmethod
     def _format_value(cls, value: _V) -> str:
         pass
+
+    def _clone(self: _SelfSingleValueRawTokenModel) -> _SelfSingleValueRawTokenModel:
+        return type(self)(self.raw_text, self.value)
 
 
 class SimpleSingleValueRawTokenModel(SingleValueRawTokenModel[str]):

@@ -17,6 +17,7 @@ class TestLink(base.BaseTestModel):
         token = self._parser.parse_token(text, raw_models.Link)
         assert token.raw_text == text
         assert token.value == value
+        self.check_deepcopy_token(token)
 
     @pytest.mark.parametrize(
         'text', [

@@ -1,9 +1,11 @@
-from typing import Optional
+from typing import Optional, TypeVar, final
 from . import base
 from . import editor
 from . import punctuation
 from . import escaped_string
 from . import internal
+
+_Self = TypeVar('_Self', bound='Plugin')
 
 
 @internal.token_model
@@ -15,6 +17,7 @@ class PluginLabel(internal.SimpleRawTokenModel):
 class Plugin(base.RawTreeModel):
     RULE = 'plugin'
 
+    @final
     def __init__(
             self,
             token_store: base.TokenStore,
@@ -50,3 +53,17 @@ class Plugin(base.RawTreeModel):
     @raw_config.remover
     def __raw_config_remover(self, current: escaped_string.EscapedString) -> None:
         editor.remove_with_left_whitespace(self.token_store, current)
+
+    def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
+        return type(self)(
+            token_store,
+            token_transformer.transform(self._label),
+            token_transformer.transform(self.raw_name),
+            token_transformer.transform(self.raw_config),
+        )
+
+    def reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
+        self._token_store = token_store
+        self._label = token_transformer.transform(self._label)
+        Plugin.raw_name.reset(self, token_transformer.transform(self.raw_name))
+        Plugin.raw_config.reset(self, token_transformer.transform(self.raw_config))

@@ -149,6 +149,10 @@ class TokenStore(Generic[_T]):
         end_idx = _check_store_handle(end).index
         yield from self._tokens[start_idx:end_idx + 1]
 
+    def get_index(self, token: _T) -> int:
+        handle = _check_store_handle(token)
+        return handle.index
+
     def get_position(self, token: _T) -> Position:
         handle = _check_store_handle(token)
         return handle.position

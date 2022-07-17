@@ -43,6 +43,7 @@ class TestEscapedString(base.BaseTestModel):
         token = self._parser.parse_token(text, raw_models.EscapedString)
         assert token.value == value
         assert token.raw_text == text
+        self.check_deepcopy_token(token)
 
     @pytest.mark.parametrize(
         'text', [
