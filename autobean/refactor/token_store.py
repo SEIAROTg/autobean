@@ -1,6 +1,9 @@
 import bisect
 import dataclasses
-from typing import Any, Collection, Iterable, Iterator, Optional
+from typing import Any, Collection, Generic, Iterable, Iterator, Optional, Type, TypeVar
+
+_T = TypeVar('_T', bound='Token')
+_Self = TypeVar('_Self', bound='TokenStore')
 
 
 @dataclasses.dataclass(frozen=True)
@@ -67,10 +70,10 @@ def _token_size(token: Token) -> Position:
         column=len(token.raw_text) - token.raw_text.rfind('\n') - 1)
 
 
-class TokenStore:
+class TokenStore(Generic[_T]):
     """Storage for tokens allowing insertion, deletion and lookup by position."""
 
-    _tokens: list[Token]
+    _tokens: list[_T]
     _end: Position
 
     def __init__(self) -> None:
@@ -78,11 +81,11 @@ class TokenStore:
         self._end = Position(0, 0, 0)
 
     @classmethod
-    def from_tokens(cls, tokens: Iterable[Token]) -> 'TokenStore':
+    def from_tokens(cls: Type[_Self], tokens: Iterable[_T]) -> _Self:
         for token in tokens:
             if token.store_handle:
                 raise ValueError('Token already in a store.')
-        store = TokenStore()
+        store = cls()
         for token in tokens:
             token.store_handle = _Handle(
                 store=store, index=0, position=Position(0, 0, 0))
@@ -104,57 +107,60 @@ class TokenStore:
             position += _token_size(token)
         self._end = position
 
-    def _splice(self, tokens: Collection[Token], start: int, end: int) -> list[Token]:
+    def _splice(self, tokens: Collection[_T], start: int, end: int) -> None:
         for token in tokens:
             handle = token.store_handle
             if handle and not (handle.store is self and start <= handle.index <= end):
                 raise ValueError('Token already in a store.')
-        removed = self._tokens[start:end]
-        for token in removed:
+        for token in self._tokens[start:end]:
             token.store_handle = None
         for token in tokens:
             token.store_handle = _Handle(store=self, index=0, position=Position(0, 0, 0))
         self._tokens[start:end] = tokens
         self._update_token_handles(start)
-        return removed
 
-    def splice(self, tokens: Collection[Token], ref: Optional[Token], del_end: Optional[Token] = None) -> list[Token]:
+    def splice(self, tokens: Collection[_T], ref: Optional[_T], del_end: Optional[_T] = None) -> None:
         start = _check_store_handle(ref).index if ref else 0
         end = _check_store_handle(del_end).index + 1 if del_end else start
-        return self._splice(tokens, start, end)
+        self._splice(tokens, start, end)
 
-    def insert_after(self, ref: Optional[Token], tokens: Collection[Token]) -> None:
+    def insert_after(self, ref: Optional[_T], tokens: Collection[_T]) -> None:
         if ref is None:
             start = 0
         else:
             start = _check_store_handle(ref).index + 1
         self._splice(tokens, start, start)
 
-    def insert_before(self, ref: Optional[Token], tokens: Collection[Token]) -> None:
+    def insert_before(self, ref: Optional[_T], tokens: Collection[_T]) -> None:
         self.splice(tokens, ref)
 
-    def update(self, token: Token) -> None:
+    def update(self, token: _T) -> None:
         handle = _check_store_handle(token)
         self._update_token_handles(handle.index + 1)
 
-    def replace(self, token: Token, repl: Token) -> None:
+    def replace(self, token: _T, repl: _T) -> None:
         self.splice([repl], token, token)
 
-    def remove(self, start: Token, end: Optional[Token] = None) -> list[Token]:
-        return self.splice([], start, end or start)
+    def remove(self, start: _T, end: Optional[_T] = None) -> None:
+        self.splice([], start, end or start)
+    
+    def iter(self, start: _T, end: _T) -> Iterator[_T]:
+        start_idx = _check_store_handle(start).index
+        end_idx = _check_store_handle(end).index
+        yield from self._tokens[start_idx:end_idx + 1]
 
-    def get_position(self, token: Token) -> Position:
+    def get_position(self, token: _T) -> Position:
         handle = _check_store_handle(token)
         return handle.position
 
-    def get_by_position(self, position: int) -> Token:
+    def get_by_position(self, position: int) -> _T:
         index = bisect.bisect_left(
             self._tokens, position, key=lambda t: _check_store_handle(t).position.position)
         if index >= len(self._tokens) or _check_store_handle(self._tokens[index]).position.position != position:
             raise KeyError(f'No token found at position {position}.')
         return self._tokens[index]
 
-    def find_by_line(self, line: int) -> Iterator[Token]:  # zero-based
+    def find_by_line(self, line: int) -> Iterator[_T]:  # zero-based
         index = bisect.bisect_left(
             self._tokens, line, key=lambda t: _check_store_handle(t).position.line)
         while index < len(self._tokens):
@@ -163,27 +169,27 @@ class TokenStore:
                 break
             yield self._tokens[index]
 
-    def get_prev(self, token: Token) -> Optional[Token]:
+    def get_prev(self, token: _T) -> Optional[_T]:
         handle = _check_store_handle(token)
         if handle.index:
             return self._tokens[handle.index - 1]
         else:
             return None
 
-    def get_next(self, token: Token) -> Optional[Token]:
+    def get_next(self, token: _T) -> Optional[_T]:
         handle = _check_store_handle(token)
         if handle.index < len(self._tokens) - 1:
             return self._tokens[handle.index + 1]
         else:
             return None
 
-    def get_first(self) -> Optional[Token]:
+    def get_first(self) -> Optional[_T]:
         return self._tokens[0] if self._tokens else None
 
-    def get_last(self) -> Optional[Token]:
+    def get_last(self) -> Optional[_T]:
         return self._tokens[-1] if self._tokens else None
 
-    def __iter__(self) -> Iterator[Token]:
+    def __iter__(self) -> Iterator[_T]:
         yield from self._tokens
 
     def __len__(self) -> int:

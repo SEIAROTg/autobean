@@ -1,5 +1,4 @@
 from typing import Optional
-from autobean.refactor import token_store as token_store_lib
 from . import base
 from . import editor
 from . import punctuation
@@ -18,7 +17,7 @@ class Plugin(base.RawTreeModel):
 
     def __init__(
             self,
-            token_store: token_store_lib.TokenStore,
+            token_store: base.TokenStore,
             label: PluginLabel,
             name: escaped_string.EscapedString,
             config: Optional[escaped_string.EscapedString],
@@ -29,11 +28,11 @@ class Plugin(base.RawTreeModel):
         self.raw_config = config
 
     @property
-    def first_token(self) -> token_store_lib.Token:
+    def first_token(self) -> base.RawTokenModel:
         return self._label
 
     @property
-    def last_token(self) -> token_store_lib.Token:
+    def last_token(self) -> base.RawTokenModel:
         return self.raw_config or self.raw_name
 
     @internal.required_node_property

@@ -5,7 +5,6 @@ import lark
 from lark import exceptions
 from lark import lexer
 from lark import load_grammar
-from autobean.refactor import token_store as token_store_lib
 from autobean.refactor.models import raw_models
 
 _T = TypeVar('_T', bound=raw_models.RawTokenModel)
@@ -75,14 +74,14 @@ class Parser:
             parser.feed_token(token)
         tree = parser.feed_eof()
 
-        token_models: list[token_store_lib.Token] = []
+        token_models: list[raw_models.RawTokenModel] = []
         token_to_model = {}
         for token in tokens:
             token_model = self._token_models[token.type].from_raw_text(token.value)
             token_models.append(token_model)
             token_to_model[token] = token_model
 
-        token_store = token_store_lib.TokenStore.from_tokens(token_models)
+        token_store = raw_models.TokenStore.from_tokens(token_models)
         transformed_tree = self._transform_tree(
             tree,
             target,
@@ -95,7 +94,7 @@ class Parser:
             self,
             tree: lark.Tree,
             target: Type[_U],
-            token_store: token_store_lib.TokenStore,
+            token_store: raw_models.TokenStore,
             token_to_model: dict[lark.Token, raw_models.RawTokenModel],
     ) -> _U:
         models = []

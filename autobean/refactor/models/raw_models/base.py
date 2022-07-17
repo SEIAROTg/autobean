@@ -1,8 +1,9 @@
 import abc
-from typing import ClassVar, Optional, Type, TypeVar
+from typing import Any, ClassVar, Optional, Type, TypeVar
 from autobean.refactor import token_store as token_store_lib
 
 _T = TypeVar('_T', bound='RawTokenModel')
+TokenStore = token_store_lib.TokenStore['RawTokenModel']
 
 
 class RawModel(abc.ABC):
@@ -10,17 +11,17 @@ class RawModel(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def token_store(self) -> Optional[token_store_lib.TokenStore]:
+    def token_store(self) -> Optional[TokenStore]:
         ...
 
     @property
     @abc.abstractmethod
-    def first_token(self) -> Optional[token_store_lib.Token]:
+    def first_token(self) -> Optional['RawTokenModel']:
         ...
 
     @property
     @abc.abstractmethod
-    def last_token(self) -> Optional[token_store_lib.Token]:
+    def last_token(self) -> Optional['RawTokenModel']:
         ...
 
 
@@ -33,25 +34,25 @@ class RawTokenModel(token_store_lib.Token, RawModel):
         return cls(raw_text)
 
     @property
-    def token_store(self) -> Optional[token_store_lib.TokenStore]:
+    def token_store(self) -> Optional[TokenStore]:
         return self.store_handle.store if self.store_handle else None
 
     @property
-    def first_token(self) -> Optional[token_store_lib.Token]:
+    def first_token(self) -> 'RawTokenModel':
         return self
 
     @property
-    def last_token(self) -> Optional[token_store_lib.Token]:
+    def last_token(self) -> 'RawTokenModel':
         return self
 
 
 class RawTreeModel(RawModel):
-    def __init__(self, token_store: token_store_lib.TokenStore) -> None:
+    def __init__(self, token_store: TokenStore) -> None:
         super().__init__()
         self._token_store = token_store
 
     @property
-    def token_store(self) -> token_store_lib.TokenStore:
+    def token_store(self) -> TokenStore:
         return self._token_store
 
 

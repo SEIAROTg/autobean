@@ -1,6 +1,5 @@
 import abc
 from typing import Callable, Generic, Type, TypeVar, Optional, Union, overload
-from autobean.refactor import token_store as token_store_lib
 from . import base
 
 _TT = TypeVar('_TT', bound=Type[base.RawTokenModel])
@@ -46,14 +45,19 @@ class _base_property(Generic[_B, _U], abc.ABC):
         return self._get(instance)
 
 
-def _destruct_tree_model(model: _U) -> list[token_store_lib.Token]:
+def _destruct_tree_model(model: base.RawModel) -> list[base.RawTokenModel]:
+    if model.token_store is None:
+        assert isinstance(model, base.RawTokenModel)
+        return [model]
     if (
             model.first_token is not model.token_store.get_first() or
             model.last_token is not model.token_store.get_last()):
         raise ValueError('Cannot reuse node. Consider making a copy.')
     if not model.first_token or not model.last_token:
         raise ValueError('Cannot destruct empty node.')
-    return model.token_store.remove(model.first_token, model.last_token)
+    tokens = list(model.token_store.iter(model.first_token, model.last_token))
+    model.token_store.remove(model.first_token, model.last_token)
+    return tokens
 
 
 def _replace_node(node: _TU, repl: _TU) -> None:
@@ -61,13 +65,7 @@ def _replace_node(node: _TU, repl: _TU) -> None:
         raise ValueError('Cannot replace a free token.')
     if node is repl:
         return
-    tokens: list[token_store_lib.Token]
-    if isinstance(repl, base.RawTokenModel):
-        tokens = [repl]
-    elif isinstance(repl, base.RawTreeModel):
-        tokens = _destruct_tree_model(repl)
-    else:
-        assert False
+    tokens = _destruct_tree_model(repl)
     node.token_store.splice(tokens, node.first_token, node.last_token)
 
 

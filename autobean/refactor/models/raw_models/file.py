@@ -1,5 +1,4 @@
 from typing import Optional
-from autobean.refactor import token_store as token_store_lib
 from . import base
 from . import internal
 
@@ -8,14 +7,14 @@ from . import internal
 class File(base.RawTreeModel):
     RULE = 'file'
 
-    def __init__(self, token_store: token_store_lib.TokenStore, *directives: base.RawTreeModel):
+    def __init__(self, token_store: base.TokenStore, *directives: base.RawTreeModel):
         super().__init__(token_store)
         self._directives = list(directives)
 
     @property
-    def first_token(self) -> Optional[token_store_lib.Token]:
+    def first_token(self) -> Optional[base.RawTokenModel]:
         return self._token_store.get_first()
 
     @property
-    def last_token(self) -> Optional[token_store_lib.Token]:
+    def last_token(self) -> Optional[base.RawTokenModel]:
         return self._token_store.get_last()
