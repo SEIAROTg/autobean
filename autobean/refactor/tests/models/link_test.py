@@ -1,10 +1,10 @@
 from lark import exceptions
 import pytest
-from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from . import base
 
 
-class TestLink:
+class TestLink(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text,value', [
@@ -13,8 +13,8 @@ class TestLink:
             ('^000', '000'),
         ],
     )
-    def test_parse_success(self, text: str, value: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token(text, raw_models.Link)
+    def test_parse_success(self, text: str, value: str) -> None:
+        token = self._parser.parse_token(text, raw_models.Link)
         assert token.raw_text == text
         assert token.value == value
 
@@ -27,18 +27,18 @@ class TestLink:
             '^^foo',
         ],
     )
-    def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
+    def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            parser.parse_token(text, raw_models.Link)
+            self._parser.parse_token(text, raw_models.Link)
 
-    def test_set_raw_text(self, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('^foo', raw_models.Link)
+    def test_set_raw_text(self) -> None:
+        token = self._parser.parse_token('^foo', raw_models.Link)
         token.raw_text = '^bar'
         assert token.raw_text == '^bar'
         assert token.value == 'bar'
 
-    def test_set_value(self, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('^foo', raw_models.Link)
+    def test_set_value(self) -> None:
+        token = self._parser.parse_token('^foo', raw_models.Link)
         token.value = 'bar'
         assert token.value == 'bar'
         assert token.raw_text == '^bar'

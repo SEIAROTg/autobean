@@ -1,10 +1,10 @@
 from lark import exceptions
 import pytest
-from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from . import base
 
 
-class TestWhitespace:
+class TestWhitespace(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
@@ -15,8 +15,8 @@ class TestWhitespace:
             ' \t \t',
         ],
     )
-    def test_parse_success(self, text: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token(text, raw_models.Whitespace)
+    def test_parse_success(self, text: str) -> None:
+        token = self._parser.parse_token(text, raw_models.Whitespace)
         assert token.raw_text == text
 
     @pytest.mark.parametrize(
@@ -27,6 +27,6 @@ class TestWhitespace:
             '\u2000',
         ],
     )
-    def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
+    def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            parser.parse_token(text, raw_models.Whitespace)
+            self._parser.parse_token(text, raw_models.Whitespace)

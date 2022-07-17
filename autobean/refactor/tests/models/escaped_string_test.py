@@ -1,8 +1,8 @@
 import itertools
 from lark import exceptions
 import pytest
-from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from . import base
 
 # (text, value)
 _ESCAPE_TEST_CASES_COMMON = [
@@ -29,7 +29,7 @@ _ESCAPE_TEST_CASES_AGGRESSIVE = [
 ]
 
 
-class TestEscapedString:
+class TestEscapedString(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text,value', itertools.chain(
@@ -39,8 +39,8 @@ class TestEscapedString:
             _ESCAPE_TEST_CASES_AGGRESSIVE,
         ),
     )
-    def test_parse_success(self, text: str, value: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token(text, raw_models.EscapedString)
+    def test_parse_success(self, text: str, value: str) -> None:
+        token = self._parser.parse_token(text, raw_models.EscapedString)
         assert token.value == value
         assert token.raw_text == text
 
@@ -54,9 +54,9 @@ class TestEscapedString:
             '',
         ],
     )
-    def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
+    def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            parser.parse_token(text, raw_models.EscapedString)
+            self._parser.parse_token(text, raw_models.EscapedString)
 
     @pytest.mark.parametrize(
         'text,value', itertools.chain(
@@ -66,8 +66,8 @@ class TestEscapedString:
             _ESCAPE_TEST_CASES_AGGRESSIVE,
         ),
     )
-    def test_set_raw_text(self, text: str, value: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('"dummy"', raw_models.EscapedString)
+    def test_set_raw_text(self, text: str, value: str) -> None:
+        token = self._parser.parse_token('"dummy"', raw_models.EscapedString)
         token.raw_text = text
         assert token.value == value
         assert token.raw_text == text
@@ -78,8 +78,8 @@ class TestEscapedString:
             _ESCAPE_TEST_CASES_CONSERVATIVE,
         ),
     )
-    def test_set_value(self, text: str, value: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('"dummy"', raw_models.EscapedString)
+    def test_set_value(self, text: str, value: str) -> None:
+        token = self._parser.parse_token('"dummy"', raw_models.EscapedString)
         token.value = value
         assert token.value == value
         assert token.raw_text == text

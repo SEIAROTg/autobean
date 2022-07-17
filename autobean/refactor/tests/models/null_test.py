@@ -1,13 +1,13 @@
 from lark import exceptions
 import pytest
-from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from . import base
 
 
-class TestNull:
+class TestNull(base.BaseTestModel):
 
-    def test_parse_success(self, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('NULL', raw_models.Null)
+    def test_parse_success(self) -> None:
+        token = self._parser.parse_token('NULL', raw_models.Null)
         assert token.raw_text == 'NULL'
 
     @pytest.mark.parametrize(
@@ -17,6 +17,6 @@ class TestNull:
             'null',
         ],
     )
-    def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
+    def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            parser.parse_token(text, raw_models.Null)
+            self._parser.parse_token(text, raw_models.Null)

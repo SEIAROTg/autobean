@@ -1,10 +1,10 @@
 from lark import exceptions
 import pytest
-from autobean.refactor import parser as parser_lib
 from autobean.refactor.models import raw_models
+from . import base
 
 
-class TestCurrency:
+class TestCurrency(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
@@ -22,8 +22,8 @@ class TestCurrency:
             'NULL',
         ],
     )
-    def test_parse_success(self, text: str, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token(text, raw_models.Currency)
+    def test_parse_success(self, text: str) -> None:
+        token = self._parser.parse_token(text, raw_models.Currency)
         assert token.raw_text == text
         assert token.value == text
 
@@ -36,18 +36,18 @@ class TestCurrency:
             'Asset',
         ],
     )
-    def test_parse_failure(self, text: str, parser: parser_lib.Parser) -> None:
+    def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            parser.parse_token(text, raw_models.Currency)
+            self._parser.parse_token(text, raw_models.Currency)
 
-    def test_set_raw_text(self, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('USD', raw_models.Currency)
+    def test_set_raw_text(self) -> None:
+        token = self._parser.parse_token('USD', raw_models.Currency)
         token.raw_text = 'AAPL'
         assert token.raw_text == 'AAPL'
         assert token.value == 'AAPL'
 
-    def test_set_value(self, parser: parser_lib.Parser) -> None:
-        token = parser.parse_token('USD', raw_models.Currency)
+    def test_set_value(self) -> None:
+        token = self._parser.parse_token('USD', raw_models.Currency)
         token.value = 'AAPL'
         assert token.value == 'AAPL'
         assert token.raw_text == 'AAPL'
