@@ -24,7 +24,7 @@ COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 %ignore COMMENT_LINE
 
 // TODO: remove once tokens are referenced elsewhere.
-_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | POSTING_FLAG | TRANSACTION_FLAG | NUMBER
+_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | TAG | LINK | POSTING_FLAG | TRANSACTION_FLAG
 
 // Account
 // See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
@@ -64,3 +64,18 @@ TRANSACTION_FLAG: POSTING_FLAG | "txn"
 
 // Number
 NUMBER: (/([0-9]{1,3})(,[0-9]{3})+/ | /[0-9]+/) [/\.[0-9]*/]
+
+// Arithmetic operators
+UNARY_OP:     "+" | "-"
+ADD_OP:       "+" | "-"
+MUL_OP:       "*" | "/"
+LEFT_PAREN:   "("
+RIGHT_PAREN:  ")"
+
+// Arithmetic expression
+number_expr: number_add_expr
+number_add_expr: number_mul_expr (ADD_OP number_mul_expr)*
+number_mul_expr: number_atom_expr (MUL_OP number_atom_expr)*
+?number_atom_expr: NUMBER | number_paren_expr | number_unary_expr
+number_paren_expr: LEFT_PAREN number_add_expr RIGHT_PAREN
+number_unary_expr: UNARY_OP number_atom_expr

@@ -79,7 +79,7 @@ class Parser:
         for token in tokens:
             token_model = self._token_models[token.type].from_raw_text(token.value)
             token_models.append(token_model)
-            token_to_model[token] = token_model
+            token_to_model[id(token)] = token_model
 
         token_store = raw_models.TokenStore.from_tokens(token_models)
         transformed_tree = self._transform_tree(
@@ -95,7 +95,7 @@ class Parser:
             tree: lark.Tree,
             target: Type[_U],
             token_store: raw_models.TokenStore,
-            token_to_model: dict[lark.Token, raw_models.RawTokenModel],
+            token_to_model: dict[int, raw_models.RawTokenModel],
     ) -> _U:
         models = []
         for child in tree.children:
@@ -103,7 +103,7 @@ class Parser:
             if child is None:
                 model = None
             elif isinstance(child, lark.Token):
-                model = token_to_model[child]
+                model = token_to_model[id(child)]
             else:
                 model = self._transform_tree(
                     child, self._tree_models[child.data], token_store, token_to_model)
