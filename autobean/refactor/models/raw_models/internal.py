@@ -48,28 +48,14 @@ class _base_property(Generic[_B, _U], abc.ABC):
         return self._get(instance)
 
 
-def _destruct_tree_model(model: base.RawModel) -> list[base.RawTokenModel]:
-    if model.token_store is None:
-        assert isinstance(model, base.RawTokenModel)
-        return [model]
-    if (
-            model.first_token is not model.token_store.get_first() or
-            model.last_token is not model.token_store.get_last()):
-        raise ValueError('Cannot reuse node. Consider making a copy.')
-    if not model.first_token or not model.last_token:
-        raise ValueError('Cannot destruct empty node.')
-    tokens = list(model.token_store.iter(model.first_token, model.last_token))
-    model.token_store.remove(model.first_token, model.last_token)
-    return tokens
-
-
 def _replace_node(node: _TU, repl: _TU) -> None:
     if not node.token_store:
         raise ValueError('Cannot replace a free token.')
     if node is repl:
         return
-    tokens = _destruct_tree_model(repl)
-    node.token_store.splice(tokens, node.first_token, node.last_token)
+    node.token_store.splice(repl.detach(), node.first_token, node.last_token)
+    if isinstance(repl, base.RawTreeModel):
+        repl.reattach(node.token_store)
 
 
 class required_node_property(_base_property[_TU, _U]):

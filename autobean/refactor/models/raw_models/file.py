@@ -27,7 +27,7 @@ class File(base.RawTreeModel):
             token_store,
             *(directive.clone(token_store, token_transformer) for directive in self._directives))
     
-    def reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
+    def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         for directive in self._directives:
             directive.reattach(token_store, token_transformer)

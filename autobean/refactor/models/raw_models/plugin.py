@@ -62,8 +62,8 @@ class Plugin(base.RawTreeModel):
             token_transformer.transform(self.raw_config),
         )
 
-    def reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
+    def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._label = token_transformer.transform(self._label)
-        Plugin.raw_name.reset(self, token_transformer.transform(self.raw_name))
-        Plugin.raw_config.reset(self, token_transformer.transform(self.raw_config))
+        type(self).raw_name.reset(self, token_transformer.transform(self.raw_name))
+        type(self).raw_config.reset(self, token_transformer.transform(self.raw_config))

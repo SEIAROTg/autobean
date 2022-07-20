@@ -33,6 +33,18 @@ class RawModel(abc.ABC):
     def __deepcopy__(self: _SelfRawModel, memo: dict[int, Any]) -> _SelfRawModel:
         ...
 
+    def detach(self) -> list['RawTokenModel']:
+        if not self.token_store:
+            return []
+        if (
+                self.first_token is not self.token_store.get_first() or
+                self.last_token is not self.token_store.get_last()):
+            raise ValueError('Cannot reuse node. Consider making a copy.')
+        tokens = list(self.token_store)
+        if tokens:
+            self.token_store.remove(tokens[0], tokens[-1])
+        return tokens
+
 
 class RawTokenModel(token_store_lib.Token, RawModel):
     def __init__(self, raw_text: str) -> None:
@@ -62,10 +74,21 @@ class RawTokenModel(token_store_lib.Token, RawModel):
         del memo  # unused
         return self._clone()
 
+    def detach(self) -> list['RawTokenModel']:
+        if not self.store_handle:
+            return [self]
+        return super().detach()
+
 
 # This could technically be replaced with map.__getitem__ but that didn't work well with mypy.
 # https://github.com/python/mypy/issues/1317
-class TokenTransformer:
+class TokenTransformer(abc.ABC):
+    @abc.abstractmethod
+    def transform(self, token: _OT) -> _OT:
+        ...
+
+
+class MappingTokenTransformer(TokenTransformer):
     def __init__(self, map: dict[int, RawTokenModel]) -> None:
         self._map = map
 
@@ -73,6 +96,14 @@ class TokenTransformer:
         if token is None:
             return None
         return cast(_OT, self._map[id(token)])
+
+
+class IdentityTokenTransformer(TokenTransformer):
+    def transform(self, token: _OT) -> _OT:
+        return token
+
+
+_IDENTITY_TOKEN_TRANSFORMER = IdentityTokenTransformer()
 
 
 class RawTreeModel(RawModel):
@@ -98,12 +129,15 @@ class RawTreeModel(RawModel):
                 tokens.append(new_token)
                 token_map[id(token)] = new_token
         token_store = TokenStore.from_tokens(tokens)
-        return self.clone(token_store, TokenTransformer(token_map))
+        return self.clone(token_store, MappingTokenTransformer(token_map))
 
     @abc.abstractmethod
     def clone(self: _SelfRawTreeModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawTreeModel:
         ...
 
+    def reattach(self, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> None:
+        self._reattach(token_store, token_transformer)
+
     @abc.abstractmethod
-    def reattach(self, token_store: TokenStore, token_transformer: TokenTransformer) -> None:
+    def _reattach(self, token_store: TokenStore, token_transformer: TokenTransformer) -> None:
         ...

@@ -88,7 +88,7 @@ class BaseTestModel:
             *tokens,
             comment_after,
         ])
-        c.reattach(token_store, raw_models.TokenTransformer(token_map))
+        c.reattach(token_store, raw_models.MappingTokenTransformer(token_map))
         assert c.token_store is token_store
         if tokens:
             assert c.first_token is tokens[0]

@@ -51,8 +51,8 @@ class Option(base.RawTreeModel):
             token_transformer.transform(self.raw_key),
             token_transformer.transform(self.raw_value))
 
-    def reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
+    def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._label = token_transformer.transform(self._label)
-        Option.raw_key.reset(self, token_transformer.transform(self.raw_key))
-        Option.raw_value.reset(self, token_transformer.transform(self.raw_value))
+        type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
+        type(self).raw_value.reset(self, token_transformer.transform(self.raw_value))

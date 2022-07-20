@@ -143,7 +143,7 @@ class TokenStore(Generic[_T]):
 
     def remove(self, start: _T, end: Optional[_T] = None) -> None:
         self.splice([], start, end or start)
-    
+
     def iter(self, start: _T, end: _T) -> Iterator[_T]:
         start_idx = _check_store_handle(start).index
         end_idx = _check_store_handle(end).index
