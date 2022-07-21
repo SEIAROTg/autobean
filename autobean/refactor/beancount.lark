@@ -28,7 +28,7 @@ COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 %ignore COMMENT_LINE
 
 // TODO: remove once tokens are referenced elsewhere.
-_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | LINK | POSTING_FLAG | TRANSACTION_FLAG
+_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | LINK | POSTING_FLAG | TRANSACTION_FLAG | META_KEY
 
 // Account
 // See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
@@ -58,6 +58,11 @@ TAG: /#[A-Za-z0-9-_\/.]+/
 
 // Link
 LINK: /\^[A-Za-z0-9-_\/.]+/
+
+// MetaKey
+// The beancount syntax matches the trailing colon with lookahead. We make it part of the key token itself to simplify
+// testing and avoid whitespaces being inserted before the colon.
+META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 
 // Flag
 // This is v2 syntax. v3 has a different syntax due to support of single-letter currency:
