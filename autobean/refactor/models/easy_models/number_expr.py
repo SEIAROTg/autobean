@@ -3,7 +3,6 @@ import decimal
 from typing import Any, Callable, Literal, NoReturn, Union, overload
 from autobean.refactor.models import raw_models
 
-from autobean.refactor.models.raw_models import base, number_expr
 
 _AnyNumber = Union[int, decimal.Decimal, 'NumberExpr']
 _OP_INFO = {
@@ -30,35 +29,19 @@ def _operand_type_check(
             other = NumberExpr.from_value(decimal.Decimal(other))
         elif isinstance(other, decimal.Decimal):
             other = NumberExpr.from_value(other)
-        elif not isinstance(other, NumberExpr):
-            op_name, rev = _OP_INFO[op.__name__]
-            lhs: Any
-            rhs: Any
-            if rev:
-                lhs, rhs = other, self
-            else:
-                lhs, rhs = self, other
-            raise TypeError(
-                f'unsupported operand type(s) for {op_name}: '
-                f'{type(lhs).__name__!r} and {type(rhs).__name__!r}.')
-        return op(self, other)
+        if isinstance(other, NumberExpr):
+            return op(self, other)
+        op_name, rev = _OP_INFO[op.__name__]
+        lhs: Any
+        rhs: Any
+        if rev:
+            lhs, rhs = other, self
+        else:
+            lhs, rhs = self, other
+        raise TypeError(
+            f'unsupported operand type(s) for {op_name}: '
+            f'{type(lhs).__name__!r} and {type(rhs).__name__!r}.')
     return wrapped_op
-
-
-def _add_expr_from_value(value: int | decimal.Decimal) -> raw_models.NumberAddExpr:
-    if not isinstance(value, decimal.Decimal):
-        value = decimal.Decimal(value)
-    number = raw_models.Number.from_value(abs(value))
-    token_store = base.TokenStore.from_tokens([number])
-    atom_expr: raw_models.NumberAtomExpr
-    if value < 0:
-        op = raw_models.UnaryOp.from_raw_text('-')
-        token_store.insert_before(number, [op])
-        atom_expr = raw_models.NumberUnaryExpr(token_store, op, number)
-    else:
-        atom_expr = number
-    mul_expr = raw_models.NumberMulExpr(token_store, (atom_expr,), ())
-    return raw_models.NumberAddExpr(token_store, (mul_expr,), ())
 
 
 def _wrap_paren(add_expr: raw_models.NumberAddExpr) -> raw_models.NumberParenExpr:
@@ -96,20 +79,7 @@ def _unary(a: 'NumberExpr', op: Literal['+', '-']) -> raw_models.NumberAddExpr:
     return raw_models.NumberAddExpr(a.token_store, (mul_expr,), ())
 
 
-class NumberExpr(number_expr.NumberExpr):
-
-    @classmethod
-    def from_value(cls, value: int | decimal.Decimal) -> 'NumberExpr':
-        add_expr = _add_expr_from_value(value)
-        return cls(add_expr.token_store, add_expr)
-
-    @property
-    def value(self) -> decimal.Decimal:
-        return super().value
-
-    @value.setter
-    def value(self, value: decimal.Decimal) -> None:
-        self.raw_number_add_expr = _add_expr_from_value(value)
+class NumberExpr(raw_models.NumberExpr):
 
     def wrap_with_parenthesis(self) -> None:
         paren_expr = _wrap_paren(self.raw_number_add_expr)

@@ -140,15 +140,20 @@ class TestNumberExpr(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'value,expected', [
-            (0, '0'),
-            (12, '12'),
+            (decimal.Decimal(0), '0'),
+            (decimal.Decimal(12), '12'),
             (decimal.Decimal('12.34567'), '12.34567'),
             (decimal.Decimal('-12.34567'), '-12.34567'),
         ],
     )
-    def test_from_value(self, value: int | decimal.Decimal, expected: str) -> None:
-        expr = easy_models.NumberExpr.from_value(value)
+    def test_from_value(self, value: decimal.Decimal, expected: str) -> None:
+        expr = raw_models.NumberExpr.from_value(value)
         assert self.print_model(expr) == expected
+
+    def test_set_value(self) -> None:
+        expr = self._parser.parse('12+34*56+78', raw_models.NumberExpr)
+        expr.value = decimal.Decimal('-12.34')
+        assert self.print_model(expr) == '-12.34'
 
     def _as_operand(self, value: str | int | decimal.Decimal) -> easy_models.NumberExpr | int | decimal.Decimal:
         if isinstance(value, str):

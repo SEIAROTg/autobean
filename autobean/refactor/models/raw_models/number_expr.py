@@ -288,6 +288,20 @@ class NumberAddExpr(base.RawTreeModel):
             operand.reattach(token_store, token_transformer)
 
 
+def _add_expr_from_value(value: decimal.Decimal) -> NumberAddExpr:
+    number_token = number.Number.from_value(abs(value))
+    token_store = base.TokenStore.from_tokens([number_token])
+    atom_expr: NumberAtomExpr
+    if value < 0:
+        op = UnaryOp.from_raw_text('-')
+        token_store.insert_before(number_token, [op])
+        atom_expr = NumberUnaryExpr(token_store, op, number_token)
+    else:
+        atom_expr = number_token
+    mul_expr = NumberMulExpr(token_store, (atom_expr,), ())
+    return NumberAddExpr(token_store, (mul_expr,), ())
+
+
 @internal.tree_model
 class NumberExpr(base.RawTreeModel):
     RULE = 'number_expr'
@@ -299,6 +313,11 @@ class NumberExpr(base.RawTreeModel):
     ):
         super().__init__(token_store)
         self.raw_number_add_expr = number_add_expr
+
+    @classmethod
+    def from_value(cls, value: decimal.Decimal) -> 'NumberExpr':
+        add_expr = _add_expr_from_value(value)
+        return cls(add_expr.token_store, add_expr)
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -315,6 +334,10 @@ class NumberExpr(base.RawTreeModel):
     @property
     def value(self) -> decimal.Decimal:
         return self.raw_number_add_expr.value
+
+    @value.setter
+    def value(self, value: decimal.Decimal) -> None:
+        self.raw_number_add_expr = _add_expr_from_value(value)
 
     def clone(self: _SelfNumberExpr, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfNumberExpr:
         return type(self)(
