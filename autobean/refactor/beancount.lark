@@ -28,7 +28,7 @@ COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 %ignore COMMENT_LINE
 
 // TODO: remove once tokens are referenced elsewhere.
-_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | CURRENCY | LINK | POSTING_FLAG | TRANSACTION_FLAG | META_KEY
+_unused: INDENT | ACCOUNT | NULL | BOOL | DATE | LINK | POSTING_FLAG | TRANSACTION_FLAG | META_KEY
 
 // Account
 // See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
@@ -88,3 +88,6 @@ number_mul_expr: number_atom_expr (MUL_OP number_atom_expr)*
 ?number_atom_expr: NUMBER | number_paren_expr | number_unary_expr
 number_paren_expr: LEFT_PAREN number_add_expr RIGHT_PAREN
 number_unary_expr: UNARY_OP number_atom_expr
+
+// Amount
+amount: number_expr CURRENCY

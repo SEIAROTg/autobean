@@ -19,3 +19,4 @@ from .number import *
 from .number_expr import *
 from .pushtag import *
 from .meta_key import *
+from .amount import *
