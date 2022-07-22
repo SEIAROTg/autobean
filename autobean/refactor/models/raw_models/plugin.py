@@ -52,7 +52,7 @@ class Plugin(base.RawTreeModel):
     
     @raw_config.remover
     def __raw_config_remover(self, current: escaped_string.EscapedString) -> None:
-        editor.remove_with_left_whitespace(self.token_store, current)
+        editor.remove_towards_left(self, current)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(

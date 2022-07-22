@@ -49,13 +49,14 @@ class _base_property(Generic[_B, _U], abc.ABC):
 
 
 def _replace_node(node: _TU, repl: _TU) -> None:
-    if not node.token_store:
+    token_store = node.token_store  # backup because the RawTokenModel.token_store may disappear
+    if not token_store:
         raise ValueError('Cannot replace a free token.')
     if node is repl:
         return
-    node.token_store.splice(repl.detach(), node.first_token, node.last_token)
+    token_store.splice(repl.detach(), node.first_token, node.last_token)
     if isinstance(repl, base.RawTreeModel):
-        repl.reattach(node.token_store)
+        repl.reattach(token_store)
 
 
 class required_node_property(_base_property[_TU, _U]):
@@ -78,11 +79,19 @@ class required_node_property(_base_property[_TU, _U]):
         setattr(instance, self._attr, value)
 
 
+def _default_fcreator(instance: _U, value: _TU) -> None:
+    raise NotImplementedError('creator not implemented')
+
+
+def _default_fremover(instance: _U, current: _TU) -> None:
+    raise NotImplementedError('remover not implemented')
+
+
 class optional_node_property(_base_property[Optional[_TU], _U]):
     def __init__(self, inner: Callable[[_U], Optional[_TU]]):
         self._attr = '_' + inner.__name__
-        self._fcreator = lambda s, _: None
-        self._fremover = lambda s, _: None
+        self._fcreator: Callable[[_U, _TU], None] = _default_fcreator
+        self._fremover: Callable[[_U, _TU], None] = _default_fremover
 
     def _get(self, instance: _U) -> Optional[_TU]:
         value = getattr(instance, self._attr)
@@ -99,12 +108,11 @@ class optional_node_property(_base_property[Optional[_TU], _U]):
                 _replace_node(current, value)
         setattr(instance, self._attr, value)
 
-    def remover(self, fremover: Callable[[_U, _TU], None]) -> None:
-        # second argument of fremover is for easier type checking
-        self._fremover = fremover
-
     def creator(self, fcreator: Callable[[_U, _TU], None]) -> None:
         self._fcreator = fcreator
+
+    def remover(self, fremover: Callable[[_U, _TU], None]) -> None:
+        self._fremover = fremover
 
     def reset(self, instance: _U, value: Optional[_TU]) -> None:
         setattr(instance, self._attr, value)
