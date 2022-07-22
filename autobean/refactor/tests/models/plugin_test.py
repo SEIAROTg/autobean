@@ -44,7 +44,7 @@ class TestPlugin(base.BaseTestModel):
 
     def test_set_raw_name(self) -> None:
         plugin = self._parser.parse('plugin  "name"    "config"', raw_models.Plugin)
-        new_name = self._parser.parse_token('"new_name"', raw_models.EscapedString)
+        new_name = raw_models.EscapedString.from_value('new_name')
         plugin.raw_name = new_name
         assert plugin.raw_name is new_name
         assert self.print_model(plugin) == 'plugin  "new_name"    "config"'
@@ -58,7 +58,7 @@ class TestPlugin(base.BaseTestModel):
 
     def test_set_raw_config(self) -> None:
         plugin = self._parser.parse('plugin  "name"    "config"', raw_models.Plugin)
-        new_config = self._parser.parse_token('"new_config"', raw_models.EscapedString)
+        new_config = raw_models.EscapedString.from_value('new_config')
         plugin.raw_config = new_config
         assert plugin.raw_config is new_config
         assert self.print_model(plugin) == 'plugin  "name"    "new_config"'
@@ -92,7 +92,7 @@ class TestPlugin(base.BaseTestModel):
 
     def test_create_raw_config(self) -> None:
         plugin = self._parser.parse('plugin  "name"', raw_models.Plugin)
-        new_config = self._parser.parse_token('"new_config"', raw_models.EscapedString)
+        new_config = raw_models.EscapedString.from_value('new_config')
         plugin.raw_config = new_config
         assert plugin.raw_config is new_config
         assert self.print_model(plugin) == 'plugin  "name" "new_config"'

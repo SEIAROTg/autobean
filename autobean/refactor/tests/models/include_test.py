@@ -35,7 +35,7 @@ class TestInclude(base.BaseTestModel):
 
     def test_set_raw_filename(self) -> None:
         include = self._parser.parse('include  "filename"', raw_models.Include)
-        new_filename = self._parser.parse_token('"new_filename"', raw_models.EscapedString)
+        new_filename = raw_models.EscapedString.from_value('new_filename')
         include.raw_filename = new_filename
         assert include.raw_filename is new_filename
         assert self.print_model(include) == 'include  "new_filename"'

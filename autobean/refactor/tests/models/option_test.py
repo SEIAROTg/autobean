@@ -37,7 +37,7 @@ class TestOption(base.BaseTestModel):
 
     def test_set_raw_key(self) -> None:
         option = self._parser.parse('option  "key"    "value"', raw_models.Option)
-        new_key = self._parser.parse_token('"new_key"', raw_models.EscapedString)
+        new_key = raw_models.EscapedString.from_value('new_key')
         option.raw_key = new_key
         assert option.raw_key is new_key
         assert self.print_model(option) == 'option  "new_key"    "value"'
@@ -51,7 +51,7 @@ class TestOption(base.BaseTestModel):
 
     def test_set_raw_value(self) -> None:
         option = self._parser.parse('option  "key"    "value"', raw_models.Option)
-        new_value = self._parser.parse_token('"new_value"', raw_models.EscapedString)
+        new_value = raw_models.EscapedString.from_value('new_value')
         option.raw_value = new_value
         assert option.raw_value is new_value
         assert self.print_model(option) == 'option  "key"    "new_value"'
@@ -78,7 +78,7 @@ class TestOption(base.BaseTestModel):
     def test_reuse_inactive_token(self) -> None:
         option = self._parser.parse('option  "key"    "value"', raw_models.Option)
         initial_key = option.raw_key
-        option.raw_key = self._parser.parse_token('"new_key"', raw_models.EscapedString)
+        option.raw_key = raw_models.EscapedString.from_value('new_key')
         option.raw_key = initial_key
         assert option.raw_key is initial_key
         assert self.print_model(option) == 'option  "key"    "value"'
