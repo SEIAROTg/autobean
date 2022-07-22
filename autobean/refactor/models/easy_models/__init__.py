@@ -1,6 +1,7 @@
 from .internal import TOKEN_MODELS, TREE_MODELS
 from .account import *
 from .amount import *
+from .amount_tolerance import *
 from .bool import *
 from .currency import *
 from .date import *

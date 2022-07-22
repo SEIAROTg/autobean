@@ -97,7 +97,9 @@ number_paren_expr: LEFT_PAREN number_add_expr RIGHT_PAREN
 number_unary_expr: UNARY_OP number_atom_expr
 
 // Amount
+TILDE: "~"
 amount: number_expr CURRENCY
+amount_tolerance: number_expr [TILDE number_expr] CURRENCY
 
 // MetaValue
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount

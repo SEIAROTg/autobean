@@ -40,10 +40,10 @@ class optional_string_property(Generic[_U]):
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[str]:
         s = self._inner_property.__get__(instance, owner)
-        return s.value if s else None
+        return s.value if s is not None else None
     
     def __set__(self, instance: _U, value: Optional[str]) -> None:
-        s = None if value is None else self._inner_type.from_value(value)
+        s = self._inner_type.from_value(value) if value is not None else None
         self._inner_property.__set__(instance, s)
 
 
@@ -61,3 +61,16 @@ class required_number_expr_property(Generic[_U]):
     
     def __set__(self, instance: _U, value: decimal.Decimal) -> None:
         self._inner_property.__get__(instance).value = value
+
+
+class optional_number_expr_property(Generic[_U]):
+    def __init__(self, inner_property: internal.optional_node_property[raw_models.NumberExpr, _U]):
+        self._inner_property = inner_property
+
+    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[decimal.Decimal]:
+        s = self._inner_property.__get__(instance, owner)
+        return s.value if s is not None else None
+    
+    def __set__(self, instance: _U, value: Optional[decimal.Decimal]) -> None:
+        s = raw_models.NumberExpr.from_value(value) if value is not None else None
+        self._inner_property.__set__(instance, s)
