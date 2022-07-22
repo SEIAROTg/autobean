@@ -10,7 +10,7 @@ _Self = TypeVar('_Self', bound='Amount')
 
 @internal.tree_model
 class Amount(amount.Amount):
-    number = internal.required_number_expr_property(amount.Amount.raw_number_expr)
+    number = internal.required_number_expr_property(amount.Amount.raw_number)
     currency = internal.required_string_property(amount.Amount.raw_currency)
 
     @classmethod

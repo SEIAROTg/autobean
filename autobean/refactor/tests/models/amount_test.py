@@ -19,8 +19,8 @@ class TestAmount(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, number: decimal.Decimal, currency: str) -> None:
         amount = self._parser.parse(text, raw_models.Amount)
-        assert amount.first_token is amount.raw_number_expr.first_token
-        assert amount.raw_number_expr.value == number
+        assert amount.first_token is amount.raw_number.first_token
+        assert amount.raw_number.value == number
         assert amount.raw_currency.value == currency
         assert amount.last_token is amount.raw_currency
         self.check_deepcopy_tree(amount)
@@ -37,15 +37,15 @@ class TestAmount(base.BaseTestModel):
         with pytest.raises(exceptions.UnexpectedInput):
             self._parser.parse(text, raw_models.Amount)
 
-    def test_set_raw_number_expr(self) -> None:
+    def test_set_raw_number(self) -> None:
         amount = self._parser.parse('100.00  USD', raw_models.Amount)
-        new_number_expr = self._parser.parse('(100.00 + 20.00)', raw_models.NumberExpr)
-        amount.raw_number_expr = new_number_expr
-        assert amount.raw_number_expr is new_number_expr
+        new_number = self._parser.parse('(100.00 + 20.00)', raw_models.NumberExpr)
+        amount.raw_number = new_number
+        assert amount.raw_number is new_number
         assert self.print_model(amount) == '(100.00 + 20.00)  USD'
 
     def test_set_raw_currency(self) -> None:
-        amount = self._parser.parse('(100.00 + 20.00)  USD', easy_models.Amount)
+        amount = self._parser.parse('(100.00 + 20.00)  USD', raw_models.Amount)
         new_currency = raw_models.Currency.from_value('EUR')
         amount.raw_currency = new_currency
         assert amount.raw_currency is new_currency
@@ -69,14 +69,14 @@ class TestAmount(base.BaseTestModel):
         number = raw_models.NumberExpr.from_value(decimal.Decimal('100.00'))
         currency = raw_models.Currency.from_value('USD')
         amount = raw_models.Amount.from_children(number, currency)
-        assert amount.raw_number_expr is number
+        assert amount.raw_number is number
         assert amount.raw_currency is currency
         assert self.print_model(amount) == '100.00 USD' 
         self.check_consistency(amount)
 
     def test_from_value(self) -> None:
         amount = easy_models.Amount.from_value(decimal.Decimal('100.00'), 'USD')
-        assert amount.raw_number_expr.value == decimal.Decimal('100.00')
+        assert amount.raw_number.value == decimal.Decimal('100.00')
         assert amount.raw_currency.value == 'USD'
         assert self.print_model(amount) == '100.00 USD'
         self.check_consistency(amount)
