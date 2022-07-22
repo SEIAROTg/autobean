@@ -1,4 +1,6 @@
-from typing import TypeVar, final
+from typing import Type, TypeVar, final
+
+from autobean.refactor.models.raw_models import punctuation
 from . import base
 from . import escaped_string
 from . import internal
@@ -49,3 +51,13 @@ class Include(base.RawTreeModel):
             isinstance(other, Include)
             and self._label == other._label
             and self.raw_filename == other.raw_filename)
+
+    @classmethod
+    def from_children(cls: Type[_Self], filename: escaped_string.EscapedString) -> _Self:
+        label = IncludeLabel.from_raw_text('include')
+        token_store = base.TokenStore.from_tokens([
+            label,
+            punctuation.Whitespace.from_raw_text(' '),
+            *filename.detach(),
+        ])
+        return cls(token_store, label, filename)

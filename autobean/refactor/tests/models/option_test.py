@@ -82,3 +82,12 @@ class TestOption(base.BaseTestModel):
         option.raw_key = initial_key
         assert option.raw_key is initial_key
         assert self.print_model(option) == 'option  "key"    "value"'
+
+    def test_from_children(self) -> None:
+        key = raw_models.EscapedString.from_value('foo')
+        value = raw_models.EscapedString.from_value('bar')
+        option = raw_models.Option.from_children(key, value)
+        assert option.raw_key is key
+        assert option.raw_value is value
+        assert self.print_model(option) == 'option "foo" "bar"'
+        self.check_consistency(option)

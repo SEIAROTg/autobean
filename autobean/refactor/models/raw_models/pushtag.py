@@ -1,10 +1,12 @@
-from typing import Generic, TypeVar, final
+from typing import Generic, Type, TypeVar, final
 
-from autobean.refactor.models.raw_models import tag
+from autobean.refactor.models.raw_models import punctuation, tag
 from . import base
 from . import internal
 
 _Self = TypeVar('_Self', bound='_BasePushtag')
+_SelfPushtag = TypeVar('_SelfPushtag', bound='Pushtag')
+_SelfPoptag = TypeVar('_SelfPoptag', bound='Poptag')
 _L = TypeVar('_L', 'PushtagLabel', 'PoptagLabel')
 
 
@@ -59,6 +61,16 @@ class Pushtag(_BasePushtag[PushtagLabel]):
             and self._label == other._label
             and self.raw_tag == other.raw_tag)
 
+    @classmethod
+    def from_children(cls: Type[_SelfPushtag], tag: tag.Tag) -> _SelfPushtag:
+        label = PushtagLabel.from_raw_text('pushtag')
+        token_store = base.TokenStore.from_tokens([
+            label,
+            punctuation.Whitespace.from_raw_text(' '),
+            tag,
+        ])
+        return cls(token_store, label, tag)
+
 
 @internal.tree_model
 class Poptag(_BasePushtag[PoptagLabel]):
@@ -69,3 +81,13 @@ class Poptag(_BasePushtag[PoptagLabel]):
             isinstance(other, Poptag)
             and self._label == other._label
             and self.raw_tag == other.raw_tag)
+
+    @classmethod
+    def from_children(cls: Type[_SelfPoptag], tag: tag.Tag) -> _SelfPoptag:
+        label = PoptagLabel.from_raw_text('poptag')
+        token_store = base.TokenStore.from_tokens([
+            label,
+            punctuation.Whitespace.from_raw_text(' '),
+            tag,
+        ])
+        return cls(token_store, label, tag)

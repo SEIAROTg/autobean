@@ -101,3 +101,20 @@ class TestPlugin(base.BaseTestModel):
         plugin = self._parser.parse('plugin  "name"', easy_models.Plugin)
         plugin.config = 'new_config'
         assert self.print_model(plugin) == 'plugin  "name" "new_config"'
+
+    def test_from_children_with_config(self) -> None:
+        name = raw_models.EscapedString.from_value('foo')
+        config = raw_models.EscapedString.from_value('bar')
+        plugin = raw_models.Plugin.from_children(name, config)
+        assert plugin.raw_name is name
+        assert plugin.raw_config is config
+        assert self.print_model(plugin) == 'plugin "foo" "bar"'
+        self.check_consistency(plugin)
+
+    def test_from_children_without_config(self) -> None:
+        name = raw_models.EscapedString.from_value('foo')
+        plugin = raw_models.Plugin.from_children(name)
+        assert plugin.raw_name is name
+        assert plugin.raw_config is None
+        assert self.print_model(plugin) == 'plugin "foo"'
+        self.check_consistency(plugin)

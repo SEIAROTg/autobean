@@ -183,7 +183,7 @@ class NumberMulExpr(base.RawTreeModel):
         self._raw_ops = ops
 
     @classmethod
-    def from_children(cls: Type[_SelfNumberMulExpr], token_store: base.TokenStore, *children: Optional[base.RawModel]) -> _SelfNumberMulExpr:
+    def from_parsed_children(cls: Type[_SelfNumberMulExpr], token_store: base.TokenStore, *children: Optional[base.RawModel]) -> _SelfNumberMulExpr:
         return cls(
             token_store,
             cast(tuple[NumberAtomExpr, ...], children[::2]),
@@ -261,7 +261,7 @@ class NumberAddExpr(base.RawTreeModel):
         self._raw_ops = ops
 
     @classmethod
-    def from_children(cls: Type[_SelfNumberAddExpr], token_store: base.TokenStore, *children: Optional[base.RawModel]) -> _SelfNumberAddExpr:
+    def from_parsed_children(cls: Type[_SelfNumberAddExpr], token_store: base.TokenStore, *children: Optional[base.RawModel]) -> _SelfNumberAddExpr:
         return cls(
             token_store,
             cast(tuple[NumberMulExpr, ...], children[::2]),

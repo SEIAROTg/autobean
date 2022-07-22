@@ -1,4 +1,6 @@
-from typing import TypeVar, final
+from typing import TypeVar, Type, final
+
+from autobean.refactor.models.raw_models import punctuation
 from . import base
 from . import internal
 from .currency import Currency
@@ -49,3 +51,13 @@ class Amount(base.RawTreeModel):
             isinstance(other, Amount)
             and self.raw_number_expr == other.raw_number_expr
             and self.raw_currency == other.raw_currency)
+
+    @classmethod
+    def from_children(cls: Type[_Self], number_expr: NumberExpr, currency: Currency) -> _Self:
+        token_store = base.TokenStore.from_tokens([
+            *number_expr.detach(),
+            punctuation.Whitespace.from_raw_text(' '),
+            *currency.detach(),
+        ])
+        number_expr.reattach(token_store)
+        return cls(token_store, number_expr, currency)

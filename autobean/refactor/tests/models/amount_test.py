@@ -64,3 +64,12 @@ class TestAmount(base.BaseTestModel):
         amount.currency = 'EUR'
         assert amount.currency == 'EUR'
         assert self.print_model(amount) == '(100.00 + 20.00)  EUR'
+
+    def test_from_children(self) -> None:
+        number = raw_models.NumberExpr.from_value(decimal.Decimal('100.00'))
+        currency = raw_models.Currency.from_value('USD')
+        amount = raw_models.Amount.from_children(number, currency)
+        assert amount.raw_number_expr is number
+        assert amount.raw_currency is currency
+        assert self.print_model(amount) == '100.00 USD' 
+        self.check_consistency(amount)

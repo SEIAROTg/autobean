@@ -129,7 +129,7 @@ class RawTreeModel(RawModel):
         self._token_store = token_store
 
     @classmethod
-    def from_children(cls: Type[_SelfRawTreeModel], token_store: TokenStore, *children: Optional[RawModel]) -> _SelfRawTreeModel:
+    def from_parsed_children(cls: Type[_SelfRawTreeModel], token_store: TokenStore, *children: Optional[RawModel]) -> _SelfRawTreeModel:
         return cls(token_store, *children)
 
     @property

@@ -46,6 +46,13 @@ class TestPushtag(base.BaseTestModel):
         assert pushtag.tag == 'bar'
         assert self.print_model(pushtag) == 'pushtag  #bar'
 
+    def test_from_children(self) -> None:
+        tag = raw_models.Tag.from_value('foo')
+        pushtag = raw_models.Pushtag.from_children(tag)
+        assert pushtag.raw_tag is tag
+        assert self.print_model(pushtag) == 'pushtag #foo'
+        self.check_consistency(pushtag)
+
 
 class TestPoptag(base.BaseTestModel):
 
@@ -87,3 +94,10 @@ class TestPoptag(base.BaseTestModel):
         poptag.tag = 'bar'
         assert poptag.tag == 'bar'
         assert self.print_model(poptag) == 'poptag  #bar'
+
+    def test_from_children(self) -> None:
+        tag = raw_models.Tag.from_value('foo')
+        poptag = raw_models.Poptag.from_children(tag)
+        assert poptag.raw_tag is tag
+        assert self.print_model(poptag) == 'poptag #foo'
+        self.check_consistency(poptag)

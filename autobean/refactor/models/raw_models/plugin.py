@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar, final
+from typing import Optional, Type, TypeVar, final
 from . import base
 from . import editor
 from . import punctuation
@@ -73,3 +73,19 @@ class Plugin(base.RawTreeModel):
             isinstance(other, Plugin)
             and self.raw_name == other.raw_name
             and self.raw_config == other.raw_config)
+
+    @classmethod
+    def from_children(cls: Type[_Self], name: escaped_string.EscapedString, config: Optional[escaped_string.EscapedString] = None) -> _Self:
+        label = PluginLabel.from_raw_text('plugin')
+        tokens = [
+            label,
+            punctuation.Whitespace.from_raw_text(' '),
+            name,
+        ]
+        if config is not None:
+            tokens.extend([
+                punctuation.Whitespace.from_raw_text(' '),
+                config,
+            ])
+        token_store = base.TokenStore.from_tokens(tokens)
+        return cls(token_store, label, name, config)

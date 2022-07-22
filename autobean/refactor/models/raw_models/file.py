@@ -1,4 +1,7 @@
-from typing import Optional, TypeVar, final
+import itertools
+from typing import Iterable, Optional, Type, TypeVar, final
+
+from autobean.refactor.models.raw_models import punctuation
 from . import base
 from . import internal
 
@@ -34,3 +37,16 @@ class File(base.RawTreeModel):
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return isinstance(other, File) and self._directives == other._directives
+
+    @classmethod
+    def from_children(cls: Type[_Self], directives: Iterable[base.RawTreeModel]) -> _Self:
+        directives = list(directives)
+        all_tokens: list[list[base.RawTokenModel]] = []
+        for i, directive in enumerate(directives):
+            if i:
+                all_tokens.append([punctuation.Newline.from_raw_text('\n\n')])
+            all_tokens.append(directive.detach())
+        token_store = base.TokenStore.from_tokens(itertools.chain.from_iterable(all_tokens))
+        for directive in directives:
+            directive.reattach(token_store)
+        return cls(token_store, *directives)

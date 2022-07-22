@@ -94,3 +94,11 @@ class BaseTestModel:
             assert c.first_token is tokens[0]
             assert c.last_token is tokens[-1]
         _check_copy_eq(tree, c, token_store, 1)
+
+    def check_consistency(self, tree: raw_models.RawTreeModel) -> None:
+        for _, prop in _get_comparable_properties(tree).items():
+            if isinstance(prop, raw_models.RawTokenModel):
+                assert prop.token_store is tree.token_store
+            elif isinstance(prop, raw_models.RawTreeModel) and prop is not tree:
+                assert prop.token_store is tree.token_store
+                self.check_consistency(prop)

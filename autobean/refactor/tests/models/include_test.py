@@ -46,3 +46,10 @@ class TestInclude(base.BaseTestModel):
         include.filename = 'new_filename'
         assert include.filename == 'new_filename'
         assert self.print_model(include) == 'include  "new_filename"'
+
+    def test_from_children(self) -> None:
+        filename = raw_models.EscapedString.from_value('filename')
+        include = raw_models.Include.from_children(filename)
+        assert include.raw_filename is filename
+        assert self.print_model(include) == 'include "filename"'
+        self.check_consistency(include)

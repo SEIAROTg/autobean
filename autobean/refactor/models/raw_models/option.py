@@ -1,4 +1,6 @@
-from typing import TypeVar, final
+from typing import Type, TypeVar, final
+
+from autobean.refactor.models.raw_models import punctuation
 from . import base
 from . import escaped_string
 from . import internal
@@ -63,3 +65,15 @@ class Option(base.RawTreeModel):
             and self._label == other._label
             and self.raw_key == other.raw_key
             and self.raw_value == other.raw_value)
+
+    @classmethod
+    def from_children(cls: Type[_Self], key: escaped_string.EscapedString, value: escaped_string.EscapedString) -> _Self:
+        label = OptionLabel.from_raw_text('option')
+        token_store = base.TokenStore.from_tokens([
+            label,
+            punctuation.Whitespace.from_raw_text(' '),
+            key,
+            punctuation.Whitespace.from_raw_text(' '),
+            value,
+        ])
+        return cls(token_store, label, key, value)

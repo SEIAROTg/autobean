@@ -108,4 +108,4 @@ class Parser:
                 model = self._transform_tree(
                     child, self._tree_models[child.data], token_store, token_to_model)
             models.append(model)
-        return target.from_children(token_store, *models)
+        return target.from_parsed_children(token_store, *models)
