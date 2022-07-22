@@ -118,3 +118,17 @@ class TestPlugin(base.BaseTestModel):
         assert plugin.raw_config is None
         assert self.print_model(plugin) == 'plugin "foo"'
         self.check_consistency(plugin)
+
+    def test_from_value_with_config(self) -> None:
+        plugin = easy_models.Plugin.from_value('foo', 'bar')
+        assert plugin.raw_name.value == 'foo'
+        assert plugin.raw_config and plugin.raw_config.value == 'bar'
+        assert self.print_model(plugin) == 'plugin "foo" "bar"'
+        self.check_consistency(plugin)
+
+    def test_from_value_without_config(self) -> None:
+        plugin = easy_models.Plugin.from_value('foo')
+        assert plugin.raw_name.value == 'foo'
+        assert plugin.raw_config is None
+        assert self.print_model(plugin) == 'plugin "foo"'
+        self.check_consistency(plugin)

@@ -91,3 +91,10 @@ class TestOption(base.BaseTestModel):
         assert option.raw_value is value
         assert self.print_model(option) == 'option "foo" "bar"'
         self.check_consistency(option)
+
+    def test_from_value(self) -> None:
+        option = easy_models.Option.from_value('foo', 'bar')
+        assert option.raw_key.value == 'foo'
+        assert option.raw_value.value == 'bar'
+        assert self.print_model(option) == 'option "foo" "bar"'
+        self.check_consistency(option)

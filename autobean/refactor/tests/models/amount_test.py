@@ -73,3 +73,10 @@ class TestAmount(base.BaseTestModel):
         assert amount.raw_currency is currency
         assert self.print_model(amount) == '100.00 USD' 
         self.check_consistency(amount)
+
+    def test_from_value(self) -> None:
+        amount = easy_models.Amount.from_value(decimal.Decimal('100.00'), 'USD')
+        assert amount.raw_number_expr.value == decimal.Decimal('100.00')
+        assert amount.raw_currency.value == 'USD'
+        assert self.print_model(amount) == '100.00 USD'
+        self.check_consistency(amount)

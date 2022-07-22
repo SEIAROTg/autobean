@@ -53,3 +53,9 @@ class TestInclude(base.BaseTestModel):
         assert include.raw_filename is filename
         assert self.print_model(include) == 'include "filename"'
         self.check_consistency(include)
+
+    def test_from_value(self) -> None:
+        include = easy_models.Include.from_value('foo')
+        assert include.raw_filename.value == 'foo'
+        assert self.print_model(include) == 'include "foo"'
+        self.check_consistency(include)
