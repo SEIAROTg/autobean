@@ -43,3 +43,9 @@ class Include(base.RawTreeModel):
         self._token_store = token_store
         self._label = token_transformer.transform(self._label)
         type(self).raw_filename.reset(self, token_transformer.transform(self.raw_filename))
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, Include)
+            and self._label == other._label
+            and self.raw_filename == other.raw_filename)

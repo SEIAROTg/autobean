@@ -31,3 +31,6 @@ class File(base.RawTreeModel):
         self._token_store = token_store
         for directive in self._directives:
             directive.reattach(token_store, token_transformer)
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return isinstance(other, File) and self._directives == other._directives

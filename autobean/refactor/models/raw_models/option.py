@@ -56,3 +56,10 @@ class Option(base.RawTreeModel):
         self._label = token_transformer.transform(self._label)
         type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
         type(self).raw_value.reset(self, token_transformer.transform(self.raw_value))
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, Option)
+            and self._label == other._label
+            and self.raw_key == other.raw_key
+            and self.raw_value == other.raw_value)

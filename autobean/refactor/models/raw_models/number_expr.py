@@ -96,6 +96,12 @@ class NumberUnaryExpr(base.RawTreeModel):
         else:
             self.raw_operand.reattach(token_store, token_transformer)
 
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, NumberUnaryExpr)
+            and self.raw_unary_op == other.raw_unary_op
+            and self.raw_operand == other.raw_operand)
+
 
 @internal.tree_model
 class NumberParenExpr(base.RawTreeModel):
@@ -149,6 +155,13 @@ class NumberParenExpr(base.RawTreeModel):
         type(self).raw_left_paren.reset(self, token_transformer.transform(self.raw_left_paren))
         self.raw_inner_expr.reattach(token_store, token_transformer)
         type(self).raw_right_paren.reset(self, token_transformer.transform(self.raw_right_paren))
+
+    def _eq(self, other: object) -> bool:
+        return (
+            isinstance(other, NumberParenExpr)
+            and self.raw_left_paren == other.raw_left_paren
+            and self.raw_inner_expr == other.raw_inner_expr
+            and self.raw_right_paren == other.raw_right_paren)
 
 
 NumberAtomExpr = number.Number | NumberParenExpr | NumberUnaryExpr
@@ -226,6 +239,12 @@ class NumberMulExpr(base.RawTreeModel):
                 operands.append(operand)
         self._raw_operands = tuple(operands)
 
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, NumberMulExpr)
+            and self._raw_operands == other._raw_operands
+            and self._raw_ops == other._raw_ops)
+
 
 @internal.tree_model
 class NumberAddExpr(base.RawTreeModel):
@@ -287,6 +306,12 @@ class NumberAddExpr(base.RawTreeModel):
         for operand in self._raw_operands:
             operand.reattach(token_store, token_transformer)
 
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, NumberAddExpr)
+            and self._raw_operands == other._raw_operands
+            and self._raw_ops == other._raw_ops)
+
 
 def _add_expr_from_value(value: decimal.Decimal) -> NumberAddExpr:
     number_token = number.Number.from_value(abs(value))
@@ -347,3 +372,8 @@ class NumberExpr(base.RawTreeModel):
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self.raw_number_add_expr.reattach(token_store, token_transformer)
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, NumberExpr)
+            and self.raw_number_add_expr == other.raw_number_add_expr)

@@ -11,7 +11,7 @@ from autobean.refactor.models import raw_models
 def _get_comparable_properties(model: raw_models.RawModel) -> dict[str, Any]:
     ret = {}
     for key, value in inspect.getmembers(model):
-        if key.startswith('_') or key in ('token_store', 'store_handle'):
+        if key.startswith('_') or key in ('token_store', 'store_handle', 'tokens'):
             continue
         if callable(value) or value is model:
             continue

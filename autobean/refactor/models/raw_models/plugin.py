@@ -67,3 +67,9 @@ class Plugin(base.RawTreeModel):
         self._label = token_transformer.transform(self._label)
         type(self).raw_name.reset(self, token_transformer.transform(self.raw_name))
         type(self).raw_config.reset(self, token_transformer.transform(self.raw_config))
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, Plugin)
+            and self.raw_name == other.raw_name
+            and self.raw_config == other.raw_config)

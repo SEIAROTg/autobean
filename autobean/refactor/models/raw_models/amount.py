@@ -43,3 +43,9 @@ class Amount(base.RawTreeModel):
         self._token_store = token_store
         self.raw_number_expr.reattach(token_store, token_transformer)
         type(self).raw_currency.reset(self, token_transformer.transform(self.raw_currency))
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, Amount)
+            and self.raw_number_expr == other.raw_number_expr
+            and self.raw_currency == other.raw_currency)

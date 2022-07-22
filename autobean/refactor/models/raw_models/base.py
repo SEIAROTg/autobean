@@ -1,6 +1,6 @@
 import abc
 import copy
-from typing import Any, ClassVar, Optional, Type, TypeVar, cast
+from typing import Any, ClassVar, Optional, Type, TypeVar, cast, overload
 from autobean.refactor import token_store as token_store_lib
 
 _OT = TypeVar('_OT', bound=Optional['RawTokenModel'])
@@ -45,6 +45,16 @@ class RawModel(abc.ABC):
             self.token_store.remove(tokens[0], tokens[-1])
         return tokens
 
+    @property
+    def tokens(self) -> list['RawTokenModel']:
+        if not self.token_store or not self.first_token or not self.last_token:
+            return []
+        return list(self.token_store.iter(self.first_token, self.last_token))
+
+    @abc.abstractmethod
+    def __eq__(self, other: object) -> bool:
+        ...
+    
 
 class RawTokenModel(token_store_lib.Token, RawModel):
     def __init__(self, raw_text: str) -> None:
@@ -78,6 +88,13 @@ class RawTokenModel(token_store_lib.Token, RawModel):
         if not self.store_handle:
             return [self]
         return super().detach()
+
+    @property
+    def tokens(self) -> list['RawTokenModel']:
+        return [self]
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, RawTokenModel) and self.RULE == other.RULE and self.raw_text == other.raw_text
 
 
 # This could technically be replaced with map.__getitem__ but that didn't work well with mypy.
@@ -140,4 +157,11 @@ class RawTreeModel(RawModel):
 
     @abc.abstractmethod
     def _reattach(self, token_store: TokenStore, token_transformer: TokenTransformer) -> None:
+        ...
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, RawTreeModel) and self.tokens == other.tokens and self._eq(other)
+
+    @abc.abstractmethod
+    def _eq(self, other: 'RawTreeModel') -> bool:
         ...

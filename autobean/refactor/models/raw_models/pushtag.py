@@ -53,7 +53,19 @@ class _BasePushtag(base.RawTreeModel, Generic[_L]):
 class Pushtag(_BasePushtag[PushtagLabel]):
     RULE = 'pushtag'
 
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, Pushtag)
+            and self._label == other._label
+            and self.raw_tag == other.raw_tag)
+
 
 @internal.tree_model
 class Poptag(_BasePushtag[PoptagLabel]):
     RULE = 'poptag'
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return (
+            isinstance(other, Poptag)
+            and self._label == other._label
+            and self.raw_tag == other.raw_tag)
