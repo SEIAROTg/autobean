@@ -1,12 +1,25 @@
 import decimal
 from typing import Generic, Optional, Type, TypeVar
-from autobean.refactor.models.raw_models import base
-from autobean.refactor.models.raw_models import escaped_string
+from autobean.refactor.models import raw_models
 from autobean.refactor.models.raw_models import internal
-from autobean.refactor.models.raw_models import number_expr
 
+_TT = TypeVar('_TT', bound=Type[raw_models.RawTokenModel])
+_UT = TypeVar('_UT', bound=Type[raw_models.RawTreeModel])
 _ST = TypeVar('_ST', bound=internal.SingleValueRawTokenModel[str])
-_U = TypeVar('_U', bound=base.RawTreeModel)
+_U = TypeVar('_U', bound=raw_models.RawTreeModel)
+
+TOKEN_MODELS: list[Type[raw_models.RawTokenModel]] = []
+TREE_MODELS: list[Type[raw_models.RawTreeModel]] = []
+
+
+def token_model(cls: _TT) -> _TT:
+    TOKEN_MODELS.append(cls)
+    return cls
+
+
+def tree_model(cls: _UT) -> _UT:
+    TREE_MODELS.append(cls)
+    return cls
 
 
 class required_string_property(Generic[_U]):
@@ -35,12 +48,12 @@ class optional_string_property(Generic[_U]):
 
 
 class optional_escaped_string_property(optional_string_property):
-    def __init__(self, inner_property: internal.optional_node_property[escaped_string.EscapedString, _U]):
-        super().__init__(inner_property, escaped_string.EscapedString)
+    def __init__(self, inner_property: internal.optional_node_property[raw_models.EscapedString, _U]):
+        super().__init__(inner_property, raw_models.EscapedString)
 
 
 class required_number_expr_property(Generic[_U]):
-    def __init__(self, inner_property: internal.required_node_property[number_expr.NumberExpr, _U]):
+    def __init__(self, inner_property: internal.required_node_property[raw_models.NumberExpr, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> decimal.Decimal:

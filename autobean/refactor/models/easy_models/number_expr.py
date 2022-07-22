@@ -2,6 +2,19 @@ import copy
 import decimal
 from typing import Any, Callable, Literal, NoReturn, Union, overload
 from autobean.refactor.models import raw_models
+from autobean.refactor.models.raw_models.number_expr import AddOp, MulOp, UnaryOp, LeftParen, RightParen, NumberAddExpr, NumberMulExpr, NumberAtomExpr, NumberUnaryExpr, NumberParenExpr
+from . import internal
+
+
+internal.token_model(AddOp)
+internal.token_model(MulOp)
+internal.token_model(UnaryOp)
+internal.token_model(LeftParen)
+internal.token_model(RightParen)
+internal.tree_model(NumberAddExpr)
+internal.tree_model(NumberMulExpr)
+internal.tree_model(NumberUnaryExpr)
+internal.tree_model(NumberParenExpr)
 
 
 _AnyNumber = Union[int, decimal.Decimal, 'NumberExpr']
@@ -79,6 +92,7 @@ def _unary(a: 'NumberExpr', op: Literal['+', '-']) -> raw_models.NumberAddExpr:
     return raw_models.NumberAddExpr(a.token_store, (mul_expr,), ())
 
 
+@internal.tree_model
 class NumberExpr(raw_models.NumberExpr):
 
     def wrap_with_parenthesis(self) -> None:
