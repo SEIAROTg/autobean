@@ -14,6 +14,7 @@ POPMETA:      "popmeta"
 BALANCE:      "balance"
 CLOSE:        "close"
 COMMODITY:    "commodity"
+PAD:          "pad"
 
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
@@ -29,6 +30,7 @@ TILDE:        "~"
 balance:      DATE BALANCE ACCOUNT number_expr [TILDE number_expr] CURRENCY
 close:        DATE CLOSE ACCOUNT
 commodity:    DATE COMMODITY CURRENCY
+pad:          DATE PAD ACCOUNT ACCOUNT
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
