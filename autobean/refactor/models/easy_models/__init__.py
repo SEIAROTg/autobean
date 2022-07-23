@@ -4,6 +4,7 @@ from .amount import *
 from .balance import *
 from .bool import *
 from .close import *
+from .commodity import *
 from .currency import *
 from .date import *
 from .escaped_string import *
