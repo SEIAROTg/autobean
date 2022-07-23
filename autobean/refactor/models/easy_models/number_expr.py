@@ -58,8 +58,8 @@ def _operand_type_check(
 
 
 def _wrap_paren(add_expr: raw_models.NumberAddExpr) -> raw_models.NumberParenExpr:
-    left_paren = raw_models.LeftParen.from_raw_text('(')
-    right_paren = raw_models.RightParen.from_raw_text(')')
+    left_paren = raw_models.LeftParen.from_default()
+    right_paren = raw_models.RightParen.from_default()
     add_expr.token_store.insert_before(add_expr.first_token, [left_paren])
     add_expr.token_store.insert_after(add_expr.last_token, [right_paren])
     return raw_models.NumberParenExpr(
@@ -105,9 +105,9 @@ class NumberExpr(raw_models.NumberExpr):
         mul_expr = _as_mul_expr(other)
         add_op = raw_models.AddOp.from_raw_text(op)
         self.token_store.insert_after(self.last_token, [
-            raw_models.Whitespace.from_raw_text(' '),
+            raw_models.Whitespace.from_default(),
             add_op,
-            raw_models.Whitespace.from_raw_text(' '),
+            raw_models.Whitespace.from_default(),
             *mul_expr.detach(),
         ])
         mul_expr.reattach(self.token_store)
@@ -183,9 +183,9 @@ class NumberExpr(raw_models.NumberExpr):
         atom_expr = _as_atom_expr(other)
         mul_op = raw_models.MulOp.from_raw_text(op)
         self.token_store.insert_after(self_mul_expr.last_token, [
-            raw_models.Whitespace.from_raw_text(' '),
+            raw_models.Whitespace.from_default(),
             mul_op,
-            raw_models.Whitespace.from_raw_text(' '),
+            raw_models.Whitespace.from_default(),
             *atom_expr.detach(),
         ])
         if isinstance(atom_expr, raw_models.RawTreeModel):

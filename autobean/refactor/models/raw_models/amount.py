@@ -55,7 +55,7 @@ class Amount(base.RawTreeModel):
     def from_children(cls: Type[_Self], number: NumberExpr, currency: Currency) -> _Self:
         token_store = base.TokenStore.from_tokens([
             *number.detach(),
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             *currency.detach(),
         ])
         number.reattach(token_store)

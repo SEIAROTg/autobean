@@ -12,13 +12,15 @@ _SelfPopmeta = TypeVar('_SelfPopmeta', bound='Popmeta')
 
 
 @internal.token_model
-class PushmetaLabel(internal.SimpleRawTokenModel):
+class PushmetaLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PUSHMETA'
+    DEFAULT = 'pushmeta'
 
 
 @internal.token_model
-class PopmetaLabel(internal.SimpleRawTokenModel):
+class PopmetaLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'POPMETA'
+    DEFAULT = 'popmeta'
 
 
 @internal.tree_model
@@ -101,7 +103,7 @@ class Pushmeta(base.RawTreeModel):
 
     @classmethod
     def from_children(cls: Type[_SelfPushmeta], key: meta_key.MetaKey, value: Optional[meta_value.MetaValue] = None) -> _SelfPushmeta:
-        label = PushmetaLabel.from_raw_text('pushmeta')
+        label = PushmetaLabel.from_default()
         tokens = [
             label,
             punctuation.Whitespace(' '),
@@ -156,7 +158,7 @@ class Popmeta(base.RawTreeModel):
 
     @classmethod
     def from_children(cls: Type[_SelfPopmeta], key: meta_key.MetaKey) -> _SelfPopmeta:
-        label = PopmetaLabel.from_raw_text('popmeta')
+        label = PopmetaLabel.from_default()
         token_store = base.TokenStore.from_tokens([
             label,
             punctuation.Whitespace(' '),

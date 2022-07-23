@@ -9,8 +9,9 @@ _Self = TypeVar('_Self', bound='Include')
 
 
 @internal.token_model
-class IncludeLabel(internal.SimpleRawTokenModel):
+class IncludeLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'INCLUDE'
+    DEFAULT = 'include'
 
 
 @internal.tree_model
@@ -54,10 +55,10 @@ class Include(base.RawTreeModel):
 
     @classmethod
     def from_children(cls: Type[_Self], filename: escaped_string.EscapedString) -> _Self:
-        label = IncludeLabel.from_raw_text('include')
+        label = IncludeLabel.from_default()
         token_store = base.TokenStore.from_tokens([
             label,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             *filename.detach(),
         ])
         return cls(token_store, label, filename)

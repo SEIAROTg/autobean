@@ -9,8 +9,9 @@ _Self = TypeVar('_Self', bound='Option')
 
 
 @internal.token_model
-class OptionLabel(internal.SimpleRawTokenModel):
+class OptionLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'OPTION'
+    DEFAULT = 'option'
 
 
 @internal.tree_model
@@ -68,12 +69,12 @@ class Option(base.RawTreeModel):
 
     @classmethod
     def from_children(cls: Type[_Self], key: escaped_string.EscapedString, value: escaped_string.EscapedString) -> _Self:
-        label = OptionLabel.from_raw_text('option')
+        label = OptionLabel.from_default()
         token_store = base.TokenStore.from_tokens([
             label,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             key,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             value,
         ])
         return cls(token_store, label, key, value)

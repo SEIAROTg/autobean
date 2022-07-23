@@ -12,8 +12,9 @@ class Indent(internal.SimpleRawTokenModel):
 
 
 @internal.token_model
-class Whitespace(internal.SimpleRawTokenModel):
+class Whitespace(internal.SimpleDefaultRawTokenModel):
     RULE = 'WS_INLINE'
+    DEFAULT = ' '
 
 
 @internal.token_model

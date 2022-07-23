@@ -10,6 +10,7 @@ _TU = TypeVar('_TU', bound=Union[base.RawTokenModel, base.RawTreeModel])
 _SelfBaseProperty = TypeVar('_SelfBaseProperty', bound='_base_property')
 _SelfSimpleRawTokenModel = TypeVar('_SelfSimpleRawTokenModel', bound='SimpleRawTokenModel')
 _SelfSingleValueRawTokenModel = TypeVar('_SelfSingleValueRawTokenModel', bound='SingleValueRawTokenModel')
+_SelfSimpleDefaultRawTokenModel = TypeVar('_SelfSimpleDefaultRawTokenModel', bound='SimpleDefaultRawTokenModel')
 _B = TypeVar('_B')
 _V = TypeVar('_V')
 _S = TypeVar('_S', bound='SingleValueRawTokenModel')
@@ -181,3 +182,15 @@ class SimpleSingleValueRawTokenModel(SingleValueRawTokenModel[str]):
     @classmethod
     def _format_value(cls, value: str) -> str:
         return value
+
+
+class SimpleDefaultRawTokenModel(SimpleRawTokenModel):
+    # not using @classmethod here because it suppresses abstractmethod errors.
+    @property
+    @abc.abstractmethod
+    def DEFAULT(self) -> str:
+        ...
+
+    @classmethod
+    def from_default(cls: Type[_SelfSimpleDefaultRawTokenModel]) -> _SelfSimpleDefaultRawTokenModel:
+        return cls.from_raw_text(cls.DEFAULT)  # type: ignore[arg-type]

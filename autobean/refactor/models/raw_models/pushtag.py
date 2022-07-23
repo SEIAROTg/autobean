@@ -11,13 +11,15 @@ _L = TypeVar('_L', 'PushtagLabel', 'PoptagLabel')
 
 
 @internal.token_model
-class PushtagLabel(internal.SimpleRawTokenModel):
+class PushtagLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PUSHTAG'
+    DEFAULT = 'pushtag'
 
 
 @internal.token_model
-class PoptagLabel(internal.SimpleRawTokenModel):
+class PoptagLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'POPTAG'
+    DEFAULT = 'poptag'
 
 
 class _BasePushtag(base.RawTreeModel, Generic[_L]):
@@ -63,10 +65,10 @@ class Pushtag(_BasePushtag[PushtagLabel]):
 
     @classmethod
     def from_children(cls: Type[_SelfPushtag], tag: tag.Tag) -> _SelfPushtag:
-        label = PushtagLabel.from_raw_text('pushtag')
+        label = PushtagLabel.from_default()
         token_store = base.TokenStore.from_tokens([
             label,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             tag,
         ])
         return cls(token_store, label, tag)
@@ -84,10 +86,10 @@ class Poptag(_BasePushtag[PoptagLabel]):
 
     @classmethod
     def from_children(cls: Type[_SelfPoptag], tag: tag.Tag) -> _SelfPoptag:
-        label = PoptagLabel.from_raw_text('poptag')
+        label = PoptagLabel.from_default()
         token_store = base.TokenStore.from_tokens([
             label,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             tag,
         ])
         return cls(token_store, label, tag)

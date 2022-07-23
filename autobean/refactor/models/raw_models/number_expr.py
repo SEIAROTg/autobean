@@ -28,13 +28,15 @@ class MulOp(internal.SimpleRawTokenModel):
 
 
 @internal.token_model
-class LeftParen(internal.SimpleRawTokenModel):
+class LeftParen(internal.SimpleDefaultRawTokenModel):
     RULE = 'LEFT_PAREN'
+    DEFAULT = '('
 
 
 @internal.token_model
-class RightParen(internal.SimpleRawTokenModel):
+class RightParen(internal.SimpleDefaultRawTokenModel):
     RULE = 'RIGHT_PAREN'
+    DEFAULT = ')'
 
 
 @internal.tree_model

@@ -9,8 +9,9 @@ _Self = TypeVar('_Self', bound='AmountTolerance')
 
 
 @internal.token_model
-class Tilde(internal.SimpleRawTokenModel):
+class Tilde(internal.SimpleDefaultRawTokenModel):
     RULE = 'TILDE'
+    DEFAULT = '~'
 
 
 @internal.tree_model
@@ -52,9 +53,9 @@ class AmountTolerance(base.RawTreeModel):
     def __raw_tolerance_creator(self, value: NumberExpr) -> None:
         tilde = Tilde.from_raw_text('~')
         self.token_store.insert_after(self.raw_number.last_token, [
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             tilde,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             *value.detach(),
         ])
         value.reattach(self.token_store)
@@ -103,15 +104,15 @@ class AmountTolerance(base.RawTreeModel):
     ) -> _Self:
         tokens = [
             *number_expr.detach(),
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
         ]
         if tolerance is not None:
-            tilde = Tilde.from_raw_text('~')
+            tilde = Tilde.from_default()
             tokens.extend([
                 tilde,
-                punctuation.Whitespace.from_raw_text(' '),
+                punctuation.Whitespace.from_default(),
                 *tolerance.detach(),
-                punctuation.Whitespace.from_raw_text(' '),
+                punctuation.Whitespace.from_default(),
             ])
         else:
             tilde = None

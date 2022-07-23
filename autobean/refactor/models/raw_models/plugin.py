@@ -9,8 +9,9 @@ _Self = TypeVar('_Self', bound='Plugin')
 
 
 @internal.token_model
-class PluginLabel(internal.SimpleRawTokenModel):
+class PluginLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PLUGIN'
+    DEFAULT = 'plugin'
 
 
 @internal.tree_model
@@ -76,15 +77,15 @@ class Plugin(base.RawTreeModel):
 
     @classmethod
     def from_children(cls: Type[_Self], name: escaped_string.EscapedString, config: Optional[escaped_string.EscapedString] = None) -> _Self:
-        label = PluginLabel.from_raw_text('plugin')
+        label = PluginLabel.from_default()
         tokens = [
             label,
-            punctuation.Whitespace.from_raw_text(' '),
+            punctuation.Whitespace.from_default(),
             name,
         ]
         if config is not None:
             tokens.extend([
-                punctuation.Whitespace.from_raw_text(' '),
+                punctuation.Whitespace.from_default(),
                 config,
             ])
         token_store = base.TokenStore.from_tokens(tokens)
