@@ -1,3 +1,4 @@
+import datetime
 import decimal
 from typing import Generic, Optional, Type, TypeVar
 from autobean.refactor.models import raw_models
@@ -74,3 +75,14 @@ class optional_number_expr_property(Generic[_U]):
     def __set__(self, instance: _U, value: Optional[decimal.Decimal]) -> None:
         s = raw_models.NumberExpr.from_value(value) if value is not None else None
         self._inner_property.__set__(instance, s)
+
+
+class required_date_property(Generic[_U]):
+    def __init__(self, inner_property: internal.required_node_property[raw_models.Date, _U]):
+        self._inner_property = inner_property
+
+    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> datetime.date:
+        return self._inner_property.__get__(instance, owner).value
+    
+    def __set__(self, instance: _U, value: datetime.date) -> None:
+        self._inner_property.__get__(instance).value = value

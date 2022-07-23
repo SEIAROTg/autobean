@@ -3,7 +3,7 @@ file: (_NL* directive)* _NL*
           | include
           | plugin
 
-// Directive labels
+// Labels
 OPTION:       "option"
 INCLUDE:      "include"
 PLUGIN:       "plugin"
@@ -11,7 +11,9 @@ PUSHTAG:      "pushtag"
 POPTAG:       "poptag"
 PUSHMETA:     "pushmeta"
 POPMETA:      "popmeta"
+BALANCE:      "balance"
 
+// Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
 include:      INCLUDE ESCAPED_STRING
 plugin:       PLUGIN ESCAPED_STRING [ESCAPED_STRING]
@@ -20,6 +22,11 @@ poptag:       POPTAG TAG
 pushmeta:     PUSHMETA META_KEY [meta_value]
 popmeta:      POPMETA META_KEY
 
+// Entries
+TILDE:        "~"
+balance:      DATE BALANCE ACCOUNT number_expr [TILDE number_expr] CURRENCY
+
+// Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
 INDENT: /^[ \t]+(?=[^ \t\r\n])/m
 WS_INLINE: /(?<!^)[ \t]+/m | /^[ \t]+(?=\r|$)/m
@@ -97,9 +104,7 @@ number_paren_expr: LEFT_PAREN number_add_expr RIGHT_PAREN
 number_unary_expr: UNARY_OP number_atom_expr
 
 // Amount
-TILDE: "~"
 amount: number_expr CURRENCY
-amount_tolerance: number_expr [TILDE number_expr] CURRENCY
 
 // MetaValue
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
