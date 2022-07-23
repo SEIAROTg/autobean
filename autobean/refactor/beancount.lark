@@ -12,6 +12,7 @@ POPTAG:       "poptag"
 PUSHMETA:     "pushmeta"
 POPMETA:      "popmeta"
 BALANCE:      "balance"
+CLOSE:        "close"
 
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
@@ -25,6 +26,7 @@ popmeta:      POPMETA META_KEY
 // Entries
 TILDE:        "~"
 balance:      DATE BALANCE ACCOUNT number_expr [TILDE number_expr] CURRENCY
+close:        DATE CLOSE ACCOUNT
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
