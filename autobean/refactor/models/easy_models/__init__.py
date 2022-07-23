@@ -24,5 +24,6 @@ from .posting_flag import *
 from .punctuation import *
 from .pushmeta import *
 from .pushtag import *
+from .query import *
 from .tag import *
 from .transaction_flag import *
