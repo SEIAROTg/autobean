@@ -67,6 +67,7 @@ class TestPushmeta(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
+            'pushMeta foo:',
             'pushmeta foo',
             'pushmeta ',
             '    pushmeta foo:',
@@ -168,6 +169,7 @@ class TestPopmeta(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
+            'popMeta foo:',
             'popmeta foo',
             'popmeta ',
             '    popmeta foo:',

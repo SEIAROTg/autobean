@@ -52,6 +52,7 @@ class Testbalance(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text', [
             'balance Assets:Foo 100.00 USD',
+            '2000-01-01 baLance Assets:Foo 100.00 USD',
             '2000-01-01 balance Assets:Foo',
             '2000-01-01 balance Assets:Foo 100.00',
             '2000-01-01 balance Assets:Foo USD',

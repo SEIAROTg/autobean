@@ -23,6 +23,7 @@ class TestPushtag(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
+            'pushTag #foo',
             'pushtag foo',
             'pushtag ',
             '    pushtag #foo',
@@ -77,6 +78,7 @@ class TestPoptag(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
+            'popTag #foo',
             'poptag foo',
             'poptag ',
             '    poptag #foo',

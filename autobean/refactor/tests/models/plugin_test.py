@@ -32,6 +32,7 @@ class TestPlugin(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
+            'plugIn "foo" "bar"',
             'plugin "foo" "bar" "baz"',
             'plugin ',
             '    plugin "foo"',

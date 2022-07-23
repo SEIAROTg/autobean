@@ -24,6 +24,7 @@ class TestInclude(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text', [
             '    include "foo"',
+            'incLude "foo"',
             'include\n"foo"',
             'include "foo" "bar"',
             'include ',

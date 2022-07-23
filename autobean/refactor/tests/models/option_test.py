@@ -25,6 +25,7 @@ class TestOption(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text', [
             '    option "foo" "bar"',
+            'optIon "foo" "bar"',
             'option "foo"\n"bar"',
             'option "foo" "bar" "baz"',
             'option "foo"',
