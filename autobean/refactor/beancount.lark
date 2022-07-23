@@ -15,6 +15,7 @@ BALANCE:      "balance"
 CLOSE:        "close"
 COMMODITY:    "commodity"
 PAD:          "pad"
+EVENT:        "event"
 
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
@@ -31,6 +32,7 @@ balance:      DATE BALANCE ACCOUNT number_expr [TILDE number_expr] CURRENCY
 close:        DATE CLOSE ACCOUNT
 commodity:    DATE COMMODITY CURRENCY
 pad:          DATE PAD ACCOUNT ACCOUNT
+event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
