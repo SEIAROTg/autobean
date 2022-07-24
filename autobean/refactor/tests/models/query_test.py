@@ -21,7 +21,7 @@ class TestQuery(base.BaseTestModel):
             type: str,
             query_string: str,
     ) -> None:
-        query = self._parser.parse(text, easy_models.Query)
+        query = self.easy_parser.parse(text, easy_models.Query)
         assert query.first_token is query.raw_date
         assert query.raw_date.value == date
         assert query.date == date
@@ -44,44 +44,44 @@ class TestQuery(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Query)
+            self.raw_parser.parse(text, raw_models.Query)
 
     def test_set_raw_date(self) -> None:
-        query = self._parser.parse('2000-01-01  query "foo" "bar"', raw_models.Query)
+        query = self.raw_parser.parse('2000-01-01  query "foo" "bar"', raw_models.Query)
         new_date = raw_models.Date.from_value(datetime.date(2012, 12, 12))
         query.raw_date = new_date
         assert query.raw_date is new_date
         assert self.print_model(query) == '2012-12-12  query "foo" "bar"'
 
     def test_set_date(self) -> None:
-        query = self._parser.parse('2000-01-01  query "foo" "bar"', easy_models.Query)
+        query = self.easy_parser.parse('2000-01-01  query "foo" "bar"', easy_models.Query)
         assert query.date == datetime.date(2000, 1, 1)
         query.date = datetime.date(2012, 12, 12)
         assert query.date == datetime.date(2012, 12, 12)
         assert self.print_model(query) == '2012-12-12  query "foo" "bar"'
 
     def test_set_raw_name(self) -> None:
-        query = self._parser.parse('2000-01-01 query  "foo"  "bar"', raw_models.Query)
+        query = self.raw_parser.parse('2000-01-01 query  "foo"  "bar"', raw_models.Query)
         new_type = raw_models.EscapedString.from_value('baz')
         query.raw_name = new_type
         assert query.raw_name is new_type
         assert self.print_model(query) == '2000-01-01 query  "baz"  "bar"'
 
     def test_set_type(self) -> None:
-        query = self._parser.parse('2000-01-01 query  "foo"  "bar"', easy_models.Query)
+        query = self.easy_parser.parse('2000-01-01 query  "foo"  "bar"', easy_models.Query)
         query.name = 'baz'
         assert query.name == 'baz'
         assert self.print_model(query) == '2000-01-01 query  "baz"  "bar"'
 
     def test_set_raw_query_string(self) -> None:
-        query = self._parser.parse('2000-01-01 query "foo"  "bar"', raw_models.Query)
+        query = self.raw_parser.parse('2000-01-01 query "foo"  "bar"', raw_models.Query)
         new_query_string = raw_models.EscapedString.from_value('baz')
         query.raw_query_string = new_query_string
         assert query.raw_query_string is new_query_string
         assert self.print_model(query) == '2000-01-01 query "foo"  "baz"'
 
     def test_set_query_string(self) -> None:
-        query = self._parser.parse('2000-01-01 query "foo"  "bar"', easy_models.Query)
+        query = self.easy_parser.parse('2000-01-01 query "foo"  "bar"', easy_models.Query)
         query.query_string = 'baz'
         assert query.query_string == 'baz'
         assert self.print_model(query) == '2000-01-01 query "foo"  "baz"'

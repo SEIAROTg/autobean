@@ -47,8 +47,9 @@ def _check_copy_eq(
 
 class BaseTestModel:
     @pytest.fixture(autouse=True)
-    def _setup_parser(self, parser: parser_lib.Parser) -> None:
-        self._parser = parser
+    def _setup_parser(self, raw_parser: parser_lib.Parser, easy_parser: parser_lib.Parser) -> None:
+        self.raw_parser = raw_parser
+        self.easy_parser = easy_parser
 
     def print_model(self, model: raw_models.RawModel) -> str:
         return printer.print_model(model, io.StringIO()).getvalue()

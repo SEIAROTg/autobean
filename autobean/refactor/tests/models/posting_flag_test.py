@@ -10,7 +10,7 @@ class TestPostingFlag(base.BaseTestModel):
         'text', '*!&#?%PSTCURM',
     )
     def test_parse_success(self, text: str) -> None:
-        flag = self._parser.parse_token(text, raw_models.PostingFlag)
+        flag = self.raw_parser.parse_token(text, raw_models.PostingFlag)
         assert flag.raw_text == text
         self.check_deepcopy_token(flag)
 
@@ -24,7 +24,7 @@ class TestPostingFlag(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse_token(text, raw_models.PostingFlag)
+            self.raw_parser.parse_token(text, raw_models.PostingFlag)
 
     @pytest.mark.parametrize(
         'text,new_text', [
@@ -33,7 +33,7 @@ class TestPostingFlag(base.BaseTestModel):
         ],
     )
     def test_set_raw_text(self, text: str, new_text: str) -> None:
-        flag = self._parser.parse_token(text, raw_models.PostingFlag)
+        flag = self.raw_parser.parse_token(text, raw_models.PostingFlag)
         assert flag.raw_text == text
         flag.raw_text = new_text
         assert flag.raw_text == new_text
@@ -45,7 +45,7 @@ class TestPostingFlag(base.BaseTestModel):
         ],
     )
     def test_set_value(self, text: str, new_value: str) -> None:
-        flag = self._parser.parse_token(text, raw_models.PostingFlag)
+        flag = self.raw_parser.parse_token(text, raw_models.PostingFlag)
         assert flag.value == text
         flag.value = new_value
         assert flag.value == new_value

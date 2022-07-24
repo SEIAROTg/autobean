@@ -14,7 +14,7 @@ class TestLink(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, value: str) -> None:
-        token = self._parser.parse_token(text, raw_models.Link)
+        token = self.raw_parser.parse_token(text, raw_models.Link)
         assert token.raw_text == text
         assert token.value == value
         self.check_deepcopy_token(token)
@@ -30,16 +30,16 @@ class TestLink(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse_token(text, raw_models.Link)
+            self.raw_parser.parse_token(text, raw_models.Link)
 
     def test_set_raw_text(self) -> None:
-        token = self._parser.parse_token('^foo', raw_models.Link)
+        token = self.raw_parser.parse_token('^foo', raw_models.Link)
         token.raw_text = '^bar'
         assert token.raw_text == '^bar'
         assert token.value == 'bar'
 
     def test_set_value(self) -> None:
-        token = self._parser.parse_token('^foo', raw_models.Link)
+        token = self.raw_parser.parse_token('^foo', raw_models.Link)
         token.value = 'bar'
         assert token.value == 'bar'
         assert token.raw_text == '^bar'

@@ -18,7 +18,7 @@ class TestAccount(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str) -> None:
-        token = self._parser.parse_token(text, raw_models.Account)
+        token = self.raw_parser.parse_token(text, raw_models.Account)
         assert token.raw_text == text
         assert token.value == text
         self.check_deepcopy_token(token)
@@ -30,16 +30,16 @@ class TestAccount(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse_token(text, raw_models.Account)
+            self.raw_parser.parse_token(text, raw_models.Account)
 
     def test_set_raw_text(self) -> None:
-        token = self._parser.parse_token('Assets:Foo', raw_models.Account)
+        token = self.raw_parser.parse_token('Assets:Foo', raw_models.Account)
         token.raw_text = 'Liabilities:Foo'
         assert token.raw_text == 'Liabilities:Foo'
         assert token.value == 'Liabilities:Foo'
 
     def test_set_value(self) -> None:
-        token = self._parser.parse_token('Assets:Foo', raw_models.Account)
+        token = self.raw_parser.parse_token('Assets:Foo', raw_models.Account)
         token.value = 'Liabilities:Foo'
         assert token.value == 'Liabilities:Foo'
         assert token.raw_text == 'Liabilities:Foo'

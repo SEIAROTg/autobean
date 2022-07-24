@@ -30,7 +30,7 @@ class Testbalance(base.BaseTestModel):
     ) -> None:
         date = datetime.date(2000, 1, 1)
         account = 'Assets:Foo'
-        balance = self._parser.parse(text, easy_models.Balance)
+        balance = self.easy_parser.parse(text, easy_models.Balance)
         assert balance.first_token is balance.raw_date
         assert balance.raw_date.value == date
         assert balance.date == date
@@ -65,45 +65,45 @@ class Testbalance(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Balance)
+            self.raw_parser.parse(text, raw_models.Balance)
 
     def test_set_raw_date(self) -> None:
-        balance = self._parser.parse('2000-01-01  balance Assets:Foo 100.00 USD', raw_models.Balance)
+        balance = self.raw_parser.parse('2000-01-01  balance Assets:Foo 100.00 USD', raw_models.Balance)
         new_date = raw_models.Date.from_value(datetime.date(2012, 12, 12))
         balance.raw_date = new_date
         assert balance.raw_date is new_date
         assert self.print_model(balance) == '2012-12-12  balance Assets:Foo 100.00 USD'
 
     def test_set_date(self) -> None:
-        balance = self._parser.parse('2000-01-01  balance Assets:Foo 100.00 USD', easy_models.Balance)
+        balance = self.easy_parser.parse('2000-01-01  balance Assets:Foo 100.00 USD', easy_models.Balance)
         assert balance.date == datetime.date(2000, 1, 1)
         balance.date = datetime.date(2012, 12, 12)
         assert balance.date == datetime.date(2012, 12, 12)
         assert self.print_model(balance) == '2012-12-12  balance Assets:Foo 100.00 USD'
 
     def test_set_raw_account(self) -> None:
-        balance = self._parser.parse('2000-01-01  balance Assets:Foo  100.00 USD', raw_models.Balance)
+        balance = self.raw_parser.parse('2000-01-01  balance Assets:Foo  100.00 USD', raw_models.Balance)
         new_account = raw_models.Account.from_value('Assets:Bar')
         balance.raw_account = new_account
         assert balance.raw_account is new_account
         assert self.print_model(balance) == '2000-01-01  balance Assets:Bar  100.00 USD'
 
     def test_set_account(self) -> None:
-        balance = self._parser.parse('2000-01-01  balance Assets:Foo  100.00 USD', easy_models.Balance)
+        balance = self.easy_parser.parse('2000-01-01  balance Assets:Foo  100.00 USD', easy_models.Balance)
         assert balance.account == 'Assets:Foo'
         balance.account = 'Assets:Bar'
         assert balance.account == 'Assets:Bar'
         assert self.print_model(balance) == '2000-01-01  balance Assets:Bar  100.00 USD'
 
     def test_set_raw_number(self) -> None:
-        balance = self._parser.parse('2000-01-01 balance Assets:Foo  100.00  USD', raw_models.Balance)
+        balance = self.raw_parser.parse('2000-01-01 balance Assets:Foo  100.00  USD', raw_models.Balance)
         new_number = raw_models.NumberExpr.from_value(_D('-123.45'))
         balance.raw_number = new_number
         assert balance.raw_number is new_number
         assert self.print_model(balance) == '2000-01-01 balance Assets:Foo  -123.45  USD'
 
     def test_set_number(self) -> None:
-        balance = self._parser.parse('2000-01-01 balance Assets:Foo  100.00  USD', easy_models.Balance)
+        balance = self.easy_parser.parse('2000-01-01 balance Assets:Foo  100.00  USD', easy_models.Balance)
         assert balance.number == _D('100.00')
         balance.number = _D('-123.45')
         assert balance.number == _D('-123.45')
@@ -118,7 +118,7 @@ class Testbalance(base.BaseTestModel):
         ],
     )
     def test_set_raw_tolerance(self, text: str, raw_tolerance: Optional[raw_models.NumberExpr], expected: str) -> None:
-        balance = self._parser.parse(text, easy_models.Balance)
+        balance = self.easy_parser.parse(text, easy_models.Balance)
         balance.raw_tolerance = raw_tolerance
         assert balance.raw_tolerance is raw_tolerance
         assert self.print_model(balance) == expected
@@ -132,21 +132,21 @@ class Testbalance(base.BaseTestModel):
         ],
     )
     def test_set_tolerance(self, text: str, tolerance: Optional[decimal.Decimal], expected: str) -> None:
-        balance = self._parser.parse(text, easy_models.Balance)
+        balance = self.easy_parser.parse(text, easy_models.Balance)
         balance.tolerance = tolerance
         assert balance.tolerance == tolerance
         assert self.print_model(balance) == expected
         self.check_consistency(balance)
 
     def test_set_raw_currency(self) -> None:
-        balance = self._parser.parse('2000-01-01 balance Assets:Foo 100.00  USD', raw_models.Balance)
+        balance = self.raw_parser.parse('2000-01-01 balance Assets:Foo 100.00  USD', raw_models.Balance)
         new_currency = raw_models.Currency.from_value('EUR')
         balance.raw_currency = new_currency
         assert balance.raw_currency is new_currency
         assert self.print_model(balance) == '2000-01-01 balance Assets:Foo 100.00  EUR'
 
     def test_set_currency(self) -> None:
-        balance = self._parser.parse('2000-01-01 balance Assets:Foo 100.00  USD', easy_models.Balance)
+        balance = self.easy_parser.parse('2000-01-01 balance Assets:Foo 100.00  USD', easy_models.Balance)
         assert balance.currency == 'USD'
         balance.currency = 'EUR'
         assert balance.currency == 'EUR'

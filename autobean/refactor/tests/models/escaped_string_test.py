@@ -40,7 +40,7 @@ class TestEscapedString(base.BaseTestModel):
         ),
     )
     def test_parse_success(self, text: str, value: str) -> None:
-        token = self._parser.parse_token(text, raw_models.EscapedString)
+        token = self.raw_parser.parse_token(text, raw_models.EscapedString)
         assert token.value == value
         assert token.raw_text == text
         self.check_deepcopy_token(token)
@@ -57,7 +57,7 @@ class TestEscapedString(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse_token(text, raw_models.EscapedString)
+            self.raw_parser.parse_token(text, raw_models.EscapedString)
 
     @pytest.mark.parametrize(
         'text,value', itertools.chain(
@@ -68,7 +68,7 @@ class TestEscapedString(base.BaseTestModel):
         ),
     )
     def test_set_raw_text(self, text: str, value: str) -> None:
-        token = self._parser.parse_token('"dummy"', raw_models.EscapedString)
+        token = self.raw_parser.parse_token('"dummy"', raw_models.EscapedString)
         token.raw_text = text
         assert token.value == value
         assert token.raw_text == text
@@ -80,7 +80,7 @@ class TestEscapedString(base.BaseTestModel):
         ),
     )
     def test_set_value(self, text: str, value: str) -> None:
-        token = self._parser.parse_token('"dummy"', raw_models.EscapedString)
+        token = self.raw_parser.parse_token('"dummy"', raw_models.EscapedString)
         token.value = value
         assert token.value == value
         assert token.raw_text == text

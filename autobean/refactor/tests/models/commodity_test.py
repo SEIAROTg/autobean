@@ -20,7 +20,7 @@ class TestCommodity(base.BaseTestModel):
             date: datetime.date,
             currency: str,
     ) -> None:
-        commodity = self._parser.parse(text, easy_models.Commodity)
+        commodity = self.easy_parser.parse(text, easy_models.Commodity)
         assert commodity.first_token is commodity.raw_date
         assert commodity.raw_date.value == date
         assert commodity.date == date
@@ -39,31 +39,31 @@ class TestCommodity(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Commodity)
+            self.raw_parser.parse(text, raw_models.Commodity)
 
     def test_set_raw_date(self) -> None:
-        commodity = self._parser.parse('2000-01-01  commodity USD', raw_models.Commodity)
+        commodity = self.raw_parser.parse('2000-01-01  commodity USD', raw_models.Commodity)
         new_date = raw_models.Date.from_value(datetime.date(2012, 12, 12))
         commodity.raw_date = new_date
         assert commodity.raw_date is new_date
         assert self.print_model(commodity) == '2012-12-12  commodity USD'
 
     def test_set_date(self) -> None:
-        commodity = self._parser.parse('2000-01-01  commodity USD', easy_models.Commodity)
+        commodity = self.easy_parser.parse('2000-01-01  commodity USD', easy_models.Commodity)
         assert commodity.date == datetime.date(2000, 1, 1)
         commodity.date = datetime.date(2012, 12, 12)
         assert commodity.date == datetime.date(2012, 12, 12)
         assert self.print_model(commodity) == '2012-12-12  commodity USD'
 
     def test_set_raw_currency(self) -> None:
-        commodity = self._parser.parse('2000-01-01  commodity USD', raw_models.Commodity)
+        commodity = self.raw_parser.parse('2000-01-01  commodity USD', raw_models.Commodity)
         new_currency = raw_models.Currency.from_value('EUR')
         commodity.raw_currency = new_currency
         assert commodity.raw_currency is new_currency
         assert self.print_model(commodity) == '2000-01-01  commodity EUR'
 
     def test_set_currency(self) -> None:
-        commodity = self._parser.parse('2000-01-01  commodity USD', easy_models.Commodity)
+        commodity = self.easy_parser.parse('2000-01-01  commodity USD', easy_models.Commodity)
         assert commodity.currency == 'USD'
         commodity.currency = 'EUR'
         assert commodity.currency == 'EUR'

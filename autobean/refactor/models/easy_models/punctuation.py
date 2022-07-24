@@ -1,4 +1,3 @@
-from pyparsing import White
 from autobean.refactor.models.raw_models.punctuation import Newline, Indent, Whitespace, InlineComment, LineComment
 from . import internal
 

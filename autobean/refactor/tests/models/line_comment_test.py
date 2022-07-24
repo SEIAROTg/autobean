@@ -20,7 +20,7 @@ class TestComment(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str) -> None:
-        token = self._parser.parse_token(text, raw_models.LineComment)
+        token = self.raw_parser.parse_token(text, raw_models.LineComment)
         assert token.raw_text == text
         self.check_deepcopy_token(token)
 
@@ -32,4 +32,4 @@ class TestComment(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse_token(text, raw_models.LineComment)
+            self.raw_parser.parse_token(text, raw_models.LineComment)

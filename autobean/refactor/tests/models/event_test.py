@@ -21,7 +21,7 @@ class TestEvent(base.BaseTestModel):
             type: str,
             description: str,
     ) -> None:
-        event = self._parser.parse(text, easy_models.Event)
+        event = self.easy_parser.parse(text, easy_models.Event)
         assert event.first_token is event.raw_date
         assert event.raw_date.value == date
         assert event.date == date
@@ -44,44 +44,44 @@ class TestEvent(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Event)
+            self.raw_parser.parse(text, raw_models.Event)
 
     def test_set_raw_date(self) -> None:
-        event = self._parser.parse('2000-01-01  event "foo" "bar"', raw_models.Event)
+        event = self.raw_parser.parse('2000-01-01  event "foo" "bar"', raw_models.Event)
         new_date = raw_models.Date.from_value(datetime.date(2012, 12, 12))
         event.raw_date = new_date
         assert event.raw_date is new_date
         assert self.print_model(event) == '2012-12-12  event "foo" "bar"'
 
     def test_set_date(self) -> None:
-        event = self._parser.parse('2000-01-01  event "foo" "bar"', easy_models.Event)
+        event = self.easy_parser.parse('2000-01-01  event "foo" "bar"', easy_models.Event)
         assert event.date == datetime.date(2000, 1, 1)
         event.date = datetime.date(2012, 12, 12)
         assert event.date == datetime.date(2012, 12, 12)
         assert self.print_model(event) == '2012-12-12  event "foo" "bar"'
 
     def test_set_raw_type(self) -> None:
-        event = self._parser.parse('2000-01-01 event  "foo"  "bar"', raw_models.Event)
+        event = self.raw_parser.parse('2000-01-01 event  "foo"  "bar"', raw_models.Event)
         new_type = raw_models.EscapedString.from_value('baz')
         event.raw_type = new_type
         assert event.raw_type is new_type
         assert self.print_model(event) == '2000-01-01 event  "baz"  "bar"'
 
     def test_set_type(self) -> None:
-        event = self._parser.parse('2000-01-01 event  "foo"  "bar"', easy_models.Event)
+        event = self.easy_parser.parse('2000-01-01 event  "foo"  "bar"', easy_models.Event)
         event.type = 'baz'
         assert event.type == 'baz'
         assert self.print_model(event) == '2000-01-01 event  "baz"  "bar"'
 
     def test_set_raw_description(self) -> None:
-        event = self._parser.parse('2000-01-01 event "foo"  "bar"', raw_models.Event)
+        event = self.raw_parser.parse('2000-01-01 event "foo"  "bar"', raw_models.Event)
         new_description = raw_models.EscapedString.from_value('baz')
         event.raw_description = new_description
         assert event.raw_description is new_description
         assert self.print_model(event) == '2000-01-01 event "foo"  "baz"'
 
     def test_set_description(self) -> None:
-        event = self._parser.parse('2000-01-01 event "foo"  "bar"', easy_models.Event)
+        event = self.easy_parser.parse('2000-01-01 event "foo"  "bar"', easy_models.Event)
         event.description = 'baz'
         assert event.description == 'baz'
         assert self.print_model(event) == '2000-01-01 event "foo"  "baz"'

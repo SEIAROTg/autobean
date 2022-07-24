@@ -16,7 +16,7 @@ class TestDate(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, value: datetime.date) -> None:
-        token = self._parser.parse_token(text, raw_models.Date)
+        token = self.raw_parser.parse_token(text, raw_models.Date)
         assert token.raw_text == text
         assert token.value == value
         self.check_deepcopy_token(token)
@@ -31,22 +31,22 @@ class TestDate(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse_token(text, raw_models.Date)
+            self.raw_parser.parse_token(text, raw_models.Date)
 
     def test_set_raw_text(self) -> None:
-        token = self._parser.parse_token('4321-01-23', raw_models.Date)
+        token = self.raw_parser.parse_token('4321-01-23', raw_models.Date)
         token.raw_text = '1234-03-21'
         assert token.raw_text == '1234-03-21'
         assert token.value == datetime.date(1234, 3, 21)
 
     def test_set_raw_text_format(self) -> None:
-        token = self._parser.parse_token('4321-01-23', raw_models.Date)
+        token = self.raw_parser.parse_token('4321-01-23', raw_models.Date)
         token.raw_text = '4321/01/23'
         assert token.raw_text == '4321/01/23'
         assert token.value == datetime.date(4321, 1, 23)
 
     def test_set_value(self) -> None:
-        token = self._parser.parse_token('4321-01-23', raw_models.Date)
+        token = self.raw_parser.parse_token('4321-01-23', raw_models.Date)
         token.value = datetime.date(1234, 3, 21)
         assert token.value == datetime.date(1234, 3, 21)
         assert token.raw_text == '1234-03-21'

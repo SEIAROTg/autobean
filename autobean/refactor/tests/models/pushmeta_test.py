@@ -53,7 +53,7 @@ class TestPushmeta(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, key: str, raw_value: raw_models.MetaValue, value: _SimplifiedValue) -> None:
         del value  # unused
-        pushmeta = self._parser.parse(text, raw_models.Pushmeta)
+        pushmeta = self.raw_parser.parse(text, raw_models.Pushmeta)
         assert pushmeta.first_token.raw_text == 'pushmeta'
         assert pushmeta.raw_key.value == key
         assert pushmeta.raw_value == raw_value
@@ -79,17 +79,17 @@ class TestPushmeta(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Pushmeta)
+            self.raw_parser.parse(text, raw_models.Pushmeta)
 
     def test_set_raw_key(self) -> None:
-        pushmeta = self._parser.parse('pushmeta  foo:', raw_models.Pushmeta)
+        pushmeta = self.raw_parser.parse('pushmeta  foo:', raw_models.Pushmeta)
         new_key = raw_models.MetaKey.from_value('bar')
         pushmeta.raw_key = new_key
         assert pushmeta.raw_key is new_key
         assert self.print_model(pushmeta) == 'pushmeta  bar:'
 
     def test_set_key(self) -> None:
-        pushmeta = self._parser.parse('pushmeta  foo:', easy_models.Pushmeta)
+        pushmeta = self.easy_parser.parse('pushmeta  foo:', easy_models.Pushmeta)
         assert pushmeta.key == 'foo'
         pushmeta.key = 'bar'
         assert pushmeta.key == 'bar'
@@ -104,8 +104,8 @@ class TestPushmeta(base.BaseTestModel):
     def test_set_raw_value(self, before: _PushmetaTestcase, after: _PushmetaTestcase) -> None:
         text_before, _, raw_value, _ = before
         text_after, _, expected_raw_value, _ = after
-        pushmeta = self._parser.parse(text_before, raw_models.Pushmeta)
-        expected = self._parser.parse(text_after, raw_models.Pushmeta)
+        pushmeta = self.raw_parser.parse(text_before, raw_models.Pushmeta)
+        expected = self.raw_parser.parse(text_after, raw_models.Pushmeta)
         new_value = copy.deepcopy(expected.raw_value)
         pushmeta.raw_value = new_value
         assert pushmeta.raw_value is new_value
@@ -122,9 +122,9 @@ class TestPushmeta(base.BaseTestModel):
     def test_set_value(self, before: _PushmetaTestcase, after: _PushmetaTestcase) -> None:
         text_before, _, _, value = before
         text_after, _, _, expected_value = after
-        pushmeta = self._parser.parse(text_before, easy_models.Pushmeta)
+        pushmeta = self.easy_parser.parse(text_before, easy_models.Pushmeta)
         assert pushmeta.value == value
-        expected = self._parser.parse(text_after, easy_models.Pushmeta)
+        expected = self.easy_parser.parse(text_after, easy_models.Pushmeta)
         pushmeta.value = copy.deepcopy(expected.value)
         assert pushmeta.raw_value == expected.raw_value
         assert pushmeta.value == expected_value
@@ -160,7 +160,7 @@ class TestPopmeta(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, key: str) -> None:
-        popmeta = self._parser.parse(text, raw_models.Popmeta)
+        popmeta = self.raw_parser.parse(text, raw_models.Popmeta)
         assert popmeta.first_token.raw_text == 'popmeta'
         assert popmeta.raw_key.value == key
         assert popmeta.last_token is popmeta.raw_key
@@ -178,17 +178,17 @@ class TestPopmeta(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Popmeta)
+            self.raw_parser.parse(text, raw_models.Popmeta)
 
     def test_set_raw_key(self) -> None:
-        popmeta = self._parser.parse('popmeta  foo:', raw_models.Popmeta)
+        popmeta = self.raw_parser.parse('popmeta  foo:', raw_models.Popmeta)
         new_key = raw_models.MetaKey.from_value('bar')
         popmeta.raw_key = new_key
         assert popmeta.raw_key is new_key
         assert self.print_model(popmeta) == 'popmeta  bar:'
 
     def test_set_key(self) -> None:
-        popmeta = self._parser.parse('popmeta  foo:', easy_models.Popmeta)
+        popmeta = self.easy_parser.parse('popmeta  foo:', easy_models.Popmeta)
         assert popmeta.key == 'foo'
         popmeta.key = 'bar'
         assert popmeta.key == 'bar'

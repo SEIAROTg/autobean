@@ -17,7 +17,7 @@ class TestPlugin(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, name: str, config: Optional[str]) -> None:
-        plugin = self._parser.parse(text, raw_models.Plugin)
+        plugin = self.raw_parser.parse(text, raw_models.Plugin)
         assert plugin.first_token.raw_text == 'plugin'
         assert plugin.raw_name.value == name
         if config is None:
@@ -41,65 +41,65 @@ class TestPlugin(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self._parser.parse(text, raw_models.Plugin)
+            self.raw_parser.parse(text, raw_models.Plugin)
 
     def test_set_raw_name(self) -> None:
-        plugin = self._parser.parse('plugin  "name"    "config"', raw_models.Plugin)
+        plugin = self.raw_parser.parse('plugin  "name"    "config"', raw_models.Plugin)
         new_name = raw_models.EscapedString.from_value('new_name')
         plugin.raw_name = new_name
         assert plugin.raw_name is new_name
         assert self.print_model(plugin) == 'plugin  "new_name"    "config"'
 
     def test_set_name(self) -> None:
-        plugin = self._parser.parse('plugin  "name"    "config"', easy_models.Plugin)
+        plugin = self.easy_parser.parse('plugin  "name"    "config"', easy_models.Plugin)
         assert plugin.name == 'name'
         plugin.name = 'new_name'
         assert plugin.name == 'new_name'
         assert self.print_model(plugin) == 'plugin  "new_name"    "config"'
 
     def test_set_raw_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"    "config"', raw_models.Plugin)
+        plugin = self.raw_parser.parse('plugin  "name"    "config"', raw_models.Plugin)
         new_config = raw_models.EscapedString.from_value('new_config')
         plugin.raw_config = new_config
         assert plugin.raw_config is new_config
         assert self.print_model(plugin) == 'plugin  "name"    "new_config"'
 
     def test_set_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"    "config"', easy_models.Plugin)
+        plugin = self.easy_parser.parse('plugin  "name"    "config"', easy_models.Plugin)
         plugin.config = 'new_config'
         assert self.print_model(plugin) == 'plugin  "name"    "new_config"'
 
     def test_remove_raw_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"    "config"', raw_models.Plugin)
+        plugin = self.raw_parser.parse('plugin  "name"    "config"', raw_models.Plugin)
         plugin.raw_config = None
         assert plugin.raw_config is None
         assert self.print_model(plugin) == 'plugin  "name"'
 
     def test_remove_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"    "config"', easy_models.Plugin)
+        plugin = self.easy_parser.parse('plugin  "name"    "config"', easy_models.Plugin)
         plugin.config = None
         assert self.print_model(plugin) == 'plugin  "name"'
 
     def test_noop_remove_raw_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"', raw_models.Plugin)
+        plugin = self.raw_parser.parse('plugin  "name"', raw_models.Plugin)
         plugin.raw_config = None
         assert plugin.raw_config is None
         assert self.print_model(plugin) == 'plugin  "name"'
 
     def test_noop_remove_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"', easy_models.Plugin)
+        plugin = self.easy_parser.parse('plugin  "name"', easy_models.Plugin)
         plugin.config = None
         assert self.print_model(plugin) == 'plugin  "name"'
 
     def test_create_raw_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"', raw_models.Plugin)
+        plugin = self.raw_parser.parse('plugin  "name"', raw_models.Plugin)
         new_config = raw_models.EscapedString.from_value('new_config')
         plugin.raw_config = new_config
         assert plugin.raw_config is new_config
         assert self.print_model(plugin) == 'plugin  "name" "new_config"'
 
     def test_create_config(self) -> None:
-        plugin = self._parser.parse('plugin  "name"', easy_models.Plugin)
+        plugin = self.easy_parser.parse('plugin  "name"', easy_models.Plugin)
         plugin.config = 'new_config'
         assert self.print_model(plugin) == 'plugin  "name" "new_config"'
 
