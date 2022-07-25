@@ -60,11 +60,19 @@ class Balance(base.RawTreeModel):
         pass
 
     @internal.required_node_property
+    def _label(self) -> BalanceLabel:
+        pass
+
+    @internal.required_node_property
     def raw_account(self) -> Account:
         pass
 
     @internal.required_node_property
     def raw_number(self) -> NumberExpr:
+        pass
+
+    @internal.optional_node_property(floating=internal.Floating.LEFT)
+    def _tilde(self) -> Tilde:
         pass
 
     @internal.optional_node_property(floating=internal.Floating.LEFT)
@@ -81,14 +89,14 @@ class Balance(base.RawTreeModel):
             *value.detach(),
         ])
         value.reattach(self.token_store)
-        self._tilde = tilde
+        type(self)._tilde.reset(self, tilde)
 
     @raw_tolerance.remover
     def __raw_tolerance_remover(self, value: NumberExpr) -> None:
         start = self.token_store.get_next(self.raw_number.last_token)
         assert start is not None
         self.token_store.splice([], start, value.last_token)
-        self._tilde = None
+        type(self)._tilde.reset(self, None)
 
     @internal.required_node_property
     def raw_currency(self) -> Currency:
@@ -108,10 +116,10 @@ class Balance(base.RawTreeModel):
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_account.reset(self, token_transformer.transform(self.raw_account))
         self.raw_number.reattach(token_store, token_transformer)
-        self._tilde = token_transformer.transform(self._tilde)
+        type(self)._tilde.reset(self, token_transformer.transform(self._tilde))
         if self.raw_tolerance is not None:
             self.raw_tolerance.reattach(token_store, token_transformer)
         type(self).raw_currency.reset(self, token_transformer.transform(self.raw_currency))

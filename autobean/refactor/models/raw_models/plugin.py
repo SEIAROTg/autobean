@@ -40,6 +40,10 @@ class Plugin(base.RawTreeModel):
         return self.raw_config or self.raw_name
 
     @internal.required_node_property
+    def _label(self) -> PluginLabel:
+        pass
+
+    @internal.required_node_property
     def raw_name(self) -> escaped_string.EscapedString:
         pass
 
@@ -65,7 +69,7 @@ class Plugin(base.RawTreeModel):
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_name.reset(self, token_transformer.transform(self.raw_name))
         type(self).raw_config.reset(self, token_transformer.transform(self.raw_config))
 

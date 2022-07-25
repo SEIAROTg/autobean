@@ -39,6 +39,10 @@ class Event(base.RawTreeModel):
         pass
 
     @internal.required_node_property
+    def _label(self) -> EventLabel:
+        pass
+
+    @internal.required_node_property
     def raw_type(self) -> EscapedString:
         pass
 
@@ -57,7 +61,7 @@ class Event(base.RawTreeModel):
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_type.reset(self, token_transformer.transform(self.raw_type))
         type(self).raw_description.reset(self, token_transformer.transform(self.raw_description))
 

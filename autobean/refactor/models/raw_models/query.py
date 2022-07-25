@@ -39,6 +39,10 @@ class Query(base.RawTreeModel):
         pass
 
     @internal.required_node_property
+    def _label(self) -> QueryLabel:
+        pass
+
+    @internal.required_node_property
     def raw_name(self) -> EscapedString:
         pass
 
@@ -57,7 +61,7 @@ class Query(base.RawTreeModel):
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_name.reset(self, token_transformer.transform(self.raw_name))
         type(self).raw_query_string.reset(self, token_transformer.transform(self.raw_query_string))
 

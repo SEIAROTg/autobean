@@ -51,6 +51,10 @@ class Pushmeta(base.RawTreeModel):
                 assert False
 
     @internal.required_node_property
+    def _label(self) -> PushmetaLabel:
+        pass
+
+    @internal.required_node_property
     def raw_key(self) -> meta_key.MetaKey:
         pass
 
@@ -86,7 +90,7 @@ class Pushmeta(base.RawTreeModel):
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
         if isinstance(self.raw_value, base.RawTokenModel):
             type(self).raw_value.reset(self, token_transformer.transform(self.raw_value))
@@ -139,6 +143,10 @@ class Popmeta(base.RawTreeModel):
         return self.raw_key
 
     @internal.required_node_property
+    def _label(self) -> PopmetaLabel:
+        pass
+
+    @internal.required_node_property
     def raw_key(self) -> meta_key.MetaKey:
         pass
 
@@ -150,7 +158,7 @@ class Popmeta(base.RawTreeModel):
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
 
     def _eq(self, other: base.RawTreeModel) -> bool:

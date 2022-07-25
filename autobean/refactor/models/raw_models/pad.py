@@ -39,6 +39,10 @@ class Pad(base.RawTreeModel):
         pass
 
     @internal.required_node_property
+    def _label(self) -> PadLabel:
+        pass
+
+    @internal.required_node_property
     def raw_account(self) -> Account:
         pass
 
@@ -57,7 +61,7 @@ class Pad(base.RawTreeModel):
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_account.reset(self, token_transformer.transform(self.raw_account))
         type(self).raw_source_account.reset(self, token_transformer.transform(self.raw_source_account))
 

@@ -38,6 +38,10 @@ class Close(base.RawTreeModel):
         pass
 
     @internal.required_node_property
+    def _label(self) -> CloseLabel:
+        pass
+
+    @internal.required_node_property
     def raw_account(self) -> Account:
         pass
 
@@ -51,7 +55,7 @@ class Close(base.RawTreeModel):
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_account.reset(self, token_transformer.transform(self.raw_account))
 
     def _eq(self, other: base.RawTreeModel) -> bool:

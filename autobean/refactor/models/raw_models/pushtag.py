@@ -38,6 +38,10 @@ class _BasePushtag(base.RawTreeModel, Generic[_L]):
         return self.raw_tag
 
     @internal.required_node_property
+    def _label(self) -> _L:
+        pass
+
+    @internal.required_node_property
     def raw_tag(self) -> tag.Tag:
         pass
 
@@ -49,7 +53,7 @@ class _BasePushtag(base.RawTreeModel, Generic[_L]):
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_tag.reset(self, token_transformer.transform(self.raw_tag))
 
 

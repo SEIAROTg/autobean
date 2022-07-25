@@ -40,6 +40,10 @@ class Option(base.RawTreeModel):
         return self.raw_value
 
     @internal.required_node_property
+    def _label(self) -> OptionLabel:
+        pass
+
+    @internal.required_node_property
     def raw_key(self) -> escaped_string.EscapedString:
         pass
 
@@ -56,7 +60,7 @@ class Option(base.RawTreeModel):
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
+        type(self)._label.reset(self, token_transformer.transform(self._label))
         type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
         type(self).raw_value.reset(self, token_transformer.transform(self.raw_value))
 
