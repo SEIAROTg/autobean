@@ -54,7 +54,7 @@ class Pushmeta(base.RawTreeModel):
     def raw_key(self) -> meta_key.MetaKey:
         pass
 
-    @internal.optional_node_property[meta_value.MetaValue, 'Pushmeta']
+    @internal.optional_node_property(floating=internal.Floating.LEFT)
     def raw_value(self) -> meta_value.MetaValue:
         pass
 

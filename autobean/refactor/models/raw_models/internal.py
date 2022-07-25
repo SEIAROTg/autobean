@@ -1,4 +1,5 @@
 import abc
+import enum
 from typing import Callable, Generic, Type, TypeVar, Optional, Union, final, overload
 from . import base
 
@@ -88,8 +89,14 @@ def _default_fremover(instance: _U, current: _TU) -> None:
     raise NotImplementedError('remover not implemented')
 
 
-class optional_node_property(_base_property[Optional[_TU], _U]):
-    def __init__(self, inner: Callable[[_U], Optional[_TU]]):
+class Floating(enum.Enum):
+    LEFT = enum.auto()
+    RIGHT = enum.auto()
+
+
+class OptionalNodeProperty(_base_property[Optional[_TU], _U]):
+    def __init__(self, floating: Floating, inner: Callable[[_U], Optional[_TU]]):
+        self._floating = floating
         self._attr = '_' + inner.__name__
         self._fcreator: Callable[[_U, _TU], None] = _default_fcreator
         self._fremover: Callable[[_U, _TU], None] = _default_fremover
@@ -118,6 +125,15 @@ class optional_node_property(_base_property[Optional[_TU], _U]):
     def reset(self, instance: _U, value: Optional[_TU]) -> None:
         setattr(instance, self._attr, value)
 
+
+def optional_node_property(
+        *,
+        floating: Floating,
+) -> Callable[[Callable[[_U], _TU]], OptionalNodeProperty[_TU, _U]]:
+    def decorator(inner: Callable[[_U], _TU]) -> OptionalNodeProperty[_TU, _U]:
+        return OptionalNodeProperty(floating, inner)
+    return decorator
+    
 
 class SimpleRawTokenModel(base.RawTokenModel):
     @final

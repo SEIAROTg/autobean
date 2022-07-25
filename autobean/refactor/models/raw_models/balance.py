@@ -67,8 +67,8 @@ class Balance(base.RawTreeModel):
     def raw_number(self) -> NumberExpr:
         pass
 
-    @internal.optional_node_property
-    def raw_tolerance(self) -> Optional[NumberExpr]:
+    @internal.optional_node_property(floating=internal.Floating.LEFT)
+    def raw_tolerance(self) -> NumberExpr:
         pass
 
     @raw_tolerance.creator

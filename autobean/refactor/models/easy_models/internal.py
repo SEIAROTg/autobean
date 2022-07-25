@@ -35,7 +35,7 @@ class required_string_property(Generic[_U]):
 
 
 class optional_string_property(Generic[_U]):
-    def __init__(self, inner_property: internal.optional_node_property[_ST, _U], inner_type: Type[_ST]):
+    def __init__(self, inner_property: internal.OptionalNodeProperty[_ST, _U], inner_type: Type[_ST]):
         self._inner_property = inner_property
         self._inner_type = inner_type
 
@@ -49,7 +49,7 @@ class optional_string_property(Generic[_U]):
 
 
 class optional_escaped_string_property(optional_string_property):
-    def __init__(self, inner_property: internal.optional_node_property[raw_models.EscapedString, _U]):
+    def __init__(self, inner_property: internal.OptionalNodeProperty[raw_models.EscapedString, _U]):
         super().__init__(inner_property, raw_models.EscapedString)
 
 
@@ -65,7 +65,7 @@ class required_number_expr_property(Generic[_U]):
 
 
 class optional_number_expr_property(Generic[_U]):
-    def __init__(self, inner_property: internal.optional_node_property[raw_models.NumberExpr, _U]):
+    def __init__(self, inner_property: internal.OptionalNodeProperty[raw_models.NumberExpr, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[decimal.Decimal]:

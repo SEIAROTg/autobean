@@ -43,7 +43,7 @@ class Plugin(base.RawTreeModel):
     def raw_name(self) -> escaped_string.EscapedString:
         pass
 
-    @internal.optional_node_property
+    @internal.optional_node_property(floating=internal.Floating.LEFT)
     def raw_config(self) -> escaped_string.EscapedString:
         pass
 
