@@ -1,6 +1,6 @@
 import abc
 import copy
-from typing import Any, ClassVar, Optional, Type, TypeVar, cast, overload
+from typing import Any, ClassVar, Optional, Type, TypeVar, cast
 from autobean.refactor import token_store as token_store_lib
 
 _OT = TypeVar('_OT', bound=Optional['RawTokenModel'])
@@ -9,6 +9,32 @@ _SelfRawModel = TypeVar('_SelfRawModel', bound='RawModel')
 _SelfRawTokenModel = TypeVar('_SelfRawTokenModel', bound='RawTokenModel')  
 _SelfRawTreeModel = TypeVar('_SelfRawTreeModel', bound='RawTreeModel')
 TokenStore = token_store_lib.TokenStore['RawTokenModel']
+
+
+# This could technically be replaced with map.__getitem__ but that didn't work well with mypy.
+# https://github.com/python/mypy/issues/1317
+class TokenTransformer(abc.ABC):
+    @abc.abstractmethod
+    def transform(self, token: _OT) -> _OT:
+        ...
+
+
+class MappingTokenTransformer(TokenTransformer):
+    def __init__(self, map: dict[int, 'RawTokenModel']) -> None:
+        self._map = map
+
+    def transform(self, token: _OT) -> _OT:
+        if token is None:
+            return None
+        return cast(_OT, self._map[id(token)])
+
+
+class IdentityTokenTransformer(TokenTransformer):
+    def transform(self, token: _OT) -> _OT:
+        return token
+
+
+_IDENTITY_TOKEN_TRANSFORMER = IdentityTokenTransformer()
 
 
 class RawModel(abc.ABC):
@@ -54,6 +80,10 @@ class RawModel(abc.ABC):
     @abc.abstractmethod
     def __eq__(self, other: object) -> bool:
         ...
+
+    @abc.abstractmethod
+    def clone(self: _SelfRawModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawModel:
+        ...
     
 
 class RawTokenModel(token_store_lib.Token, RawModel):
@@ -96,31 +126,8 @@ class RawTokenModel(token_store_lib.Token, RawModel):
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RawTokenModel) and self.RULE == other.RULE and self.raw_text == other.raw_text
 
-
-# This could technically be replaced with map.__getitem__ but that didn't work well with mypy.
-# https://github.com/python/mypy/issues/1317
-class TokenTransformer(abc.ABC):
-    @abc.abstractmethod
-    def transform(self, token: _OT) -> _OT:
-        ...
-
-
-class MappingTokenTransformer(TokenTransformer):
-    def __init__(self, map: dict[int, RawTokenModel]) -> None:
-        self._map = map
-
-    def transform(self, token: _OT) -> _OT:
-        if token is None:
-            return None
-        return cast(_OT, self._map[id(token)])
-
-
-class IdentityTokenTransformer(TokenTransformer):
-    def transform(self, token: _OT) -> _OT:
-        return token
-
-
-_IDENTITY_TOKEN_TRANSFORMER = IdentityTokenTransformer()
+    def clone(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawTokenModel:
+        return token_transformer.transform(self)
 
 
 class RawTreeModel(RawModel):
@@ -147,10 +154,6 @@ class RawTreeModel(RawModel):
                 token_map[id(token)] = new_token
         token_store = TokenStore.from_tokens(tokens)
         return self.clone(token_store, MappingTokenTransformer(token_map))
-
-    @abc.abstractmethod
-    def clone(self: _SelfRawTreeModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawTreeModel:
-        ...
 
     def reattach(self, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> None:
         self._reattach(token_store, token_transformer)
