@@ -31,8 +31,8 @@ class Pushmeta(base.RawTreeModel):
     def __init__(self, token_store: base.TokenStore, label: PushmetaLabel, key: meta_key.MetaKey, value: Optional[meta_value.MetaValue]):
         super().__init__(token_store)
         self._label = label
-        self.raw_key = key
-        self.raw_value = value
+        self._key = key
+        self._value = value
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -40,31 +40,26 @@ class Pushmeta(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        match self.raw_value:
+        match self._value:
             case base.RawTokenModel():
-                return self.raw_value
+                return self._value
             case base.RawTreeModel():
-                return self.raw_value.last_token
+                return self._value.last_token
             case None:
-                return self.raw_key
+                return self._key
             case _:
                 assert False
 
-    @internal.required_node_property
-    def _label(self) -> PushmetaLabel:
-        pass
+    _label = internal.field[PushmetaLabel]()
+    _key = internal.field[meta_key.MetaKey]()
+    _value = internal.field[Optional[meta_value.MetaValue]]()
 
-    @internal.required_node_property
-    def raw_key(self) -> meta_key.MetaKey:
-        pass
-
-    @internal.optional_node_property(floating=internal.Floating.LEFT)
-    def raw_value(self) -> meta_value.MetaValue:
-        pass
+    raw_key = internal.required_node_property(_key)
+    raw_value = internal.optional_node_property[meta_value.MetaValue](_value, floating=internal.Floating.LEFT)
 
     @raw_value.creator
     def __raw_value_creator(self, value: meta_value.MetaValue) -> None:
-        self.token_store.insert_after(self.raw_key, [
+        self.token_store.insert_after(self._key, [
             punctuation.Whitespace(' '), *value.detach()])
         if isinstance(value, base.RawTreeModel):
             value.reattach(self.token_store)
@@ -75,35 +70,35 @@ class Pushmeta(base.RawTreeModel):
 
     def clone(self: _SelfPushmeta, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfPushmeta:
         value: Optional[meta_value.MetaValue]
-        if isinstance(self.raw_value, base.RawTokenModel):
-            value = token_transformer.transform(self.raw_value)
-        elif isinstance(self.raw_value, base.RawTreeModel):
-            value = self.raw_value.clone(token_store, token_transformer)
+        if isinstance(self._value, base.RawTokenModel):
+            value = token_transformer.transform(self._value)
+        elif isinstance(self._value, base.RawTreeModel):
+            value = self._value.clone(token_store, token_transformer)
         else:
-            assert self.raw_value is None
-            value = self.raw_value
+            assert self._value is None
+            value = self._value
         return type(self)(
             token_store,
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_key),
+            token_transformer.transform(self._key),
             value)
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
-        if isinstance(self.raw_value, base.RawTokenModel):
-            type(self).raw_value.reset(self, token_transformer.transform(self.raw_value))
-        elif isinstance(self.raw_value, base.RawTreeModel):
-            self.raw_value.reattach(token_store, token_transformer)
+        self._label = token_transformer.transform(self._label)
+        self._key = token_transformer.transform(self._key)
+        if isinstance(self._value, base.RawTokenModel):
+            self._value = token_transformer.transform(self._value)
+        elif isinstance(self._value, base.RawTreeModel):
+            self._value.reattach(token_store, token_transformer)
         else:
-            assert self.raw_value is None
+            assert self._value is None
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Pushmeta) and
-            self.raw_key == other.raw_key and
-            self.raw_value == other.raw_value)
+            self._key == other._key and
+            self._value == other._value)
 
     @classmethod
     def from_children(cls: Type[_SelfPushmeta], key: meta_key.MetaKey, value: Optional[meta_value.MetaValue] = None) -> _SelfPushmeta:
@@ -132,7 +127,7 @@ class Popmeta(base.RawTreeModel):
     def __init__(self, token_store: base.TokenStore, label: PopmetaLabel, key: meta_key.MetaKey):
         super().__init__(token_store)
         self._label = label
-        self.raw_key = key
+        self._key = key
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -140,29 +135,25 @@ class Popmeta(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_key
+        return self._key
 
-    @internal.required_node_property
-    def _label(self) -> PopmetaLabel:
-        pass
-
-    @internal.required_node_property
-    def raw_key(self) -> meta_key.MetaKey:
-        pass
+    _label = internal.field[PopmetaLabel]()
+    _key = internal.field[meta_key.MetaKey]()
+    raw_key = internal.required_node_property(_key)
 
     def clone(self: _SelfPopmeta, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfPopmeta:
         return type(self)(
             token_store,
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_key))
+            token_transformer.transform(self._key))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_key.reset(self, token_transformer.transform(self.raw_key))
+        self._label = token_transformer.transform(self._label)
+        self._key = token_transformer.transform(self._key)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
-        return isinstance(other, Popmeta) and self.raw_key == other.raw_key
+        return isinstance(other, Popmeta) and self._key == other._key
 
     @classmethod
     def from_children(cls: Type[_SelfPopmeta], key: meta_key.MetaKey) -> _SelfPopmeta:

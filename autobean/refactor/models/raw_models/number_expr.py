@@ -51,58 +51,56 @@ class NumberUnaryExpr(base.RawTreeModel):
             operand: 'NumberAtomExpr',
     ):
         super().__init__(token_store)
-        self.raw_unary_op = unary_op
-        self.raw_operand = operand
+        self._unary_op = unary_op
+        self._operand = operand
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_unary_op
+        return self._unary_op
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_operand.last_token
+        return self._operand.last_token
 
-    @internal.required_node_property
-    def raw_unary_op(self) -> UnaryOp:
-        pass
+    _unary_op = internal.field[UnaryOp]()
+    _operand = internal.field['NumberAtomExpr']()
 
-    @internal.required_node_property
-    def raw_operand(self) -> 'NumberAtomExpr':
-        pass
+    raw_unary_op = internal.required_node_property(_unary_op)
+    raw_operand = internal.required_node_property(_operand)
 
     @property
     def value(self) -> decimal.Decimal:
-        if self.raw_unary_op.raw_text == '+':
-            return self.raw_operand.value
-        elif self.raw_unary_op.raw_text == '-':
-            return -self.raw_operand.value
+        if self._unary_op.raw_text == '+':
+            return self._operand.value
+        elif self._unary_op.raw_text == '-':
+            return -self._operand.value
         else:
             assert False
 
     def clone(self: _SelfNumberUnaryExpr, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfNumberUnaryExpr:
         operand: NumberAtomExpr
-        if isinstance(self.raw_operand, number.Number):
-            operand = token_transformer.transform(self.raw_operand)
+        if isinstance(self._operand, number.Number):
+            operand = token_transformer.transform(self._operand)
         else:
-            operand = self.raw_operand.clone(token_store, token_transformer)
+            operand = self._operand.clone(token_store, token_transformer)
         return type(self)(
             token_store,
-            token_transformer.transform(self.raw_unary_op),
+            token_transformer.transform(self._unary_op),
             operand)
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self).raw_unary_op.reset(self, token_transformer.transform(self.raw_unary_op))
-        if isinstance(self.raw_operand, number.Number):
-            type(self).raw_operand.reset(self, token_transformer.transform(self.raw_operand))
+        self._unary_op = token_transformer.transform(self._unary_op)
+        if isinstance(self._operand, number.Number):
+            self._operand = token_transformer.transform(self._operand)
         else:
-            self.raw_operand.reattach(token_store, token_transformer)
+            self._operand.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, NumberUnaryExpr)
-            and self.raw_unary_op == other.raw_unary_op
-            and self.raw_operand == other.raw_operand)
+            and self._unary_op == other._unary_op
+            and self._operand == other._operand)
 
 
 @internal.tree_model
@@ -117,53 +115,49 @@ class NumberParenExpr(base.RawTreeModel):
             right_paren: RightParen,
     ):
         super().__init__(token_store)
-        self.raw_left_paren = left_paren
-        self.raw_inner_expr = inner_expr
-        self.raw_right_paren = right_paren
+        self._left_paren = left_paren
+        self._inner_expr = inner_expr
+        self._right_paren = right_paren
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_left_paren
+        return self._left_paren
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_right_paren
+        return self._right_paren
 
-    @internal.required_node_property
-    def raw_left_paren(self) -> LeftParen:
-        pass
+    _left_paren = internal.field[LeftParen]()
+    _inner_expr = internal.field['NumberAddExpr']()
+    _right_paren = internal.field[RightParen]()
 
-    @internal.required_node_property
-    def raw_inner_expr(self) -> 'NumberAddExpr':
-        pass
-
-    @internal.required_node_property
-    def raw_right_paren(self) -> RightParen:
-        pass
+    raw_left_paren = internal.required_node_property(_left_paren)
+    raw_inner_expr = internal.required_node_property(_inner_expr)
+    raw_right_paren = internal.required_node_property(_right_paren)
 
     @property
     def value(self) -> decimal.Decimal:
-        return self.raw_inner_expr.value
+        return self._inner_expr.value
 
     def clone(self: _SelfNumberParenExpr, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfNumberParenExpr:
         return type(self)(
             token_store,
-            token_transformer.transform(self.raw_left_paren),
-            self.raw_inner_expr.clone(token_store, token_transformer),
-            token_transformer.transform(self.raw_right_paren))
+            token_transformer.transform(self._left_paren),
+            self._inner_expr.clone(token_store, token_transformer),
+            token_transformer.transform(self._right_paren))
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self).raw_left_paren.reset(self, token_transformer.transform(self.raw_left_paren))
-        self.raw_inner_expr.reattach(token_store, token_transformer)
-        type(self).raw_right_paren.reset(self, token_transformer.transform(self.raw_right_paren))
+        self._left_paren = token_transformer.transform(self._left_paren)
+        self._inner_expr.reattach(token_store, token_transformer)
+        self._right_paren = token_transformer.transform(self._right_paren)
 
     def _eq(self, other: object) -> bool:
         return (
             isinstance(other, NumberParenExpr)
-            and self.raw_left_paren == other.raw_left_paren
-            and self.raw_inner_expr == other.raw_inner_expr
-            and self.raw_right_paren == other.raw_right_paren)
+            and self._left_paren == other._left_paren
+            and self._inner_expr == other._inner_expr
+            and self._right_paren == other._right_paren)
 
 
 NumberAtomExpr = number.Number | NumberParenExpr | NumberUnaryExpr
@@ -339,7 +333,7 @@ class NumberExpr(base.RawTreeModel):
             number_add_expr: NumberAddExpr,
     ):
         super().__init__(token_store)
-        self.raw_number_add_expr = number_add_expr
+        self._number_add_expr = number_add_expr
 
     @classmethod
     def from_value(cls, value: decimal.Decimal) -> 'NumberExpr':
@@ -348,19 +342,19 @@ class NumberExpr(base.RawTreeModel):
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_number_add_expr.first_token
+        return self._number_add_expr.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_number_add_expr.last_token
+        return self._number_add_expr.last_token
 
-    @internal.required_node_property
-    def raw_number_add_expr(self) -> NumberAddExpr:
-        pass
+    _number_add_expr = internal.field[NumberAddExpr]()
+
+    raw_number_add_expr = internal.required_node_property(_number_add_expr)
 
     @property
     def value(self) -> decimal.Decimal:
-        return self.raw_number_add_expr.value
+        return self._number_add_expr.value
 
     @value.setter
     def value(self, value: decimal.Decimal) -> None:
@@ -369,13 +363,13 @@ class NumberExpr(base.RawTreeModel):
     def clone(self: _SelfNumberExpr, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfNumberExpr:
         return type(self)(
             token_store,
-            self.raw_number_add_expr.clone(token_store, token_transformer))
+            self._number_add_expr.clone(token_store, token_transformer))
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self.raw_number_add_expr.reattach(token_store, token_transformer)
+        self._number_add_expr.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, NumberExpr)
-            and self.raw_number_add_expr == other.raw_number_add_expr)
+            and self._number_add_expr == other._number_add_expr)

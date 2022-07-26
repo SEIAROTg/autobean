@@ -28,8 +28,8 @@ class Plugin(base.RawTreeModel):
     ):
         super().__init__(token_store)
         self._label = label
-        self.raw_name = name
-        self.raw_config = config
+        self._name = name
+        self._config = config
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -37,23 +37,18 @@ class Plugin(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_config or self.raw_name
+        return self._config or self._name
 
-    @internal.required_node_property
-    def _label(self) -> PluginLabel:
-        pass
+    _label = internal.field[PluginLabel]()
+    _name = internal.field[escaped_string.EscapedString]()
+    _config = internal.field[Optional[escaped_string.EscapedString]]()
 
-    @internal.required_node_property
-    def raw_name(self) -> escaped_string.EscapedString:
-        pass
-
-    @internal.optional_node_property(floating=internal.Floating.LEFT)
-    def raw_config(self) -> escaped_string.EscapedString:
-        pass
+    raw_name = internal.required_node_property(_name)
+    raw_config = internal.optional_node_property(_config, floating=internal.Floating.LEFT)
 
     @raw_config.creator
     def __raw_config_creator(self, config: escaped_string.EscapedString) -> None:
-        self.token_store.insert_after(self.raw_name, [punctuation.Whitespace(' '), config])
+        self.token_store.insert_after(self._name, [punctuation.Whitespace(' '), config])
     
     @raw_config.remover
     def __raw_config_remover(self, current: escaped_string.EscapedString) -> None:
@@ -63,21 +58,21 @@ class Plugin(base.RawTreeModel):
         return type(self)(
             token_store,
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_name),
-            token_transformer.transform(self.raw_config),
+            token_transformer.transform(self._name),
+            token_transformer.transform(self._config),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_name.reset(self, token_transformer.transform(self.raw_name))
-        type(self).raw_config.reset(self, token_transformer.transform(self.raw_config))
+        self._label = token_transformer.transform(self._label)
+        self._name = token_transformer.transform(self._name)
+        self._config = token_transformer.transform(self._config)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Plugin)
-            and self.raw_name == other.raw_name
-            and self.raw_config == other.raw_config)
+            and self._name == other._name
+            and self._config == other._config)
 
     @classmethod
     def from_children(cls: Type[_Self], name: escaped_string.EscapedString, config: Optional[escaped_string.EscapedString] = None) -> _Self:

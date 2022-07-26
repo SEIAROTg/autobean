@@ -26,8 +26,8 @@ class _BasePushtag(base.RawTreeModel, Generic[_L]):
     @final
     def __init__(self, token_store: base.TokenStore, label: _L, tag: tag.Tag):
         super().__init__(token_store)
-        self._label: _L = label
-        self.raw_tag = tag
+        self._label = label
+        self._tag = tag
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -35,26 +35,23 @@ class _BasePushtag(base.RawTreeModel, Generic[_L]):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_tag
+        return self._tag
 
-    @internal.required_node_property
-    def _label(self) -> _L:
-        pass
+    _label = internal.field[_L]()
+    _tag = internal.field[tag.Tag]()
 
-    @internal.required_node_property
-    def raw_tag(self) -> tag.Tag:
-        pass
+    raw_tag = internal.required_node_property(_tag)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_tag))
+            token_transformer.transform(self._tag))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_tag.reset(self, token_transformer.transform(self.raw_tag))
+        self._label = token_transformer.transform(self._label)
+        self._tag = token_transformer.transform(self._tag)
 
 
 @internal.tree_model
@@ -65,7 +62,7 @@ class Pushtag(_BasePushtag[PushtagLabel]):
         return (
             isinstance(other, Pushtag)
             and self._label == other._label
-            and self.raw_tag == other.raw_tag)
+            and self._tag == other._tag)
 
     @classmethod
     def from_children(cls: Type[_SelfPushtag], tag: tag.Tag) -> _SelfPushtag:
@@ -86,7 +83,7 @@ class Poptag(_BasePushtag[PoptagLabel]):
         return (
             isinstance(other, Poptag)
             and self._label == other._label
-            and self.raw_tag == other.raw_tag)
+            and self._tag == other._tag)
 
     @classmethod
     def from_children(cls: Type[_SelfPoptag], tag: tag.Tag) -> _SelfPoptag:

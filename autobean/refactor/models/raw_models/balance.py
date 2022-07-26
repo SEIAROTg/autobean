@@ -39,99 +39,86 @@ class Balance(base.RawTreeModel):
             currency: Currency,
     ):
         super().__init__(token_store)
-        self.raw_date = date
+        self._date = date
         self._label = label
-        self.raw_account = account
-        self.raw_number = number
+        self._account = account
+        self._number = number
         self._tilde = tilde
-        self.raw_tolerance = tolerance
-        self.raw_currency = currency
+        self._tolerance = tolerance
+        self._currency = currency
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_date
+        return self._date
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_currency
+        return self._currency
 
-    @internal.required_node_property
-    def raw_date(self) -> Date:
-        pass
-
-    @internal.required_node_property
-    def _label(self) -> BalanceLabel:
-        pass
-
-    @internal.required_node_property
-    def raw_account(self) -> Account:
-        pass
-
-    @internal.required_node_property
-    def raw_number(self) -> NumberExpr:
-        pass
-
-    @internal.optional_node_property(floating=internal.Floating.LEFT)
-    def _tilde(self) -> Tilde:
-        pass
-
-    @internal.optional_node_property(floating=internal.Floating.LEFT)
-    def raw_tolerance(self) -> NumberExpr:
-        pass
-
+    _date = internal.field[Date]()
+    _label = internal.field[BalanceLabel]()
+    _account = internal.field[Account]()
+    _number = internal.field[NumberExpr]()
+    _tilde = internal.field[Optional[Tilde]]()
+    _tolerance = internal.field[Optional[NumberExpr]]()
+    _currency = internal.field[Currency]()
+  
+    raw_date = internal.required_node_property(_date)
+    raw_account = internal.required_node_property(_account)
+    raw_number = internal.required_node_property(_number)
+    raw_tilde = internal.optional_node_property(_tilde, floating=internal.Floating.LEFT)
+    raw_tolerance = internal.optional_node_property(_tolerance, floating=internal.Floating.LEFT)
+    raw_currency = internal.required_node_property(_currency)
+    
     @raw_tolerance.creator
     def __raw_tolerance_creator(self, value: NumberExpr) -> None:
         tilde = Tilde.from_default()
-        self.token_store.insert_after(self.raw_number.last_token, [
+        self.token_store.insert_after(self._number.last_token, [
             punctuation.Whitespace.from_default(),
             tilde,
             punctuation.Whitespace.from_default(),
             *value.detach(),
         ])
         value.reattach(self.token_store)
-        type(self)._tilde.reset(self, tilde)
+        self._tilde = tilde
 
     @raw_tolerance.remover
     def __raw_tolerance_remover(self, value: NumberExpr) -> None:
-        start = self.token_store.get_next(self.raw_number.last_token)
+        start = self.token_store.get_next(self._number.last_token)
         assert start is not None
         self.token_store.splice([], start, value.last_token)
-        type(self)._tilde.reset(self, None)
-
-    @internal.required_node_property
-    def raw_currency(self) -> Currency:
-        pass
+        self._tilde = None
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            token_transformer.transform(self.raw_date),
+            token_transformer.transform(self._date),
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_account),
-            self.raw_number.clone(token_store, token_transformer),
+            token_transformer.transform(self._account),
+            self._number.clone(token_store, token_transformer),
             token_transformer.transform(self._tilde),
-            self.raw_tolerance.clone(token_store, token_transformer) if self.raw_tolerance else None,
-            token_transformer.transform(self.raw_currency))
+            self._tolerance.clone(token_store, token_transformer) if self._tolerance else None,
+            token_transformer.transform(self._currency))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_account.reset(self, token_transformer.transform(self.raw_account))
-        self.raw_number.reattach(token_store, token_transformer)
-        type(self)._tilde.reset(self, token_transformer.transform(self._tilde))
-        if self.raw_tolerance is not None:
-            self.raw_tolerance.reattach(token_store, token_transformer)
-        type(self).raw_currency.reset(self, token_transformer.transform(self.raw_currency))
+        self._date = token_transformer.transform(self._date)
+        self._label = token_transformer.transform(self._label)
+        self._account = token_transformer.transform(self._account)
+        self._number.reattach(token_store, token_transformer)
+        self._tilde = token_transformer.transform(self._tilde)
+        if self._tolerance is not None:
+            self._tolerance.reattach(token_store, token_transformer)
+        self._currency = token_transformer.transform(self._currency)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Balance)
-            and self.raw_date == other.raw_date
-            and self.raw_account == other.raw_account
-            and self.raw_number == other.raw_number
-            and self.raw_tolerance == other.raw_tolerance
-            and self.raw_currency == other.raw_currency)
+            and self._date == other._date
+            and self._account == other._account
+            and self._number == other._number
+            and self._tolerance == other._tolerance
+            and self._currency == other._currency)
 
     @classmethod
     def from_children(

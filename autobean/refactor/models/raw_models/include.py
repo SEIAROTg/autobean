@@ -22,7 +22,7 @@ class Include(base.RawTreeModel):
     def __init__(self, token_store: base.TokenStore, label: IncludeLabel, filename: escaped_string.EscapedString):
         super().__init__(token_store)
         self._label = label
-        self.raw_filename = filename
+        self._filename = filename
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -30,32 +30,29 @@ class Include(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_filename
+        return self._filename
 
-    @internal.required_node_property
-    def _label(self) -> IncludeLabel:
-        pass
+    _label = internal.field[IncludeLabel]()
+    _filename = internal.field[escaped_string.EscapedString]()
 
-    @internal.required_node_property
-    def raw_filename(self) -> escaped_string.EscapedString:
-        pass
+    raw_filename = internal.required_node_property(_filename)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_filename))
+            token_transformer.transform(self._filename))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_filename.reset(self, token_transformer.transform(self.raw_filename))
+        self._label = token_transformer.transform(self._label)
+        self._filename = token_transformer.transform(self._filename)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Include)
             and self._label == other._label
-            and self.raw_filename == other.raw_filename)
+            and self._filename == other._filename)
 
     @classmethod
     def from_children(cls: Type[_Self], filename: escaped_string.EscapedString) -> _Self:

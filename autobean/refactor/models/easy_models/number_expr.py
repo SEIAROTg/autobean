@@ -99,7 +99,7 @@ class NumberExpr(raw_models.NumberExpr):
         paren_expr = _wrap_paren(self.raw_number_add_expr)
         mul_expr = raw_models.NumberMulExpr(self.token_store, (paren_expr,), ())
         add_expr = raw_models.NumberAddExpr(self.token_store, (mul_expr,), ())
-        type(self).raw_number_add_expr.reset(self, add_expr)
+        self._number_add_expr = add_expr
 
     def _iaddsub(self: 'NumberExpr', other: 'NumberExpr', op: Literal['+', '-']) -> 'NumberExpr':
         mul_expr = _as_mul_expr(other)
@@ -115,7 +115,7 @@ class NumberExpr(raw_models.NumberExpr):
             self.token_store,
             self.raw_number_add_expr.raw_operands + (mul_expr,),
             self.raw_number_add_expr.raw_ops + (add_op,))
-        type(self).raw_number_add_expr.reset(self, add_expr)
+        self._number_add_expr = add_expr
         return self
 
     @overload
@@ -195,7 +195,7 @@ class NumberExpr(raw_models.NumberExpr):
             self_mul_expr.raw_operands + (atom_expr,),
             self_mul_expr.raw_ops + (mul_op,))
         add_expr = raw_models.NumberAddExpr(self.token_store, (mul_expr,), ())
-        type(self).raw_number_add_expr.reset(self, add_expr)
+        self._number_add_expr = add_expr
         return self
 
     @overload

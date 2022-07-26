@@ -21,55 +21,48 @@ class Query(base.RawTreeModel):
     @final
     def __init__(self, token_store: base.TokenStore, date: Date, label: QueryLabel, name: EscapedString, query_string: EscapedString):
         super().__init__(token_store)
-        self.raw_date = date
+        self._date = date
         self._label = label
-        self.raw_name = name
-        self.raw_query_string = query_string
+        self._name = name
+        self._query_string = query_string
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_date
+        return self._date
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_query_string
+        return self._query_string
 
-    @internal.required_node_property
-    def raw_date(self) -> Date:
-        pass
+    _date = internal.field[Date]()
+    _label = internal.field[QueryLabel]()
+    _name = internal.field[EscapedString]()
+    _query_string = internal.field[EscapedString]()
 
-    @internal.required_node_property
-    def _label(self) -> QueryLabel:
-        pass
-
-    @internal.required_node_property
-    def raw_name(self) -> EscapedString:
-        pass
-
-    @internal.required_node_property
-    def raw_query_string(self) -> EscapedString:
-        pass
+    raw_date = internal.required_node_property(_date)
+    raw_name = internal.required_node_property(_name)
+    raw_query_string = internal.required_node_property(_query_string)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            token_transformer.transform(self.raw_date),
+            token_transformer.transform(self._date),
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_name),
-            token_transformer.transform(self.raw_query_string))
+            token_transformer.transform(self._name),
+            token_transformer.transform(self._query_string))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_name.reset(self, token_transformer.transform(self.raw_name))
-        type(self).raw_query_string.reset(self, token_transformer.transform(self.raw_query_string))
+        self._date = token_transformer.transform(self._date)
+        self._label = token_transformer.transform(self._label)
+        self._name = token_transformer.transform(self._name)
+        self._query_string = token_transformer.transform(self._query_string)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Query)
-            and self.raw_name == other.raw_name
-            and self.raw_query_string == other.raw_query_string)
+            and self._name == other._name
+            and self._query_string == other._query_string)
 
     @classmethod
     def from_children(cls: Type[_Self], date: Date, type: EscapedString, query_string: EscapedString) -> _Self:

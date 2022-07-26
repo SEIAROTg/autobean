@@ -61,24 +61,29 @@ def _replace_node(node: _TU, repl: _TU) -> None:
         repl.reattach(token_store)
 
 
-class required_node_property(_base_property[_TU, _U]):
-    def __init__(self, inner: Callable[[_U], _TU]):
-        self._attr = '_' + inner.__name__
+class field(_base_property[_V, base.RawTreeModel]):
+    def __set_name__(self, owner: Type[base.RawTreeModel], name: str) -> None:
+        self._attr = '_' + name
 
-    def _get(self, instance: _U) -> _TU:
-        value = getattr(instance, self._attr)
-        assert value
-        return value
+    def _get(self, instance: base.RawTreeModel) -> _V:
+        return getattr(instance, self._attr)
 
-    def __set__(self, instance: _U, value: _TU) -> None:
-        assert value
-        if hasattr(instance, self._attr):
-            current = self.__get__(instance)
-            _replace_node(current, value)
+    def __set__(self, instance: base.RawTreeModel, value: _V) -> None:
         setattr(instance, self._attr, value)
 
-    def reset(self, instance: _U, value: _TU) -> None:
-        setattr(instance, self._attr, value)
+
+class required_node_property(_base_property[_TU, base.RawTreeModel]):
+    def __init__(self, inner_field: field[_TU]) -> None:
+        self._inner_field = inner_field
+
+    def _get(self, instance: base.RawTreeModel) -> _TU:
+        return self._inner_field.__get__(instance)
+
+    def __set__(self, instance: base.RawTreeModel, value: _TU) -> None:
+        assert value is not None
+        current = self._inner_field.__get__(instance)
+        _replace_node(current, value)
+        self._inner_field.__set__(instance, value)
 
 
 def _default_fcreator(instance: _U, value: _TU) -> None:
@@ -94,27 +99,25 @@ class Floating(enum.Enum):
     RIGHT = enum.auto()
 
 
-class OptionalNodeProperty(_base_property[Optional[_TU], _U]):
-    def __init__(self, floating: Floating, inner: Callable[[_U], Optional[_TU]]):
+class optional_node_property(_base_property[Optional[_TU], base.RawTreeModel]):
+    def __init__(self, inner_field: field[Optional[_TU]], *, floating: Floating):
+        self._inner_field = inner_field
         self._floating = floating
-        self._attr = '_' + inner.__name__
         self._fcreator: Callable[[_U, _TU], None] = _default_fcreator
         self._fremover: Callable[[_U, _TU], None] = _default_fremover
 
     def _get(self, instance: _U) -> Optional[_TU]:
-        value = getattr(instance, self._attr)
-        return value
+        return self._inner_field.__get__(instance)
 
     def __set__(self, instance: _U, value: Optional[_TU]) -> None:
-        if hasattr(instance, self._attr):
-            current = self.__get__(instance)
-            if current is None and value is not None:
-                self._fcreator(instance, value)
-            elif current is not None and value is None:
-                self._fremover(instance, current)
-            elif current is not None and value is not None:
-                _replace_node(current, value)
-        setattr(instance, self._attr, value)
+        current = self.__get__(instance)
+        if current is None and value is not None:
+            self._fcreator(instance, value)
+        elif current is not None and value is None:
+            self._fremover(instance, current)
+        elif current is not None and value is not None:
+            _replace_node(current, value)
+        self._inner_field.__set__(instance, value)
 
     def creator(self, fcreator: Callable[[_U, _TU], None]) -> None:
         self._fcreator = fcreator
@@ -122,18 +125,6 @@ class OptionalNodeProperty(_base_property[Optional[_TU], _U]):
     def remover(self, fremover: Callable[[_U, _TU], None]) -> None:
         self._fremover = fremover
 
-    def reset(self, instance: _U, value: Optional[_TU]) -> None:
-        setattr(instance, self._attr, value)
-
-
-def optional_node_property(
-        *,
-        floating: Floating,
-) -> Callable[[Callable[[_U], _TU]], OptionalNodeProperty[_TU, _U]]:
-    def decorator(inner: Callable[[_U], _TU]) -> OptionalNodeProperty[_TU, _U]:
-        return OptionalNodeProperty(floating, inner)
-    return decorator
-    
 
 class SimpleRawTokenModel(base.RawTokenModel):
     @final

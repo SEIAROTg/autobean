@@ -23,8 +23,8 @@ def tree_model(cls: _UT) -> _UT:
     return cls
 
 
-class required_string_property(Generic[_U]):
-    def __init__(self, inner_property: internal.required_node_property[_ST, _U]):
+class required_string_property:
+    def __init__(self, inner_property: internal.required_node_property[_ST]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> str:
@@ -34,8 +34,8 @@ class required_string_property(Generic[_U]):
         self._inner_property.__get__(instance).value = value
 
 
-class optional_string_property(Generic[_U]):
-    def __init__(self, inner_property: internal.OptionalNodeProperty[_ST, _U], inner_type: Type[_ST]):
+class optional_string_property:
+    def __init__(self, inner_property: internal.optional_node_property[_ST], inner_type: Type[_ST]):
         self._inner_property = inner_property
         self._inner_type = inner_type
 
@@ -49,12 +49,12 @@ class optional_string_property(Generic[_U]):
 
 
 class optional_escaped_string_property(optional_string_property):
-    def __init__(self, inner_property: internal.OptionalNodeProperty[raw_models.EscapedString, _U]):
+    def __init__(self, inner_property: internal.optional_node_property[raw_models.EscapedString]):
         super().__init__(inner_property, raw_models.EscapedString)
 
 
-class required_number_expr_property(Generic[_U]):
-    def __init__(self, inner_property: internal.required_node_property[raw_models.NumberExpr, _U]):
+class required_number_expr_property:
+    def __init__(self, inner_property: internal.required_node_property[raw_models.NumberExpr]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> decimal.Decimal:
@@ -64,8 +64,8 @@ class required_number_expr_property(Generic[_U]):
         self._inner_property.__get__(instance).value = value
 
 
-class optional_number_expr_property(Generic[_U]):
-    def __init__(self, inner_property: internal.OptionalNodeProperty[raw_models.NumberExpr, _U]):
+class optional_number_expr_property:
+    def __init__(self, inner_property: internal.optional_node_property[raw_models.NumberExpr]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[decimal.Decimal]:
@@ -77,8 +77,8 @@ class optional_number_expr_property(Generic[_U]):
         self._inner_property.__set__(instance, s)
 
 
-class required_date_property(Generic[_U]):
-    def __init__(self, inner_property: internal.required_node_property[raw_models.Date, _U]):
+class required_date_property:
+    def __init__(self, inner_property: internal.required_node_property[raw_models.Date]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> datetime.date:

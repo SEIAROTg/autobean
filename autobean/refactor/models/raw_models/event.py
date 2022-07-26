@@ -21,55 +21,48 @@ class Event(base.RawTreeModel):
     @final
     def __init__(self, token_store: base.TokenStore, date: Date, label: EventLabel, type: EscapedString, description: EscapedString):
         super().__init__(token_store)
-        self.raw_date = date
+        self._date = date
         self._label = label
-        self.raw_type = type
-        self.raw_description = description
+        self._type = type
+        self._description = description
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_date
+        return self._date
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_description
+        return self._description
 
-    @internal.required_node_property
-    def raw_date(self) -> Date:
-        pass
+    _date = internal.field[Date]()
+    _label = internal.field[EventLabel]()
+    _type = internal.field[EscapedString]()
+    _description = internal.field[EscapedString]()
 
-    @internal.required_node_property
-    def _label(self) -> EventLabel:
-        pass
-
-    @internal.required_node_property
-    def raw_type(self) -> EscapedString:
-        pass
-
-    @internal.required_node_property
-    def raw_description(self) -> EscapedString:
-        pass
+    raw_date = internal.required_node_property(_date)
+    raw_type = internal.required_node_property(_type)
+    raw_description = internal.required_node_property(_description)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            token_transformer.transform(self.raw_date),
+            token_transformer.transform(self._date),
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_type),
-            token_transformer.transform(self.raw_description))
+            token_transformer.transform(self._type),
+            token_transformer.transform(self._description))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_type.reset(self, token_transformer.transform(self.raw_type))
-        type(self).raw_description.reset(self, token_transformer.transform(self.raw_description))
+        self._date = token_transformer.transform(self._date)
+        self._label = token_transformer.transform(self._label)
+        self._type = token_transformer.transform(self._type)
+        self._description = token_transformer.transform(self._description)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Event)
-            and self.raw_type == other.raw_type
-            and self.raw_description == other.raw_description)
+            and self._type == other._type
+            and self._description == other._description)
 
     @classmethod
     def from_children(cls: Type[_Self], date: Date, type: EscapedString, description: EscapedString) -> _Self:

@@ -21,47 +21,42 @@ class Commodity(base.RawTreeModel):
     @final
     def __init__(self, token_store: base.TokenStore, date: Date, label: CommodityLabel, currency: Currency):
         super().__init__(token_store)
-        self.raw_date = date
+        self._date = date
         self._label = label
-        self.raw_currency = currency
+        self._currency = currency
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self.raw_date
+        return self._date
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self.raw_currency
+        return self._currency
 
-    @internal.required_node_property
-    def raw_date(self) -> Date:
-        pass
+    _date = internal.field[Date]()
+    _label = internal.field[CommodityLabel]()
+    _currency = internal.field[Currency]()
 
-    @internal.required_node_property
-    def _label(self) -> CommodityLabel:
-        pass
-
-    @internal.required_node_property
-    def raw_currency(self) -> Currency:
-        pass
+    raw_date = internal.required_node_property(_date)
+    raw_currency = internal.required_node_property(_currency)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            token_transformer.transform(self.raw_date),
+            token_transformer.transform(self._date),
             token_transformer.transform(self._label),
-            token_transformer.transform(self.raw_currency))
+            token_transformer.transform(self._currency))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        type(self).raw_date.reset(self, token_transformer.transform(self.raw_date))
-        type(self)._label.reset(self, token_transformer.transform(self._label))
-        type(self).raw_currency.reset(self, token_transformer.transform(self.raw_currency))
+        self._date = token_transformer.transform(self._date)
+        self._label = token_transformer.transform(self._label)
+        self._currency = token_transformer.transform(self._currency)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Commodity)
-            and self.raw_currency == other.raw_currency)
+            and self._currency == other._currency)
 
     @classmethod
     def from_children(cls: Type[_Self], date: Date, currency: Currency) -> _Self:
