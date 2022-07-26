@@ -147,6 +147,13 @@ class TokenStore(Generic[_T]):
     def iter(self, start: _T, end: _T) -> Iterator[_T]:
         start_idx = _check_store_handle(start).index
         end_idx = _check_store_handle(end).index
+        for token in self._tokens[start_idx:end_idx + 1]:
+            if token.raw_text:
+                yield token
+    
+    def iter_all(self, start: _T, end: _T) -> Iterator[_T]:
+        start_idx = _check_store_handle(start).index
+        end_idx = _check_store_handle(end).index
         yield from self._tokens[start_idx:end_idx + 1]
 
     def get_index(self, token: _T) -> int:
@@ -160,41 +167,40 @@ class TokenStore(Generic[_T]):
     def get_by_position(self, position: int) -> _T:
         index = bisect.bisect_left(
             self._tokens, position, key=lambda t: _check_store_handle(t).position.position)
-        if index >= len(self._tokens) or _check_store_handle(self._tokens[index]).position.position != position:
+        token = next((token for token in self._tokens[index:] if token.raw_text), None)
+        if token is None or _check_store_handle(token).position.position != position:
             raise KeyError(f'No token found at position {position}.')
-        return self._tokens[index]
+        return token
 
     def find_by_line(self, line: int) -> Iterator[_T]:  # zero-based
         index = bisect.bisect_left(
             self._tokens, line, key=lambda t: _check_store_handle(t).position.line)
         while index < len(self._tokens):
-            handle = _check_store_handle(self._tokens[index])
-            if handle.position.line > line:
+            token = self._tokens[index]
+            if not token.raw_text:
+                continue
+            if _check_store_handle(token).position.line >= line:
                 break
             yield self._tokens[index]
 
     def get_prev(self, token: _T) -> Optional[_T]:
-        handle = _check_store_handle(token)
-        if handle.index:
-            return self._tokens[handle.index - 1]
-        else:
-            return None
+        index = _check_store_handle(token).index - 1
+        return next((token for token in self._tokens[:index] if token.raw_text), None)
 
     def get_next(self, token: _T) -> Optional[_T]:
-        handle = _check_store_handle(token)
-        if handle.index < len(self._tokens) - 1:
-            return self._tokens[handle.index + 1]
-        else:
-            return None
+        index = _check_store_handle(token).index + 1
+        return next((token for token in self._tokens[index:] if token.raw_text), None)
 
     def get_first(self) -> Optional[_T]:
-        return self._tokens[0] if self._tokens else None
+        return next((token for token in self._tokens if token.raw_text), None)
 
     def get_last(self) -> Optional[_T]:
-        return self._tokens[-1] if self._tokens else None
+        return next((token for token in reversed(self._tokens) if token.raw_text), None)
 
     def __iter__(self) -> Iterator[_T]:
-        yield from self._tokens
+        for token in self._tokens:
+            if token.raw_text:
+                yield token
 
     def __len__(self) -> int:
         return len(self._tokens)

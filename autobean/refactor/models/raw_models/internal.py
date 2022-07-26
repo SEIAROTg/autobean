@@ -1,17 +1,22 @@
 import abc
+import copy
 import enum
-from typing import Callable, Generic, Type, TypeVar, Optional, Union, final, overload
+from typing import Callable, Generic, Type, TypeVar, Optional, final, overload
 from . import base
+from . import placeholder
 
 _TT = TypeVar('_TT', bound=Type[base.RawTokenModel])
 _UT = TypeVar('_UT', bound=Type[base.RawTreeModel])
 _U = TypeVar('_U', bound=base.RawTreeModel)
-_TU = TypeVar('_TU', bound=Union[base.RawTokenModel, base.RawTreeModel])
+_M = TypeVar('_M', bound=base.RawModel)
 # TODO: replace with PEP 673 Self once supported
 _SelfBaseProperty = TypeVar('_SelfBaseProperty', bound='_base_property')
 _SelfSimpleRawTokenModel = TypeVar('_SelfSimpleRawTokenModel', bound='SimpleRawTokenModel')
 _SelfSingleValueRawTokenModel = TypeVar('_SelfSingleValueRawTokenModel', bound='SingleValueRawTokenModel')
 _SelfSimpleDefaultRawTokenModel = TypeVar('_SelfSimpleDefaultRawTokenModel', bound='SimpleDefaultRawTokenModel')
+_SelfMaybe = TypeVar('_SelfMaybe', bound='Maybe')
+_SelfMaybeL = TypeVar('_SelfMaybeL', bound='MaybeL')
+_SelfMaybeR = TypeVar('_SelfMaybeR', bound='MaybeR')
 _B = TypeVar('_B')
 _V = TypeVar('_V')
 _S = TypeVar('_S', bound='SingleValueRawTokenModel')
@@ -50,7 +55,7 @@ class _base_property(Generic[_B, _U], abc.ABC):
         return self._get(instance)
 
 
-def _replace_node(node: _TU, repl: _TU) -> None:
+def _replace_node(node: _M, repl: _M) -> None:
     token_store = node.token_store  # backup because the RawTokenModel.token_store may disappear
     if not token_store:
         raise ValueError('Cannot replace a free token.')
@@ -72,25 +77,132 @@ class field(_base_property[_V, base.RawTreeModel]):
         setattr(instance, self._attr, value)
 
 
-class required_node_property(_base_property[_TU, base.RawTreeModel]):
-    def __init__(self, inner_field: field[_TU]) -> None:
+class required_node_property(_base_property[_M, base.RawTreeModel]):
+    def __init__(self, inner_field: field[_M]) -> None:
         self._inner_field = inner_field
 
-    def _get(self, instance: base.RawTreeModel) -> _TU:
+    def _get(self, instance: base.RawTreeModel) -> _M:
         return self._inner_field.__get__(instance)
 
-    def __set__(self, instance: base.RawTreeModel, value: _TU) -> None:
+    def __set__(self, instance: base.RawTreeModel, value: _M) -> None:
         assert value is not None
         current = self._inner_field.__get__(instance)
         _replace_node(current, value)
         self._inner_field.__set__(instance, value)
 
 
-def _default_fcreator(instance: _U, value: _TU) -> None:
+class Maybe(base.RawTreeModel, Generic[_M]):
+    def __init__(
+            self,
+            token_store: base.TokenStore,
+            inner: Optional[_M],
+            placeholder: placeholder.Placeholder,
+    ) -> None:
+        super().__init__(token_store)
+        self.inner = inner
+        self._placeholder = placeholder
+
+    @property
+    def placeholder(self) -> placeholder.Placeholder:
+        return self._placeholder
+
+    def clone(self: _SelfMaybe, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfMaybe:
+        inner = token_transformer.transform(self.inner) if self.inner is not None else None
+        placeholder = token_transformer.transform(self.placeholder)
+        return type(self)(token_store, inner, placeholder)
+
+    def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
+        if self.inner is not None:
+            self.inner = self.inner.reattach(token_store, token_transformer)
+
+    @abc.abstractmethod
+    def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...]) -> None:
+        ...
+
+    @abc.abstractmethod
+    def remove_inner(self, inner: _M) -> None:
+        ...
+
+
+class MaybeL(Maybe[_M]):
+    @property
+    def first_token(self) -> base.RawTokenModel:
+        return self.placeholder
+
+    @property
+    def last_token(self) -> base.RawTokenModel:
+        return self.inner.last_token if self.inner is not None else self.placeholder
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return isinstance(other, MaybeL) and self.inner == other.inner
+
+    @classmethod
+    def from_children(
+            cls: Type[_SelfMaybeL],
+            inner: Optional[_M],
+            *,
+            separators: tuple[base.RawTokenModel, ...],
+    ) -> _SelfMaybeL:
+        placeholder = placeholder.Placeholder.from_default()
+        tokens = [placeholder, *copy.deepcopy(separators), *inner.tokens] if inner is not None else [placeholder]
+        token_store = base.TokenStore.from_tokens(tokens)
+        return cls(token_store, inner, placeholder)
+
+    def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...],) -> None:
+        self.token_store.insert_after(self.placeholder, [
+            *copy.deepcopy(separators),
+            *inner.detach(),
+        ])
+        inner.reattach(self.token_store)
+
+    def remove_inner(self, inner: _M) -> None:
+        first = self.token_store.get_next(self.placeholder)
+        assert first is not None
+        self.token_store.remove(first, inner.last_token)
+
+
+class MaybeR(Maybe[_M]):
+    @property
+    def first_token(self) -> base.RawTokenModel:
+        return self.inner.first_token if self.inner is not None else self.placeholder
+
+    @property
+    def last_token(self) -> base.RawTokenModel:
+        return self.placeholder
+
+    def _eq(self, other: base.RawTreeModel) -> bool:
+        return isinstance(other, MaybeR) and self.inner == other.inner
+
+    @classmethod
+    def from_children(
+            cls: Type[_SelfMaybeR],
+            inner: Optional[_M],
+            *,
+            separators: tuple[base.RawTokenModel, ...],
+    ) -> _SelfMaybeR:
+        placeholder = placeholder.Placeholder.from_default()
+        tokens = [*inner.tokens, *copy.deepcopy(separators), placeholder] if inner is not None else [placeholder]
+        token_store = base.TokenStore.from_tokens(tokens)
+        return cls(token_store, inner, placeholder)
+
+    def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...],) -> None:
+        self.token_store.insert_before(self.placeholder, [
+            *inner.detach(),
+            *copy.deepcopy(separators),
+        ])
+        inner.reattach(self.token_store)
+
+    def remove_inner(self, inner: _M) -> None:
+        last = self.token_store.get_prev(self.placeholder)
+        assert last is not None
+        self.token_store.remove(inner.first_token, last)
+
+
+def _default_fcreator(instance: _U, value: _M) -> None:
     raise NotImplementedError('creator not implemented')
 
 
-def _default_fremover(instance: _U, current: _TU) -> None:
+def _default_fremover(instance: _U, current: _M) -> None:
     raise NotImplementedError('remover not implemented')
 
 
@@ -99,17 +211,17 @@ class Floating(enum.Enum):
     RIGHT = enum.auto()
 
 
-class optional_node_property(_base_property[Optional[_TU], base.RawTreeModel]):
-    def __init__(self, inner_field: field[Optional[_TU]], *, floating: Floating):
+class optional_node_property(_base_property[Optional[_M], base.RawTreeModel]):
+    def __init__(self, inner_field: field[Optional[_M]], *, floating: Floating):
         self._inner_field = inner_field
         self._floating = floating
-        self._fcreator: Callable[[_U, _TU], None] = _default_fcreator
-        self._fremover: Callable[[_U, _TU], None] = _default_fremover
+        self._fcreator: Callable[[_U, _M], None] = _default_fcreator
+        self._fremover: Callable[[_U, _M], None] = _default_fremover
 
-    def _get(self, instance: _U) -> Optional[_TU]:
+    def _get(self, instance: _U) -> Optional[_M]:
         return self._inner_field.__get__(instance)
 
-    def __set__(self, instance: _U, value: Optional[_TU]) -> None:
+    def __set__(self, instance: _U, value: Optional[_M]) -> None:
         current = self.__get__(instance)
         if current is None and value is not None:
             self._fcreator(instance, value)
@@ -119,10 +231,10 @@ class optional_node_property(_base_property[Optional[_TU], base.RawTreeModel]):
             _replace_node(current, value)
         self._inner_field.__set__(instance, value)
 
-    def creator(self, fcreator: Callable[[_U, _TU], None]) -> None:
+    def creator(self, fcreator: Callable[[_U, _M], None]) -> None:
         self._fcreator = fcreator
 
-    def remover(self, fremover: Callable[[_U, _TU], None]) -> None:
+    def remover(self, fremover: Callable[[_U, _M], None]) -> None:
         self._fremover = fremover
 
 

@@ -47,12 +47,12 @@ class RawModel(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def first_token(self) -> Optional['RawTokenModel']:
+    def first_token(self) -> 'RawTokenModel':
         ...
 
     @property
     @abc.abstractmethod
-    def last_token(self) -> Optional['RawTokenModel']:
+    def last_token(self) -> 'RawTokenModel':
         ...
 
     @abc.abstractmethod
@@ -84,7 +84,11 @@ class RawModel(abc.ABC):
     @abc.abstractmethod
     def clone(self: _SelfRawModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawModel:
         ...
-    
+
+    @abc.abstractmethod
+    def reattach(self: _SelfRawModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawModel:
+        ...
+
 
 class RawTokenModel(token_store_lib.Token, RawModel):
     def __init__(self, raw_text: str) -> None:
@@ -129,6 +133,9 @@ class RawTokenModel(token_store_lib.Token, RawModel):
     def clone(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawTokenModel:
         return token_transformer.transform(self)
 
+    def reattach(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTokenModel:
+        return token_transformer.transform(self)
+
 
 class RawTreeModel(RawModel):
     def __init__(self, token_store: TokenStore) -> None:
@@ -148,23 +155,24 @@ class RawTreeModel(RawModel):
         tokens: list[RawTokenModel] = []
         token_map: dict[int, RawTokenModel] = {}
         if self.first_token and self.last_token:
-            for token in self._token_store.iter(self.first_token, self.last_token):
+            for token in self._token_store.iter_all(self.first_token, self.last_token):
                 new_token = copy.deepcopy(token)
                 tokens.append(new_token)
                 token_map[id(token)] = new_token
         token_store = TokenStore.from_tokens(tokens)
         return self.clone(token_store, MappingTokenTransformer(token_map))
 
-    def reattach(self, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> None:
-        self._reattach(token_store, token_transformer)
-
-    @abc.abstractmethod
-    def _reattach(self, token_store: TokenStore, token_transformer: TokenTransformer) -> None:
-        ...
-
     def __eq__(self, other: object) -> bool:
         return isinstance(other, RawTreeModel) and self.tokens == other.tokens and self._eq(other)
 
     @abc.abstractmethod
     def _eq(self, other: 'RawTreeModel') -> bool:
+        ...
+
+    def reattach(self: _SelfRawTreeModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTreeModel:
+        self._reattach(token_store, token_transformer)
+        return self
+
+    @abc.abstractmethod
+    def _reattach(self, token_store: TokenStore, token_transformer: TokenTransformer) -> None:
         ...

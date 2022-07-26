@@ -17,12 +17,14 @@ class File(base.RawTreeModel):
         super().__init__(token_store)
         self._directives = list(directives)
 
+    # TODO: remove type ignore once switched to Maybe
     @property
-    def first_token(self) -> Optional[base.RawTokenModel]:
+    def first_token(self) -> Optional[base.RawTokenModel]:  # type: ignore[override]
         return self._token_store.get_first()
 
+    # TODO: remove type ignore once switched to Maybe
     @property
-    def last_token(self) -> Optional[base.RawTokenModel]:
+    def last_token(self) -> Optional[base.RawTokenModel]:  # type: ignore[override]
         return self._token_store.get_last()
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
