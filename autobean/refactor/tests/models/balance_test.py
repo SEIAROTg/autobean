@@ -41,7 +41,7 @@ class Testbalance(base.BaseTestModel):
         if balance.raw_tolerance is None:
             assert tolerance is None
         else:
-            assert balance.raw_tolerance.value == tolerance
+            assert balance.raw_tolerance.raw_number.value == tolerance
         assert balance.tolerance == tolerance
         assert balance.raw_currency.value == currency
         assert balance.currency == currency
@@ -112,12 +112,16 @@ class Testbalance(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text,raw_tolerance,expected', [
             ('2000-01-01 balance Assets:Foo 100.00  USD', None, '2000-01-01 balance Assets:Foo 100.00  USD'),
-            ('2000-01-01 balance Assets:Foo 100.00  USD', raw_models.NumberExpr.from_value(_D('0.01')), '2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD'),
-            ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD', raw_models.NumberExpr.from_value(_D('0.02')), '2000-01-01 balance Assets:Foo 100.00 ~ 0.02  USD'),
+            ('2000-01-01 balance Assets:Foo 100.00  USD',
+             raw_models.Tolerance.from_children(raw_models.NumberExpr.from_value(_D('0.01'))),
+             '2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD'),
+            ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD',
+             raw_models.Tolerance.from_children(raw_models.NumberExpr.from_value(_D('0.02'))),
+             '2000-01-01 balance Assets:Foo 100.00 ~ 0.02  USD'),
             ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD', None, '2000-01-01 balance Assets:Foo 100.00  USD'),
         ],
     )
-    def test_set_raw_tolerance(self, text: str, raw_tolerance: Optional[raw_models.NumberExpr], expected: str) -> None:
+    def test_set_raw_tolerance(self, text: str, raw_tolerance: Optional[raw_models.Tolerance], expected: str) -> None:
         balance = self.easy_parser.parse(text, easy_models.Balance)
         balance.raw_tolerance = raw_tolerance
         assert balance.raw_tolerance is raw_tolerance
@@ -156,7 +160,7 @@ class Testbalance(base.BaseTestModel):
         date = raw_models.Date.from_value(datetime.date(2000, 1, 1))
         account = raw_models.Account.from_value('Assets:Foo')
         number = raw_models.NumberExpr.from_value(_D('100.00'))
-        tolerance = raw_models.NumberExpr.from_value(_D('0.01'))
+        tolerance = raw_models.Tolerance.from_children(raw_models.NumberExpr.from_value(_D('0.01')))
         currency = raw_models.Currency.from_value('USD')
         balance = raw_models.Balance.from_children(date, account, number, tolerance, currency)
         assert balance.raw_date is date
@@ -187,7 +191,7 @@ class Testbalance(base.BaseTestModel):
         assert balance.raw_date.value == datetime.date(2000, 1, 1)
         assert balance.raw_account.value == 'Assets:Foo'
         assert balance.raw_number.value == _D('100.00')
-        assert balance.raw_tolerance and balance.raw_tolerance.value == _D('0.01')
+        assert balance.raw_tolerance and balance.raw_tolerance.raw_number.value == _D('0.01')
         assert balance.raw_currency.value == 'USD'
         assert self.print_model(balance) == '2000-01-01 balance Assets:Foo 100.00 ~ 0.01 USD'
         self.check_consistency(balance)

@@ -28,8 +28,7 @@ pushmeta:     PUSHMETA META_KEY [meta_value]
 popmeta:      POPMETA META_KEY
 
 // Entries
-TILDE:        "~"
-balance:      DATE BALANCE ACCOUNT number_expr [TILDE number_expr] CURRENCY
+balance:      DATE BALANCE ACCOUNT number_expr [tolerance] CURRENCY
 close:        DATE CLOSE ACCOUNT
 commodity:    DATE COMMODITY CURRENCY
 pad:          DATE PAD ACCOUNT ACCOUNT
@@ -118,3 +117,7 @@ amount: number_expr CURRENCY
 
 // MetaValue
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
+
+// Tolerance
+TILDE:        "~"
+tolerance:    TILDE number_expr
