@@ -50,12 +50,12 @@ class Pushmeta(base.RawTreeModel):
             case _:
                 assert False
 
-    _label = internal.field[PushmetaLabel]()
-    _key = internal.field[meta_key.MetaKey]()
-    _value = internal.field[Optional[meta_value.MetaValue]]()
+    _label = internal.required_field[PushmetaLabel]()
+    _key = internal.required_field[meta_key.MetaKey]()
+    _value = internal.optional_field[meta_value.MetaValue](floating=internal.Floating.LEFT)
 
     raw_key = internal.required_node_property(_key)
-    raw_value = internal.optional_node_property[meta_value.MetaValue](_value, floating=internal.Floating.LEFT)
+    raw_value = internal.optional_node_property[meta_value.MetaValue](_value)
 
     @raw_value.creator
     def __raw_value_creator(self, value: meta_value.MetaValue) -> None:
@@ -137,8 +137,8 @@ class Popmeta(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._key
 
-    _label = internal.field[PopmetaLabel]()
-    _key = internal.field[meta_key.MetaKey]()
+    _label = internal.required_field[PopmetaLabel]()
+    _key = internal.required_field[meta_key.MetaKey]()
     raw_key = internal.required_node_property(_key)
 
     def clone(self: _SelfPopmeta, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfPopmeta:

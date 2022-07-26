@@ -26,8 +26,8 @@ class Amount(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._currency
 
-    _number = internal.field[NumberExpr]()
-    _currency = internal.field[Currency]()
+    _number = internal.required_field[NumberExpr]()
+    _currency = internal.required_field[Currency]()
     raw_number = internal.required_node_property(_number)
     raw_currency = internal.required_node_property(_currency)
 

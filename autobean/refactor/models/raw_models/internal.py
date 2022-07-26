@@ -66,29 +66,9 @@ def _replace_node(node: _M, repl: _M) -> None:
         repl.reattach(token_store)
 
 
-class field(_base_property[_V, base.RawTreeModel]):
-    def __set_name__(self, owner: Type[base.RawTreeModel], name: str) -> None:
-        self._attr = '_' + name
-
-    def _get(self, instance: base.RawTreeModel) -> _V:
-        return getattr(instance, self._attr)
-
-    def __set__(self, instance: base.RawTreeModel, value: _V) -> None:
-        setattr(instance, self._attr, value)
-
-
-class required_node_property(_base_property[_M, base.RawTreeModel]):
-    def __init__(self, inner_field: field[_M]) -> None:
-        self._inner_field = inner_field
-
-    def _get(self, instance: base.RawTreeModel) -> _M:
-        return self._inner_field.__get__(instance)
-
-    def __set__(self, instance: base.RawTreeModel, value: _M) -> None:
-        assert value is not None
-        current = self._inner_field.__get__(instance)
-        _replace_node(current, value)
-        self._inner_field.__set__(instance, value)
+class Floating(enum.Enum):
+    LEFT = enum.auto()
+    RIGHT = enum.auto()
 
 
 class Maybe(base.RawTreeModel, Generic[_M]):
@@ -198,6 +178,44 @@ class MaybeR(Maybe[_M]):
         self.token_store.remove(inner.first_token, last)
 
 
+class field(_base_property[_V, base.RawTreeModel]):
+    def __set_name__(self, owner: Type[base.RawTreeModel], name: str) -> None:
+        self._attr = '_' + name
+
+    def _get(self, instance: base.RawTreeModel) -> _V:
+        return getattr(instance, self._attr)
+
+    def __set__(self, instance: base.RawTreeModel, value: _V) -> None:
+        setattr(instance, self._attr, value)
+
+
+class required_field(field[_M]):
+    pass
+
+
+class optional_field(field[Optional[_M]]):
+    def __init__(self, *, floating: Floating):
+        self._floating = floating
+
+    @property
+    def floating(self) -> Floating:
+        return self._floating
+
+
+class required_node_property(_base_property[_M, base.RawTreeModel]):
+    def __init__(self, inner_field: required_field[_M]) -> None:
+        self._inner_field = inner_field
+
+    def _get(self, instance: base.RawTreeModel) -> _M:
+        return self._inner_field.__get__(instance)
+
+    def __set__(self, instance: base.RawTreeModel, value: _M) -> None:
+        assert value is not None
+        current = self._inner_field.__get__(instance)
+        _replace_node(current, value)
+        self._inner_field.__set__(instance, value)
+
+
 def _default_fcreator(instance: _U, value: _M) -> None:
     raise NotImplementedError('creator not implemented')
 
@@ -206,15 +224,9 @@ def _default_fremover(instance: _U, current: _M) -> None:
     raise NotImplementedError('remover not implemented')
 
 
-class Floating(enum.Enum):
-    LEFT = enum.auto()
-    RIGHT = enum.auto()
-
-
 class optional_node_property(_base_property[Optional[_M], base.RawTreeModel]):
-    def __init__(self, inner_field: field[Optional[_M]], *, floating: Floating):
+    def __init__(self, inner_field: optional_field[_M]):
         self._inner_field = inner_field
-        self._floating = floating
         self._fcreator: Callable[[_U, _M], None] = _default_fcreator
         self._fremover: Callable[[_U, _M], None] = _default_fremover
 

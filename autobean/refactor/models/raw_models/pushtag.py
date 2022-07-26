@@ -37,8 +37,8 @@ class _BasePushtag(base.RawTreeModel, Generic[_L]):
     def last_token(self) -> base.RawTokenModel:
         return self._tag
 
-    _label = internal.field[_L]()
-    _tag = internal.field[tag.Tag]()
+    _label = internal.required_field[_L]()
+    _tag = internal.required_field[tag.Tag]()
 
     raw_tag = internal.required_node_property(_tag)
 

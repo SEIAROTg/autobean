@@ -48,17 +48,17 @@ class Balance(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._currency
 
-    _date = internal.field[Date]()
-    _label = internal.field[BalanceLabel]()
-    _account = internal.field[Account]()
-    _number = internal.field[NumberExpr]()
-    _tolerance = internal.field[Optional[Tolerance]]()
-    _currency = internal.field[Currency]()
+    _date = internal.required_field[Date]()
+    _label = internal.required_field[BalanceLabel]()
+    _account = internal.required_field[Account]()
+    _number = internal.required_field[NumberExpr]()
+    _tolerance = internal.optional_field[Tolerance](floating=internal.Floating.LEFT)
+    _currency = internal.required_field[Currency]()
   
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
     raw_number = internal.required_node_property(_number)
-    raw_tolerance = internal.optional_node_property(_tolerance, floating=internal.Floating.LEFT)
+    raw_tolerance = internal.optional_node_property(_tolerance)
     raw_currency = internal.required_node_property(_currency)
     
     @raw_tolerance.creator

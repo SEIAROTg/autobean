@@ -34,10 +34,10 @@ class Pad(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._source_account
 
-    _date = internal.field[Date]()
-    _label = internal.field[PadLabel]()
-    _account = internal.field[Account]()
-    _source_account = internal.field[Account]()
+    _date = internal.required_field[Date]()
+    _label = internal.required_field[PadLabel]()
+    _account = internal.required_field[Account]()
+    _source_account = internal.required_field[Account]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)

@@ -34,10 +34,10 @@ class Query(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._query_string
 
-    _date = internal.field[Date]()
-    _label = internal.field[QueryLabel]()
-    _name = internal.field[EscapedString]()
-    _query_string = internal.field[EscapedString]()
+    _date = internal.required_field[Date]()
+    _label = internal.required_field[QueryLabel]()
+    _name = internal.required_field[EscapedString]()
+    _query_string = internal.required_field[EscapedString]()
 
     raw_date = internal.required_node_property(_date)
     raw_name = internal.required_node_property(_name)

@@ -34,10 +34,10 @@ class Event(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._description
 
-    _date = internal.field[Date]()
-    _label = internal.field[EventLabel]()
-    _type = internal.field[EscapedString]()
-    _description = internal.field[EscapedString]()
+    _date = internal.required_field[Date]()
+    _label = internal.required_field[EventLabel]()
+    _type = internal.required_field[EscapedString]()
+    _description = internal.required_field[EscapedString]()
 
     raw_date = internal.required_node_property(_date)
     raw_type = internal.required_node_property(_type)

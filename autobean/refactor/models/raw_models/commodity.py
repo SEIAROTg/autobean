@@ -33,9 +33,9 @@ class Commodity(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._currency
 
-    _date = internal.field[Date]()
-    _label = internal.field[CommodityLabel]()
-    _currency = internal.field[Currency]()
+    _date = internal.required_field[Date]()
+    _label = internal.required_field[CommodityLabel]()
+    _currency = internal.required_field[Currency]()
 
     raw_date = internal.required_node_property(_date)
     raw_currency = internal.required_node_property(_currency)

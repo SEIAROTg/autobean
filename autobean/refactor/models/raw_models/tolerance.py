@@ -37,8 +37,8 @@ class Tolerance(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self.raw_number.last_token
 
-    _tilde = internal.field[Tilde]()
-    _number = internal.field[NumberExpr]()
+    _tilde = internal.required_field[Tilde]()
+    _number = internal.required_field[NumberExpr]()
 
     raw_number = internal.required_node_property(_number)
 

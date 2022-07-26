@@ -39,12 +39,12 @@ class Plugin(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._config or self._name
 
-    _label = internal.field[PluginLabel]()
-    _name = internal.field[escaped_string.EscapedString]()
-    _config = internal.field[Optional[escaped_string.EscapedString]]()
+    _label = internal.required_field[PluginLabel]()
+    _name = internal.required_field[escaped_string.EscapedString]()
+    _config = internal.optional_field[escaped_string.EscapedString](floating=internal.Floating.LEFT)
 
     raw_name = internal.required_node_property(_name)
-    raw_config = internal.optional_node_property(_config, floating=internal.Floating.LEFT)
+    raw_config = internal.optional_node_property(_config)
 
     @raw_config.creator
     def __raw_config_creator(self, config: escaped_string.EscapedString) -> None:

@@ -39,9 +39,9 @@ class Option(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._value
 
-    _label = internal.field[OptionLabel]()
-    _key = internal.field[escaped_string.EscapedString]()
-    _value = internal.field[escaped_string.EscapedString]()
+    _label = internal.required_field[OptionLabel]()
+    _key = internal.required_field[escaped_string.EscapedString]()
+    _value = internal.required_field[escaped_string.EscapedString]()
 
     raw_key = internal.required_node_property(_key)
     raw_value = internal.required_node_property(_value)

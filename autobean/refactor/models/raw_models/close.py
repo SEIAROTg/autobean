@@ -33,9 +33,9 @@ class Close(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._account
 
-    _date = internal.field[Date]()
-    _label = internal.field[CloseLabel]()
-    _account = internal.field[Account]()
+    _date = internal.required_field[Date]()
+    _label = internal.required_field[CloseLabel]()
+    _account = internal.required_field[Account]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)

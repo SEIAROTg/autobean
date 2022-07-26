@@ -62,8 +62,8 @@ class NumberUnaryExpr(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._operand.last_token
 
-    _unary_op = internal.field[UnaryOp]()
-    _operand = internal.field['NumberAtomExpr']()
+    _unary_op = internal.required_field[UnaryOp]()
+    _operand = internal.required_field['NumberAtomExpr']()
 
     raw_unary_op = internal.required_node_property(_unary_op)
     raw_operand = internal.required_node_property(_operand)
@@ -127,9 +127,9 @@ class NumberParenExpr(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._right_paren
 
-    _left_paren = internal.field[LeftParen]()
-    _inner_expr = internal.field['NumberAddExpr']()
-    _right_paren = internal.field[RightParen]()
+    _left_paren = internal.required_field[LeftParen]()
+    _inner_expr = internal.required_field['NumberAddExpr']()
+    _right_paren = internal.required_field[RightParen]()
 
     raw_left_paren = internal.required_node_property(_left_paren)
     raw_inner_expr = internal.required_node_property(_inner_expr)
@@ -348,7 +348,7 @@ class NumberExpr(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._number_add_expr.last_token
 
-    _number_add_expr = internal.field[NumberAddExpr]()
+    _number_add_expr = internal.required_field[NumberAddExpr]()
 
     raw_number_add_expr = internal.required_node_property(_number_add_expr)
 

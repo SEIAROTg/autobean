@@ -32,8 +32,8 @@ class Include(base.RawTreeModel):
     def last_token(self) -> base.RawTokenModel:
         return self._filename
 
-    _label = internal.field[IncludeLabel]()
-    _filename = internal.field[escaped_string.EscapedString]()
+    _label = internal.required_field[IncludeLabel]()
+    _filename = internal.required_field[escaped_string.EscapedString]()
 
     raw_filename = internal.required_node_property(_filename)
 
