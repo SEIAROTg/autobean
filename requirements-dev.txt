@@ -5,3 +5,5 @@ pylint
 types-python-dateutil
 types-PyYAML
 types-requests
+stringcase 
+mako
