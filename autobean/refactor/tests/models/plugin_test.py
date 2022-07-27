@@ -18,15 +18,13 @@ class TestPlugin(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, name: str, config: Optional[str]) -> None:
         plugin = self.raw_parser.parse(text, raw_models.Plugin)
-        assert plugin.first_token.raw_text == 'plugin'
         assert plugin.raw_name.value == name
         if config is None:
             assert plugin.raw_config is None
-            assert plugin.last_token is plugin.raw_name
         else:
             assert plugin.raw_config
             assert plugin.raw_config.value == config
-            assert plugin.last_token is plugin.raw_config
+        assert self.print_model(plugin) == text
         self.check_deepcopy_tree(plugin)
         self.check_reattach_tree(plugin)
 

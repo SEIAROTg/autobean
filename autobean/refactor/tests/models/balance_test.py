@@ -31,7 +31,6 @@ class Testbalance(base.BaseTestModel):
         date = datetime.date(2000, 1, 1)
         account = 'Assets:Foo'
         balance = self.easy_parser.parse(text, easy_models.Balance)
-        assert balance.first_token is balance.raw_date
         assert balance.raw_date.value == date
         assert balance.date == date
         assert balance.raw_account.value == account
@@ -45,9 +44,9 @@ class Testbalance(base.BaseTestModel):
         assert balance.tolerance == tolerance
         assert balance.raw_currency.value == currency
         assert balance.currency == currency
-        assert balance.last_token is balance.raw_currency
         self.check_deepcopy_tree(balance)
         self.check_reattach_tree(balance)
+        assert self.print_model(balance) == text
 
     @pytest.mark.parametrize(
         'text', [

@@ -29,7 +29,7 @@ class Balance(base.RawTreeModel):
             label: BalanceLabel,
             account: Account,
             number: NumberExpr,
-            tolerance: Optional[Tolerance],
+            tolerance: internal.Maybe[Tolerance],
             currency: Currency,
     ):
         super().__init__(token_store)
@@ -52,7 +52,7 @@ class Balance(base.RawTreeModel):
     _label = internal.required_field[BalanceLabel]()
     _account = internal.required_field[Account]()
     _number = internal.required_field[NumberExpr]()
-    _tolerance = internal.optional_field[Tolerance](floating=internal.Floating.LEFT)
+    _tolerance = internal.optional_field[Tolerance](floating=internal.Floating.LEFT, separators=(punctuation.Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
   
     raw_date = internal.required_node_property(_date)
@@ -60,40 +60,25 @@ class Balance(base.RawTreeModel):
     raw_number = internal.required_node_property(_number)
     raw_tolerance = internal.optional_node_property(_tolerance)
     raw_currency = internal.required_node_property(_currency)
-    
-    @raw_tolerance.creator
-    def __raw_tolerance_creator(self, value: Tolerance) -> None:
-        self.token_store.insert_after(self._number.last_token, [
-            punctuation.Whitespace.from_default(),
-            *value.detach(),
-        ])
-        value.reattach(self.token_store)
-
-    @raw_tolerance.remover
-    def __raw_tolerance_remover(self, value: Tolerance) -> None:
-        start = self.token_store.get_next(self._number.last_token)
-        assert start is not None
-        self.token_store.splice([], start, value.last_token)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            token_transformer.transform(self._date),
-            token_transformer.transform(self._label),
-            token_transformer.transform(self._account),
+            self._date.clone(token_store, token_transformer),
+            self._label.clone(token_store, token_transformer),
+            self._account.clone(token_store, token_transformer),
             self._number.clone(token_store, token_transformer),
-            self._tolerance.clone(token_store, token_transformer) if self._tolerance else None,
-            token_transformer.transform(self._currency))
+            self._tolerance.clone(token_store, token_transformer),
+            self._currency.clone(token_store, token_transformer))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._date = token_transformer.transform(self._date)
-        self._label = token_transformer.transform(self._label)
-        self._account = token_transformer.transform(self._account)
-        self._number.reattach(token_store, token_transformer)
-        if self._tolerance is not None:
-            self._tolerance.reattach(token_store, token_transformer)
-        self._currency = token_transformer.transform(self._currency)
+        self._date = self._date.reattach(token_store, token_transformer)
+        self._label = self._label.reattach(token_store, token_transformer)
+        self._account = self._account.reattach(token_store, token_transformer)
+        self._number = self._number.reattach(token_store, token_transformer)
+        self._tolerance = self._tolerance.reattach(token_store, token_transformer)
+        self._currency = self._currency.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -114,6 +99,7 @@ class Balance(base.RawTreeModel):
             currency: Currency,
     ) -> _Self:
         label = BalanceLabel.from_default()
+        maybe_tolerance = internal.MaybeL.from_children(tolerance, separators=cls._tolerance.separators)
         tokens = [
             *date.detach(),
             punctuation.Whitespace.from_default(),
@@ -122,16 +108,11 @@ class Balance(base.RawTreeModel):
             *account.detach(),
             punctuation.Whitespace.from_default(),
             *number.detach(),
+            *maybe_tolerance.detach(),
             punctuation.Whitespace.from_default(),
+            *currency.detach(),
         ]
-        if tolerance is not None:
-            tokens.extend([
-                *tolerance.detach(),
-                punctuation.Whitespace.from_default(),
-            ])
-        tokens.extend(currency.detach())
         token_store = base.TokenStore.from_tokens(tokens)
         number.reattach(token_store)
-        if tolerance is not None:
-            tolerance.reattach(token_store)
-        return cls(token_store, date, label, account, number, tolerance, currency)
+        maybe_tolerance.reattach(token_store)
+        return cls(token_store, date, label, account, number, maybe_tolerance, currency)

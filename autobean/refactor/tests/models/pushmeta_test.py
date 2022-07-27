@@ -54,16 +54,12 @@ class TestPushmeta(base.BaseTestModel):
     def test_parse_success(self, text: str, key: str, raw_value: raw_models.MetaValue, value: _SimplifiedValue) -> None:
         del value  # unused
         pushmeta = self.raw_parser.parse(text, raw_models.Pushmeta)
-        assert pushmeta.first_token.raw_text == 'pushmeta'
         assert pushmeta.raw_key.value == key
         assert pushmeta.raw_value == raw_value
-        if pushmeta.raw_value is None:
-            assert pushmeta.last_token is pushmeta.raw_key
-        else:
-            assert pushmeta.last_token is pushmeta.raw_value.last_token
         assert self.print_model(pushmeta) == text
         self.check_deepcopy_tree(pushmeta)
         self.check_reattach_tree(pushmeta)
+        assert self.print_model(pushmeta) == text
 
     @pytest.mark.parametrize(
         'text', [

@@ -147,13 +147,6 @@ class TokenStore(Generic[_T]):
     def iter(self, start: _T, end: _T) -> Iterator[_T]:
         start_idx = _check_store_handle(start).index
         end_idx = _check_store_handle(end).index
-        for token in self._tokens[start_idx:end_idx + 1]:
-            if token.raw_text:
-                yield token
-    
-    def iter_all(self, start: _T, end: _T) -> Iterator[_T]:
-        start_idx = _check_store_handle(start).index
-        end_idx = _check_store_handle(end).index
         yield from self._tokens[start_idx:end_idx + 1]
 
     def get_index(self, token: _T) -> int:
@@ -184,23 +177,21 @@ class TokenStore(Generic[_T]):
             yield self._tokens[index]
 
     def get_prev(self, token: _T) -> Optional[_T]:
-        index = _check_store_handle(token).index - 1
-        return next((token for token in self._tokens[:index] if token.raw_text), None)
+        index = _check_store_handle(token).index
+        return self._tokens[index - 1] if index else None
 
     def get_next(self, token: _T) -> Optional[_T]:
-        index = _check_store_handle(token).index + 1
-        return next((token for token in self._tokens[index:] if token.raw_text), None)
+        index = _check_store_handle(token).index
+        return self._tokens[index + 1] if index + 1 < len(self._tokens) else None
 
     def get_first(self) -> Optional[_T]:
-        return next((token for token in self._tokens if token.raw_text), None)
+        return next(iter(self._tokens), None)
 
     def get_last(self) -> Optional[_T]:
-        return next((token for token in reversed(self._tokens) if token.raw_text), None)
+        return next(reversed(self._tokens), None)
 
     def __iter__(self) -> Iterator[_T]:
-        for token in self._tokens:
-            if token.raw_text:
-                yield token
+        yield from self._tokens
 
     def __len__(self) -> int:
         return len(self._tokens)

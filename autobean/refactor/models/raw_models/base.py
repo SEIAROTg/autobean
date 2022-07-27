@@ -3,7 +3,7 @@ import copy
 from typing import Any, ClassVar, Optional, Type, TypeVar, cast
 from autobean.refactor import token_store as token_store_lib
 
-_OT = TypeVar('_OT', bound=Optional['RawTokenModel'])
+_T = TypeVar('_T', bound='RawTokenModel')
 # TODO: replace with PEP 673 Self once supported
 _SelfRawModel = TypeVar('_SelfRawModel', bound='RawModel')
 _SelfRawTokenModel = TypeVar('_SelfRawTokenModel', bound='RawTokenModel')  
@@ -15,7 +15,7 @@ TokenStore = token_store_lib.TokenStore['RawTokenModel']
 # https://github.com/python/mypy/issues/1317
 class TokenTransformer(abc.ABC):
     @abc.abstractmethod
-    def transform(self, token: _OT) -> _OT:
+    def transform(self, token: _T) -> _T:
         ...
 
 
@@ -23,14 +23,12 @@ class MappingTokenTransformer(TokenTransformer):
     def __init__(self, map: dict[int, 'RawTokenModel']) -> None:
         self._map = map
 
-    def transform(self, token: _OT) -> _OT:
-        if token is None:
-            return None
-        return cast(_OT, self._map[id(token)])
+    def transform(self, token: _T) -> _T:
+        return cast(_T, self._map[id(token)])
 
 
 class IdentityTokenTransformer(TokenTransformer):
-    def transform(self, token: _OT) -> _OT:
+    def transform(self, token: _T) -> _T:
         return token
 
 
@@ -154,11 +152,10 @@ class RawTreeModel(RawModel):
         del memo  # unused
         tokens: list[RawTokenModel] = []
         token_map: dict[int, RawTokenModel] = {}
-        if self.first_token and self.last_token:
-            for token in self._token_store.iter_all(self.first_token, self.last_token):
-                new_token = copy.deepcopy(token)
-                tokens.append(new_token)
-                token_map[id(token)] = new_token
+        for token in self._token_store.iter(self.first_token, self.last_token):
+            new_token = copy.deepcopy(token)
+            tokens.append(new_token)
+            token_map[id(token)] = new_token
         token_store = TokenStore.from_tokens(tokens)
         return self.clone(token_store, MappingTokenTransformer(token_map))
 

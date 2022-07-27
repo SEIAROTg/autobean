@@ -1,7 +1,6 @@
 from typing import Optional, Type, TypeVar, final
 
 from . import base
-from . import editor
 from . import meta_key
 from . import meta_value
 from . import internal
@@ -28,7 +27,7 @@ class Pushmeta(base.RawTreeModel):
     RULE = 'pushmeta'
 
     @final
-    def __init__(self, token_store: base.TokenStore, label: PushmetaLabel, key: meta_key.MetaKey, value: Optional[meta_value.MetaValue]):
+    def __init__(self, token_store: base.TokenStore, label: PushmetaLabel, key: meta_key.MetaKey, value: internal.Maybe[meta_value.MetaValue]):
         super().__init__(token_store)
         self._label = label
         self._key = key
@@ -40,59 +39,27 @@ class Pushmeta(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        match self._value:
-            case base.RawTokenModel():
-                return self._value
-            case base.RawTreeModel():
-                return self._value.last_token
-            case None:
-                return self._key
-            case _:
-                assert False
+        return self._value.last_token
 
     _label = internal.required_field[PushmetaLabel]()
     _key = internal.required_field[meta_key.MetaKey]()
-    _value = internal.optional_field[meta_value.MetaValue](floating=internal.Floating.LEFT)
+    _value = internal.optional_field[meta_value.MetaValue](floating=internal.Floating.LEFT, separators=(punctuation.Whitespace.from_default(),))
 
     raw_key = internal.required_node_property(_key)
     raw_value = internal.optional_node_property[meta_value.MetaValue](_value)
 
-    @raw_value.creator
-    def __raw_value_creator(self, value: meta_value.MetaValue) -> None:
-        self.token_store.insert_after(self._key, [
-            punctuation.Whitespace(' '), *value.detach()])
-        if isinstance(value, base.RawTreeModel):
-            value.reattach(self.token_store)
-    
-    @raw_value.remover
-    def __raw_value_remover(self, current: meta_value.MetaValue) -> None:
-        editor.remove_towards_left(self, current)
-
     def clone(self: _SelfPushmeta, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfPushmeta:
-        value: Optional[meta_value.MetaValue]
-        if isinstance(self._value, base.RawTokenModel):
-            value = token_transformer.transform(self._value)
-        elif isinstance(self._value, base.RawTreeModel):
-            value = self._value.clone(token_store, token_transformer)
-        else:
-            assert self._value is None
-            value = self._value
         return type(self)(
             token_store,
-            token_transformer.transform(self._label),
-            token_transformer.transform(self._key),
-            value)
+            self._label.clone(token_store, token_transformer),
+            self._key.clone(token_store, token_transformer),
+            self._value.clone(token_store, token_transformer))
     
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
-        self._key = token_transformer.transform(self._key)
-        if isinstance(self._value, base.RawTokenModel):
-            self._value = token_transformer.transform(self._value)
-        elif isinstance(self._value, base.RawTreeModel):
-            self._value.reattach(token_store, token_transformer)
-        else:
-            assert self._value is None
+        self._label = self._label.reattach(token_store, token_transformer)
+        self._key = self._key.reattach(token_store, token_transformer)
+        self._value = self._value.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -103,20 +70,17 @@ class Pushmeta(base.RawTreeModel):
     @classmethod
     def from_children(cls: Type[_SelfPushmeta], key: meta_key.MetaKey, value: Optional[meta_value.MetaValue] = None) -> _SelfPushmeta:
         label = PushmetaLabel.from_default()
+        maybe_value = internal.MaybeL[meta_value.MetaValue].from_children(value, separators=cls._value.separators)
         tokens = [
             label,
             punctuation.Whitespace(' '),
             *key.detach(),
+            *maybe_value.detach(),
         ]
-        if value is not None:
-            tokens.extend([
-                punctuation.Whitespace(' '),
-                *value.detach(),
-            ])
         token_store = base.TokenStore.from_tokens(tokens)
         if isinstance(value, base.RawTreeModel):
             value.reattach(token_store)
-        return cls(token_store, label, key, value)
+        return cls(token_store, label, key, maybe_value)
 
 
 @internal.tree_model

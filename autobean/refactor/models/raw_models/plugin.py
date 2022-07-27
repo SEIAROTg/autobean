@@ -1,6 +1,5 @@
 from typing import Optional, Type, TypeVar, final
 from . import base
-from . import editor
 from . import punctuation
 from . import escaped_string
 from . import internal
@@ -24,7 +23,7 @@ class Plugin(base.RawTreeModel):
             token_store: base.TokenStore,
             label: PluginLabel,
             name: escaped_string.EscapedString,
-            config: Optional[escaped_string.EscapedString],
+            config: internal.Maybe[escaped_string.EscapedString],
     ):
         super().__init__(token_store)
         self._label = label
@@ -37,36 +36,28 @@ class Plugin(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._config or self._name
+        return self._config.last_token
 
     _label = internal.required_field[PluginLabel]()
     _name = internal.required_field[escaped_string.EscapedString]()
-    _config = internal.optional_field[escaped_string.EscapedString](floating=internal.Floating.LEFT)
+    _config = internal.optional_field[escaped_string.EscapedString](floating=internal.Floating.LEFT, separators=(punctuation.Whitespace.from_default(),))
 
     raw_name = internal.required_node_property(_name)
     raw_config = internal.optional_node_property(_config)
 
-    @raw_config.creator
-    def __raw_config_creator(self, config: escaped_string.EscapedString) -> None:
-        self.token_store.insert_after(self._name, [punctuation.Whitespace(' '), config])
-    
-    @raw_config.remover
-    def __raw_config_remover(self, current: escaped_string.EscapedString) -> None:
-        editor.remove_towards_left(self, current)
-
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            token_transformer.transform(self._label),
-            token_transformer.transform(self._name),
-            token_transformer.transform(self._config),
+            self._label.clone(token_store, token_transformer),
+            self._name.clone(token_store, token_transformer),
+            self._config.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = token_transformer.transform(self._label)
-        self._name = token_transformer.transform(self._name)
-        self._config = token_transformer.transform(self._config)
+        self._label = self._label.reattach(token_store, token_transformer)
+        self._name = self._name.reattach(token_store, token_transformer)
+        self._config = self._config.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -77,15 +68,13 @@ class Plugin(base.RawTreeModel):
     @classmethod
     def from_children(cls: Type[_Self], name: escaped_string.EscapedString, config: Optional[escaped_string.EscapedString] = None) -> _Self:
         label = PluginLabel.from_default()
+        maybe_config = internal.MaybeL.from_children(config, separators=cls._config.separators)
         tokens = [
             label,
             punctuation.Whitespace.from_default(),
             name,
+            *maybe_config.detach(),
         ]
-        if config is not None:
-            tokens.extend([
-                punctuation.Whitespace.from_default(),
-                config,
-            ])
         token_store = base.TokenStore.from_tokens(tokens)
-        return cls(token_store, label, name, config)
+        maybe_config.reattach(token_store)
+        return cls(token_store, label, name, maybe_config)

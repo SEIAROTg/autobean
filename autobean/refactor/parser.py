@@ -6,6 +6,7 @@ from lark import exceptions
 from lark import lexer
 from lark import load_grammar
 from autobean.refactor.models import raw_models
+from autobean.refactor.models.raw_models import internal
 
 _T = TypeVar('_T', bound=raw_models.RawTokenModel)
 _U = TypeVar('_U', bound=raw_models.RawTreeModel)
@@ -74,38 +75,82 @@ class Parser:
             parser.feed_token(token)
         tree = parser.feed_eof()
 
-        token_models: list[raw_models.RawTokenModel] = []
-        token_to_model = {}
-        for token in tokens:
-            token_model = self._token_models[token.type].from_raw_text(token.value)
-            token_models.append(token_model)
-            token_to_model[id(token)] = token_model
+        return ModelBuilder(tokens, self._token_models, self._tree_models).build(tree, target)
 
-        token_store = raw_models.TokenStore.from_tokens(token_models)
-        transformed_tree = self._transform_tree(
-            tree,
-            target,
-            token_store,
-            token_to_model)
 
-        return transformed_tree
+class ModelBuilder:
+    def __init__(self, tokens: list[lark.Token], token_models: dict[str, Type[raw_models.RawTokenModel]], tree_models: dict[str, Type[raw_models.RawTreeModel]]):
+        self._tokens = tokens
+        self._token_models = token_models 
+        self._tree_models = tree_models
+        self._built_tokens: list[raw_models.RawTokenModel] = []
+        self._token_to_index = {id(token): i for i, token in enumerate(tokens)}
+        self._cursor = 0
+        self._right_floating_placeholders: list[raw_models.Placeholder] = []
+        self._token_store = raw_models.TokenStore.from_tokens([])
 
-    def _transform_tree(
-            self,
-            tree: lark.Tree,
-            target: Type[_U],
-            token_store: raw_models.TokenStore,
-            token_to_model: dict[int, raw_models.RawTokenModel],
-    ) -> _U:
-        models = []
-        for child in tree.children:
-            model: Optional[raw_models.RawModel]
-            if child is None:
-                model = None
-            elif isinstance(child, lark.Token):
-                model = token_to_model[id(child)]
-            else:
-                model = self._transform_tree(
-                    child, self._tree_models[child.data], token_store, token_to_model)
-            models.append(model)
-        return target.from_parsed_children(token_store, *models)
+    def _fix_gap(self, cursor: int) -> None:
+        for token in self._tokens[self._cursor:cursor]:
+            self._built_tokens.append(self._token_models[token.type].from_raw_text(token.value))
+        self._cursor = cursor
+        self._built_tokens.extend(self._right_floating_placeholders)
+        self._right_floating_placeholders.clear()
+
+    def _add_placeholder(self, floating: internal.Floating) -> raw_models.Placeholder:
+        placeholder = raw_models.Placeholder.from_default()
+        if floating == internal.Floating.RIGHT:
+            self._right_floating_placeholders.append(placeholder)
+        elif floating == internal.Floating.LEFT:
+            if self._right_floating_placeholders:
+                raise ValueError('Floating direction cannot be satisified.')
+            self._built_tokens.append(placeholder)
+        else:
+            assert False
+        return placeholder
+
+    def _add_token(self, token: lark.Token) -> raw_models.RawTokenModel:
+        self._fix_gap(self._token_to_index[id(token)])
+        built_token = self._token_models[token.type].from_raw_text(token.value)
+        self._built_tokens.append(built_token)
+        self._cursor += 1
+        return built_token
+
+    def _add_tree(self, tree: lark.Tree) -> raw_models.RawTreeModel:
+        model_type = self._tree_models[tree.data]
+        fields = internal.list_fields(model_type)
+        if fields:
+            assert len(tree.children) == len(fields)
+            children = []
+            for child, field in zip(tree.children, fields):
+                if isinstance(field, internal.required_field):
+                    children.append(self._add_required_node(child))
+                elif isinstance(field, internal.optional_field):
+                    children.append(self._add_optional_node(child, field.floating))
+                else:
+                    assert False
+        else:
+            children = [self._add_required_node(child) for child in tree.children]
+        return model_type.from_parsed_children(self._token_store, *children)
+
+    def _add_required_node(self, node: lark.Token | lark.Tree) -> raw_models.RawModel:
+        if isinstance(node, lark.Token):
+            return self._add_token(node)
+        if isinstance(node, lark.Tree):
+            return self._add_tree(node)
+        assert False
+
+    def _add_optional_node(self, node: lark.Token | lark.Tree | None, floating: internal.Floating) -> raw_models.RawModel:
+        placeholder = self._add_placeholder(floating)
+        inner = self._add_required_node(node) if node is not None else None
+        if floating == internal.Floating.LEFT:
+            return internal.MaybeL(self._token_store, inner, placeholder)
+        if floating == internal.Floating.RIGHT:
+            return internal.MaybeR(self._token_store, inner, placeholder)
+        assert False
+
+    def build(self, tree: lark.Tree, model_type: Type[_U]) -> _U:
+        model = self._add_tree(tree)
+        self._fix_gap(len(self._tokens))
+        self._token_store.insert_after(None, self._built_tokens)
+        assert isinstance(model, model_type)
+        return model

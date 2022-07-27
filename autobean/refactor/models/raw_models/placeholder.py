@@ -7,3 +7,6 @@ class Placeholder(RawTokenModel):
     @classmethod
     def from_default(cls) -> 'Placeholder':
         return cls('')
+
+    def _clone(self) -> 'Placeholder':
+        return Placeholder('')

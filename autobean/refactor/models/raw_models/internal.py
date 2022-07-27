@@ -87,13 +87,15 @@ class Maybe(base.RawTreeModel, Generic[_M]):
         return self._placeholder
 
     def clone(self: _SelfMaybe, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _SelfMaybe:
-        inner = token_transformer.transform(self.inner) if self.inner is not None else None
-        placeholder = token_transformer.transform(self.placeholder)
-        return type(self)(token_store, inner, placeholder)
+        return type(self)(
+            token_store,
+            self.inner.clone(token_store, token_transformer) if self.inner is not None else None,
+            self.placeholder.clone(token_store, token_transformer))
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         if self.inner is not None:
             self.inner = self.inner.reattach(token_store, token_transformer)
+        self._placeholder = self._placeholder.reattach(token_store, token_transformer)
 
     @abc.abstractmethod
     def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...]) -> None:
@@ -123,10 +125,10 @@ class MaybeL(Maybe[_M]):
             *,
             separators: tuple[base.RawTokenModel, ...],
     ) -> _SelfMaybeL:
-        placeholder = placeholder.Placeholder.from_default()
-        tokens = [placeholder, *copy.deepcopy(separators), *inner.tokens] if inner is not None else [placeholder]
+        ph = placeholder.Placeholder.from_default()
+        tokens = [ph, *copy.deepcopy(separators), *inner.detach()] if inner is not None else [ph]
         token_store = base.TokenStore.from_tokens(tokens)
-        return cls(token_store, inner, placeholder)
+        return cls(token_store, inner, ph)
 
     def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...],) -> None:
         self.token_store.insert_after(self.placeholder, [
@@ -161,7 +163,7 @@ class MaybeR(Maybe[_M]):
             separators: tuple[base.RawTokenModel, ...],
     ) -> _SelfMaybeR:
         placeholder = placeholder.Placeholder.from_default()
-        tokens = [*inner.tokens, *copy.deepcopy(separators), placeholder] if inner is not None else [placeholder]
+        tokens = [*inner.detach(), *copy.deepcopy(separators), placeholder] if inner is not None else [placeholder]
         token_store = base.TokenStore.from_tokens(tokens)
         return cls(token_store, inner, placeholder)
 
@@ -193,13 +195,18 @@ class required_field(field[_M]):
     pass
 
 
-class optional_field(field[Optional[_M]]):
-    def __init__(self, *, floating: Floating):
+class optional_field(field[Maybe[_M]]):
+    def __init__(self, *, floating: Floating, separators: tuple[base.RawTokenModel, ...]) -> None:
         self._floating = floating
+        self._separators = separators
 
     @property
     def floating(self) -> Floating:
         return self._floating
+
+    @property
+    def separators(self) -> tuple[base.RawTokenModel, ...]:
+        return self._separators
 
 
 class required_node_property(_base_property[_M, base.RawTreeModel]):
@@ -216,37 +223,29 @@ class required_node_property(_base_property[_M, base.RawTreeModel]):
         self._inner_field.__set__(instance, value)
 
 
-def _default_fcreator(instance: _U, value: _M) -> None:
-    raise NotImplementedError('creator not implemented')
-
-
-def _default_fremover(instance: _U, current: _M) -> None:
-    raise NotImplementedError('remover not implemented')
-
-
 class optional_node_property(_base_property[Optional[_M], base.RawTreeModel]):
-    def __init__(self, inner_field: optional_field[_M]):
+    def __init__(self, inner_field: optional_field[_M]) -> None:
         self._inner_field = inner_field
-        self._fcreator: Callable[[_U, _M], None] = _default_fcreator
-        self._fremover: Callable[[_U, _M], None] = _default_fremover
+        self._fcreator: Optional[Callable[[_U, Maybe[_M], _M], None]] = None
+        self._fremover: Optional[Callable[[_U, Maybe[_M], _M], None]] = None
 
     def _get(self, instance: _U) -> Optional[_M]:
-        return self._inner_field.__get__(instance)
+        return self._inner_field.__get__(instance).inner
 
-    def __set__(self, instance: _U, value: Optional[_M]) -> None:
-        current = self.__get__(instance)
-        if current is None and value is not None:
-            self._fcreator(instance, value)
-        elif current is not None and value is None:
-            self._fremover(instance, current)
-        elif current is not None and value is not None:
-            _replace_node(current, value)
-        self._inner_field.__set__(instance, value)
+    def __set__(self, instance: _U, inner: Optional[_M]) -> None:
+        maybe = self._inner_field.__get__(instance)
+        if maybe.inner is None and inner is not None:
+            self._fcreator(instance, maybe, inner) if self._fcreator else maybe.create_inner(inner, separators=self._inner_field.separators)
+        elif maybe.inner is not None and inner is None:
+            self._fremover(instance, maybe, maybe.inner) if self._fremover else maybe.remove_inner(maybe.inner)
+        elif maybe.inner is not None and inner is not None:
+            _replace_node(maybe.inner, inner)
+        maybe.inner = inner
 
-    def creator(self, fcreator: Callable[[_U, _M], None]) -> None:
+    def creator(self, fcreator: Callable[[_U, Maybe[_M], _M], None]) -> None:
         self._fcreator = fcreator
 
-    def remover(self, fremover: Callable[[_U, _M], None]) -> None:
+    def remover(self, fremover: Callable[[_U, Maybe[_M], _M], None]) -> None:
         self._fremover = fremover
 
 
@@ -325,3 +324,12 @@ class SimpleDefaultRawTokenModel(SimpleRawTokenModel):
     @classmethod
     def from_default(cls: Type[_SelfSimpleDefaultRawTokenModel]) -> _SelfSimpleDefaultRawTokenModel:
         return cls.from_raw_text(cls.DEFAULT)  # type: ignore[arg-type]
+
+
+def list_fields(cls: Type[base.RawTreeModel]) -> list[field]:
+    for base_class in cls.mro():
+        if issubclass(base_class, base.RawTreeModel):
+            fields = [v for v in base_class.__dict__.values() if isinstance(v, field)]
+            if fields:
+                return fields
+    return []
