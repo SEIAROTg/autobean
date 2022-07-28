@@ -21,6 +21,7 @@ from .option import *
 from .pad import *
 from .placeholder import *
 from .plugin import *
+from .price import *
 from .posting_flag import *
 from .punctuation import *
 from .pushmeta import *

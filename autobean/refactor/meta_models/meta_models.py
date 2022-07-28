@@ -122,6 +122,13 @@ class Pad(MetaModel):
     source_account: 'ACCOUNT'
 
 
+class Price(MetaModel):
+    date: 'DATE'
+    _label: 'PRICE' = field(define_as='PriceLabel')
+    currency: 'CURRENCY'
+    amount: 'amount'
+
+
 class Query(MetaModel):
     date: 'DATE'
     _label: 'QUERY' = field(define_as='QueryLabel')

@@ -17,6 +17,7 @@ COMMODITY:    "commodity"
 PAD:          "pad"
 EVENT:        "event"
 QUERY:        "query"
+PRICE:        "price"
 
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
@@ -34,6 +35,7 @@ commodity:    DATE COMMODITY CURRENCY
 pad:          DATE PAD ACCOUNT ACCOUNT
 event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING
 query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING
+price:        DATE PRICE CURRENCY amount
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s

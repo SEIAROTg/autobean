@@ -20,6 +20,7 @@ from .option import *
 from .pad import *
 from .plugin import *
 from .posting_flag import *
+from .price import *
 from .punctuation import *
 from .pushmeta import *
 from .pushtag import *
