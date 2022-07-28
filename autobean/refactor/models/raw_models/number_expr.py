@@ -194,7 +194,7 @@ def _add_expr_from_value(value: decimal.Decimal) -> NumberAddExpr:
 
 
 @internal.tree_model
-class NumberExpr(number_expr.NumberExpr):
+class NumberExpr(number_expr.NumberExpr, internal.RWValue[decimal.Decimal]):
     @classmethod
     def from_value(cls, value: decimal.Decimal) -> 'NumberExpr':
         add_expr = _add_expr_from_value(value)

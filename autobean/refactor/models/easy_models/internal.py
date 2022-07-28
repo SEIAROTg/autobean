@@ -6,7 +6,8 @@ from autobean.refactor.models.raw_models import internal
 
 _TT = TypeVar('_TT', bound=Type[raw_models.RawTokenModel])
 _UT = TypeVar('_UT', bound=Type[raw_models.RawTreeModel])
-_ST = TypeVar('_ST', bound=internal.SingleValueRawTokenModel[str])
+_SV = TypeVar('_SV', bound=internal.RWValue[str])
+_DV = TypeVar('_DV', bound=internal.RWValue[decimal.Decimal])
 _U = TypeVar('_U', bound=raw_models.RawTreeModel)
 
 TOKEN_MODELS: dict[str, Type[raw_models.RawTokenModel]] = {}
@@ -24,7 +25,7 @@ def tree_model(cls: _UT) -> _UT:
 
 
 class required_string_property:
-    def __init__(self, inner_property: internal.required_node_property[_ST]):
+    def __init__(self, inner_property: internal.required_node_property[_SV]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> str:
@@ -34,8 +35,8 @@ class required_string_property:
         self._inner_property.__get__(instance).value = value
 
 
-class optional_string_property:
-    def __init__(self, inner_property: internal.optional_node_property[_ST], inner_type: Type[_ST]):
+class optional_string_property(Generic[_SV]):
+    def __init__(self, inner_property: internal.optional_node_property[_SV], inner_type: Type[_SV]):
         self._inner_property = inner_property
         self._inner_type = inner_type
 
@@ -48,13 +49,8 @@ class optional_string_property:
         self._inner_property.__set__(instance, s)
 
 
-class optional_escaped_string_property(optional_string_property):
-    def __init__(self, inner_property: internal.optional_node_property[raw_models.EscapedString]):
-        super().__init__(inner_property, raw_models.EscapedString)
-
-
-class required_number_expr_property:
-    def __init__(self, inner_property: internal.required_node_property[raw_models.NumberExpr]):
+class required_decimal_property:
+    def __init__(self, inner_property: internal.required_node_property[_DV]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> decimal.Decimal:
@@ -64,16 +60,17 @@ class required_number_expr_property:
         self._inner_property.__get__(instance).value = value
 
 
-class optional_number_expr_property:
-    def __init__(self, inner_property: internal.optional_node_property[raw_models.NumberExpr]):
+class optional_decimal_property(Generic[_DV]):
+    def __init__(self, inner_property: internal.optional_node_property[_DV], inner_type: Type[_DV]):
         self._inner_property = inner_property
+        self._inner_type = inner_type
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[decimal.Decimal]:
         s = self._inner_property.__get__(instance, owner)
         return s.value if s is not None else None
     
     def __set__(self, instance: _U, value: Optional[decimal.Decimal]) -> None:
-        s = raw_models.NumberExpr.from_value(value) if value is not None else None
+        s = self._inner_type.from_value(value) if value is not None else None
         self._inner_property.__set__(instance, s)
 
 

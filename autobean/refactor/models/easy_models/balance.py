@@ -19,23 +19,8 @@ _Self = TypeVar('_Self', bound='Balance')
 class Balance(balance.Balance):
     date = internal.required_date_property(balance.Balance.raw_date)
     account = internal.required_string_property(balance.Balance.raw_account)
-    number = internal.required_number_expr_property(balance.Balance.raw_number)
-
-    @property
-    def tolerance(self) -> Optional[decimal.Decimal]:
-        if self.raw_tolerance is None:
-            return None
-        return self.raw_tolerance.raw_number.value
-
-    @tolerance.setter
-    def tolerance(self, value: Optional[decimal.Decimal]) -> None:
-        if value is None:
-            self.raw_tolerance = None
-        elif self.raw_tolerance is None:
-            self.raw_tolerance = Tolerance.from_value(value)
-        else:
-            self.raw_tolerance.raw_number.value = value
-
+    number = internal.required_decimal_property(balance.Balance.raw_number)
+    tolerance = internal.optional_decimal_property(balance.Balance.raw_tolerance, Tolerance)
     currency = internal.required_string_property(balance.Balance.raw_currency)
 
     @classmethod

@@ -14,6 +14,7 @@ _SelfBaseProperty = TypeVar('_SelfBaseProperty', bound='_base_property')
 _SelfSimpleRawTokenModel = TypeVar('_SelfSimpleRawTokenModel', bound='SimpleRawTokenModel')
 _SelfSingleValueRawTokenModel = TypeVar('_SelfSingleValueRawTokenModel', bound='SingleValueRawTokenModel')
 _SelfSimpleDefaultRawTokenModel = TypeVar('_SelfSimpleDefaultRawTokenModel', bound='SimpleDefaultRawTokenModel')
+_SelfRWValue = TypeVar('_SelfRWValue', bound='RWValue')
 _SelfMaybe = TypeVar('_SelfMaybe', bound='Maybe')
 _SelfMaybeL = TypeVar('_SelfMaybeL', bound='MaybeL')
 _SelfMaybeR = TypeVar('_SelfMaybeR', bound='MaybeR')
@@ -249,6 +250,21 @@ class optional_node_property(_base_property[Optional[_M], base.RawTreeModel]):
         self._fremover = fremover
 
 
+class RWValue(base.RawModel, abc.ABC, Generic[_V]):
+    @property
+    def value(self) -> _V:
+        raise NotImplementedError()
+
+    @value.setter
+    def value(self, value: _V) -> None:
+        raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    def from_value(cls: Type[_SelfRWValue], value: _V) -> _SelfRWValue:
+        raise NotImplementedError()
+
+
 class SimpleRawTokenModel(base.RawTokenModel):
     @final
     def __init__(self, raw_text: str) -> None:
@@ -258,7 +274,7 @@ class SimpleRawTokenModel(base.RawTokenModel):
         return type(self)(self.raw_text)
 
 
-class SingleValueRawTokenModel(base.RawTokenModel, Generic[_V]):
+class SingleValueRawTokenModel(base.RawTokenModel, RWValue[_V]):
     @final
     def __init__(self, raw_text: str, value: _V) -> None:
         super().__init__(raw_text)
