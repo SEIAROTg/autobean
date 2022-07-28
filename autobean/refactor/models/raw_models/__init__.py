@@ -28,4 +28,5 @@ from .pushmeta import *
 from .pushtag import *
 from .query import *
 from .tag import *
+from .tolerance import *
 from .transaction_flag import *

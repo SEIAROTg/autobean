@@ -112,7 +112,7 @@ class TestPlugin(base.BaseTestModel):
 
     def test_from_children_without_config(self) -> None:
         name = raw_models.EscapedString.from_value('foo')
-        plugin = raw_models.Plugin.from_children(name)
+        plugin = raw_models.Plugin.from_children(name, None)
         assert plugin.raw_name is name
         assert plugin.raw_config is None
         assert self.print_model(plugin) == 'plugin "foo"'
