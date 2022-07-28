@@ -44,26 +44,28 @@ class FieldCardinality(enum.Enum):
 
 
 @dataclasses.dataclass(frozen=True)
+class ModelType:
+    name: str
+    rule: str
+    module: Optional[str]
+
+
+@dataclasses.dataclass(frozen=True)
 class FieldDescriptor:
     name: str
-    rules: frozenset[str]
+    model_types: frozenset[ModelType]
     cardinality: FieldCardinality
     floating: Optional[base.Floating]
     is_public: bool
     define_as: Optional[str]
     define_default: Optional[str]
     type_alias: Optional[str]
-
-    def model_name(self, rule: str) -> str:
-        return self.define_as or stringcase.pascalcase(rule.lower())
+    circular_dep: bool
 
     @functools.cached_property
     def inner_type_original(self) -> str:
-        model_names = []
-        for rule in self.rules:
-            model_name = self.model_name(rule)
-            model_names.append(model_name)
-        return ' | '.join(sorted(model_names))
+        t = ' | '.join(sorted(model_type.name for model_type in self.model_types))
+        return f"'{t}'" if self.circular_dep else t
 
     @functools.cached_property
     def inner_type(self) -> str:
@@ -97,15 +99,21 @@ class FieldDescriptor:
             return f'_{self.name}'
 
 
+def is_token(rule: str) -> bool:
+    return isinstance(_GRAMMAR[rule], lexer.TerminalDef)
+
+
 def is_literal_token(rule: str) -> bool:
     r = _GRAMMAR[rule]
     return isinstance(r, lexer.TerminalDef) and r.pattern.type == 'str'
 
 
-def get_literal_token_pattern(rule: str) -> str:
+def get_literal_token_pattern(rule: str) -> Optional[str]:
     r = _GRAMMAR[rule]
-    assert isinstance(r, lexer.TerminalDef) and r.pattern.type == 'str'
-    return r.pattern.value
+    assert isinstance(r, lexer.TerminalDef)
+    if r.pattern.type == 'str':
+        return r.pattern.value
+    return None
 
 
 def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDescriptor]:
@@ -129,25 +137,36 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
                     raise ValueError(f'Unsupported type hint: {type_hint}')
         else:
             raise ValueError(f'Unsupported field type: {type_hint!r}.')
+        model_types = []
         for rule in rules:
+            *module, rule = rule.rsplit('.', maxsplit=1)
             if not rule in _GRAMMAR:
                 raise ValueError(f'Unknown rule: {rule}.')
+            model_types.append(ModelType(
+                name=field.define_as or stringcase.pascalcase(rule.lower()),
+                rule=rule,
+                module=module[0] if module else stringcase.snakecase(rule.lower())))
+        del rules
         if cardinality == FieldCardinality.OPTIONAL and not field.floating:
             raise ValueError('Optional fields must declare floating direction.')
-        default_constructable = len(rules) == 1 or is_literal_token(next(iter(rules)))
-        if field.define_as and not default_constructable:
-            raise ValueError(f'Fields with define_as must be default constructable.')
+        single_token = len(model_types) == 1 and is_token(next(iter(model_types)).rule)
+        if field.define_as and not single_token:
+            raise ValueError(f'Fields with define_as must be a single token.')
+        default_constructable = len(model_types) == 1 and is_literal_token(next(iter(model_types)).rule)
         if not is_public and (not default_constructable or cardinality != FieldCardinality.REQUIRED):
             raise ValueError(f'Private fields must be required and default constructable.')
         descriptor = FieldDescriptor(
             name=name,
-            rules=frozenset(rules),
+            model_types=frozenset(model_types),
             cardinality=cardinality,
             floating=field.floating,
             is_public=is_public,
             define_as=field.define_as,
-            define_default=get_literal_token_pattern(next(iter(rules))) if field.define_as else None,
+            define_default=(
+                get_literal_token_pattern(next(iter(model_types)).rule)
+                if field.define_as else None),
             type_alias=field.type_alias,
+            circular_dep=field.circular_dep,
         )
         field_descriptors.append(descriptor)
     return field_descriptors

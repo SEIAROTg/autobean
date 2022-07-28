@@ -8,6 +8,21 @@ from .base import MetaModel, Floating, field
 # Auxiliary
 
 
+class NumberUnaryExpr(MetaModel):
+    unary_op: 'UNARY_OP' = field(define_as='UnaryOp')
+    operand: 'number_expr.number_atom_expr' = field(circular_dep=True)
+
+
+class NumberParenExpr(MetaModel):
+    _left_paren: 'LEFT_PAREN' = field(define_as='LeftParen')
+    inner_expr: 'number_expr.number_add_expr' = field(circular_dep=True)
+    _right_paren: 'RIGHT_PAREN' = field(define_as='RightParen')
+
+
+class NumberExpr(MetaModel):
+    number_add_expr: 'number_expr.number_add_expr' = field(circular_dep=True)
+
+
 class Amount(MetaModel):
     number: 'number_expr'
     currency: 'CURRENCY'

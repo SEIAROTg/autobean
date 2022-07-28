@@ -18,3 +18,4 @@ class field:
     floating: Optional[Floating] = None
     define_as: Optional[str] = None
     type_alias: Optional[str] = None
+    circular_dep: bool = False
