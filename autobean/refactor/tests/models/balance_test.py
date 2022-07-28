@@ -114,10 +114,10 @@ class Testbalance(base.BaseTestModel):
             ('2000-01-01 balance Assets:Foo 100.00  USD',
              raw_models.Tolerance.from_children(raw_models.NumberExpr.from_value(_D('0.01'))),
              '2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD'),
-            ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD',
+            ('2000-01-01 balance Assets:Foo 100.00 ~  0.01   USD',
              raw_models.Tolerance.from_children(raw_models.NumberExpr.from_value(_D('0.02'))),
-             '2000-01-01 balance Assets:Foo 100.00 ~ 0.02  USD'),
-            ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD', None, '2000-01-01 balance Assets:Foo 100.00  USD'),
+             '2000-01-01 balance Assets:Foo 100.00 ~ 0.02   USD'),
+            ('2000-01-01 balance Assets:Foo 100.00 ~  0.01   USD', None, '2000-01-01 balance Assets:Foo 100.00   USD'),
         ],
     )
     def test_set_raw_tolerance(self, text: str, raw_tolerance: Optional[raw_models.Tolerance], expected: str) -> None:
@@ -130,8 +130,8 @@ class Testbalance(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text,tolerance,expected', [
             ('2000-01-01 balance Assets:Foo 100.00  USD', _D('0.01'), '2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD'),
-            ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD', _D('0.02'), '2000-01-01 balance Assets:Foo 100.00 ~ 0.02  USD'),
-            ('2000-01-01 balance Assets:Foo 100.00 ~ 0.01  USD', None, '2000-01-01 balance Assets:Foo 100.00  USD'),
+            ('2000-01-01 balance Assets:Foo 100.00 ~  0.01  USD', _D('0.02'), '2000-01-01 balance Assets:Foo 100.00 ~  0.02  USD'),
+            ('2000-01-01 balance Assets:Foo 100.00 ~  0.01   USD', None, '2000-01-01 balance Assets:Foo 100.00   USD'),
         ],
     )
     def test_set_tolerance(self, text: str, tolerance: Optional[decimal.Decimal], expected: str) -> None:

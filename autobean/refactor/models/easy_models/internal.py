@@ -45,8 +45,12 @@ class optional_string_property(Generic[_SV]):
         return s.value if s is not None else None
     
     def __set__(self, instance: _U, value: Optional[str]) -> None:
-        s = self._inner_type.from_value(value) if value is not None else None
-        self._inner_property.__set__(instance, s)
+        current = self._inner_property.__get__(instance)
+        if current is not None and value is not None:
+            current.value = value
+        else:
+            s = self._inner_type.from_value(value) if value is not None else None
+            self._inner_property.__set__(instance, s)
 
 
 class required_decimal_property:
@@ -70,8 +74,12 @@ class optional_decimal_property(Generic[_DV]):
         return s.value if s is not None else None
     
     def __set__(self, instance: _U, value: Optional[decimal.Decimal]) -> None:
-        s = self._inner_type.from_value(value) if value is not None else None
-        self._inner_property.__set__(instance, s)
+        current = self._inner_property.__get__(instance)
+        if current is not None and value is not None:
+            current.value = value
+        else:
+            s = self._inner_type.from_value(value) if value is not None else None
+            self._inner_property.__set__(instance, s)
 
 
 class required_date_property:
