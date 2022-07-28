@@ -10,11 +10,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Option')
 
 
+@internal.token_model
 class OptionLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'OPTION'
     DEFAULT = 'option'
 
 
+@internal.tree_model
 class Option(base.RawTreeModel):
     RULE = 'option'
 

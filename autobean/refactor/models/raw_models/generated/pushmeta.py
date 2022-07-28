@@ -20,11 +20,13 @@ MetaValue = Account | Amount | Bool | Currency | Date | EscapedString | Null | N
 _Self = TypeVar('_Self', bound='Pushmeta')
 
 
+@internal.token_model
 class PushmetaLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PUSHMETA'
     DEFAULT = 'pushmeta'
 
 
+@internal.tree_model
 class Pushmeta(base.RawTreeModel):
     RULE = 'pushmeta'
 

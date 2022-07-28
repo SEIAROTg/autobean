@@ -10,11 +10,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Plugin')
 
 
+@internal.token_model
 class PluginLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PLUGIN'
     DEFAULT = 'plugin'
 
 
+@internal.tree_model
 class Plugin(base.RawTreeModel):
     RULE = 'plugin'
 

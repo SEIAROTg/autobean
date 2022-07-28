@@ -14,6 +14,7 @@ from .bool import Bool
 internal.token_model(PushmetaLabel)
 internal.token_model(PopmetaLabel)
 
+MetaValue = raw_models.MetaValue
 _ValueTypeSimplified = str | datetime.date | decimal.Decimal | bool
 _ValueTypePreserved = raw_models.Account | raw_models.Currency | raw_models.Tag | raw_models.Null | raw_models.Amount | None
 _V = TypeVar('_V', str, datetime.date, decimal.Decimal, bool)

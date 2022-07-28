@@ -10,11 +10,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Popmeta')
 
 
+@internal.token_model
 class PopmetaLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'POPMETA'
     DEFAULT = 'popmeta'
 
 
+@internal.tree_model
 class Popmeta(base.RawTreeModel):
     RULE = 'popmeta'
 

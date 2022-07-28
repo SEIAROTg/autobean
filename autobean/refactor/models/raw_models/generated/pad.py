@@ -11,11 +11,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Pad')
 
 
+@internal.token_model
 class PadLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PAD'
     DEFAULT = 'pad'
 
 
+@internal.tree_model
 class Pad(base.RawTreeModel):
     RULE = 'pad'
 

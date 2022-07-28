@@ -11,11 +11,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Query')
 
 
+@internal.token_model
 class QueryLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'QUERY'
     DEFAULT = 'query'
 
 
+@internal.tree_model
 class Query(base.RawTreeModel):
     RULE = 'query'
 

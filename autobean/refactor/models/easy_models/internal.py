@@ -9,17 +9,17 @@ _UT = TypeVar('_UT', bound=Type[raw_models.RawTreeModel])
 _ST = TypeVar('_ST', bound=internal.SingleValueRawTokenModel[str])
 _U = TypeVar('_U', bound=raw_models.RawTreeModel)
 
-TOKEN_MODELS: list[Type[raw_models.RawTokenModel]] = []
-TREE_MODELS: list[Type[raw_models.RawTreeModel]] = []
+TOKEN_MODELS: dict[str, Type[raw_models.RawTokenModel]] = {}
+TREE_MODELS: dict[str, Type[raw_models.RawTreeModel]] = {}
 
 
 def token_model(cls: _TT) -> _TT:
-    TOKEN_MODELS.append(cls)
+    TOKEN_MODELS[cls.RULE] = cls
     return cls
 
 
 def tree_model(cls: _UT) -> _UT:
-    TREE_MODELS.append(cls)
+    TREE_MODELS[cls.RULE] = cls
     return cls
 
 

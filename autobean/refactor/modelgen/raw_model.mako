@@ -35,6 +35,7 @@ _Self = TypeVar('_Self', bound='${model_name}')
 % if field.define_as:
 
 
+@internal.token_model
 class ${field.define_as}(internal.SimpleDefaultRawTokenModel):
     RULE = '${next(iter(field.rules))}'
     DEFAULT = '${field.define_default}'
@@ -42,6 +43,7 @@ class ${field.define_as}(internal.SimpleDefaultRawTokenModel):
 % endfor
 
 
+@internal.tree_model
 class ${model_name}(base.RawTreeModel):
     RULE = '${model_name.lower()}'
 

@@ -10,11 +10,13 @@ from ..tag import Tag
 _Self = TypeVar('_Self', bound='Pushtag')
 
 
+@internal.token_model
 class PushtagLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'PUSHTAG'
     DEFAULT = 'pushtag'
 
 
+@internal.tree_model
 class Pushtag(base.RawTreeModel):
     RULE = 'pushtag'
 

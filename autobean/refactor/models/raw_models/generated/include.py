@@ -10,11 +10,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Include')
 
 
+@internal.token_model
 class IncludeLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'INCLUDE'
     DEFAULT = 'include'
 
 
+@internal.tree_model
 class Include(base.RawTreeModel):
     RULE = 'include'
 

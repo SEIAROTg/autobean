@@ -36,14 +36,14 @@ class Parser:
 
     def __init__(
             self,
-            token_models: list[Type[raw_models.RawTokenModel]],
-            tree_models: list[Type[raw_models.RawTreeModel]],
+            token_models: dict[str, Type[raw_models.RawTokenModel]],
+            tree_models: dict[str, Type[raw_models.RawTreeModel]],
     ):
-        start = ['_unused'] + [model.RULE for model in tree_models]
+        start = ['_unused'] + list(tree_models.keys())
         self._lark = lark.Lark(
             _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLex(), start=start)
-        self._token_models = {model.RULE: model for model in token_models}
-        self._tree_models = {model.RULE: model for model in tree_models}
+        self._token_models = token_models
+        self._tree_models = tree_models
 
     def parse_token(self, text: str, target: Type[_T]) -> _T:
         """Parses one token.

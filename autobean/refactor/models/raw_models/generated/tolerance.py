@@ -10,11 +10,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Tolerance')
 
 
+@internal.token_model
 class Tilde(internal.SimpleDefaultRawTokenModel):
     RULE = 'TILDE'
     DEFAULT = '~'
 
 
+@internal.tree_model
 class Tolerance(base.RawTreeModel):
     RULE = 'tolerance'
 

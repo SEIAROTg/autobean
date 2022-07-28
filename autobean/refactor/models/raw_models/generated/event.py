@@ -11,11 +11,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Event')
 
 
+@internal.token_model
 class EventLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'EVENT'
     DEFAULT = 'event'
 
 
+@internal.tree_model
 class Event(base.RawTreeModel):
     RULE = 'event'
 

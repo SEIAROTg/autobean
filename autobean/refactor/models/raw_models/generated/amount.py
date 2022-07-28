@@ -11,6 +11,7 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Amount')
 
 
+@internal.tree_model
 class Amount(base.RawTreeModel):
     RULE = 'amount'
 

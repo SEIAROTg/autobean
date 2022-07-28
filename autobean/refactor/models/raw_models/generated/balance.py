@@ -14,11 +14,13 @@ from ..tolerance import Tolerance
 _Self = TypeVar('_Self', bound='Balance')
 
 
+@internal.token_model
 class BalanceLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'BALANCE'
     DEFAULT = 'balance'
 
 
+@internal.tree_model
 class Balance(base.RawTreeModel):
     RULE = 'balance'
 

@@ -10,11 +10,13 @@ from ..tag import Tag
 _Self = TypeVar('_Self', bound='Poptag')
 
 
+@internal.token_model
 class PoptagLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'POPTAG'
     DEFAULT = 'poptag'
 
 
+@internal.tree_model
 class Poptag(base.RawTreeModel):
     RULE = 'poptag'
 

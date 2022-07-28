@@ -11,11 +11,13 @@ from ..punctuation import Whitespace
 _Self = TypeVar('_Self', bound='Close')
 
 
+@internal.token_model
 class CloseLabel(internal.SimpleDefaultRawTokenModel):
     RULE = 'CLOSE'
     DEFAULT = 'close'
 
 
+@internal.tree_model
 class Close(base.RawTreeModel):
     RULE = 'close'
 
