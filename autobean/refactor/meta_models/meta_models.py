@@ -1,7 +1,7 @@
 # pylance: disable
 # type: ignore
 
-from typing import Optional
+from typing import Optional, Union
 from .base import MetaModel, Floating, field
 
 
@@ -46,6 +46,22 @@ class Popmeta(MetaModel):
 class Poptag(MetaModel):
     _label: 'POPTAG' = field(define_as='PoptagLabel')
     tag: 'TAG'
+
+
+class Pushmeta(MetaModel):
+    _label: 'PUSHMETA' = field(define_as='PushmetaLabel')
+    key: 'META_KEY'
+    value: Optional[Union[
+        'ESCAPED_STRING',
+        'ACCOUNT',
+        'DATE',
+        'CURRENCY',
+        'TAG',
+        'BOOL',
+        'NULL',
+        'number_expr',
+        'amount',
+    ]] = field(floating=Floating.LEFT, type_alias='MetaValue')
 
 
 class Pushtag(MetaModel):

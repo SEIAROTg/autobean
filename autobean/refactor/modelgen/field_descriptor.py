@@ -52,17 +52,24 @@ class FieldDescriptor:
     is_public: bool
     define_as: Optional[str]
     define_default: Optional[str]
+    type_alias: Optional[str]
 
     def model_name(self, rule: str) -> str:
         return self.define_as or stringcase.pascalcase(rule.lower())
 
     @functools.cached_property
-    def inner_type(self) -> str:
+    def inner_type_original(self) -> str:
         model_names = []
         for rule in self.rules:
             model_name = self.model_name(rule)
             model_names.append(model_name)
         return ' | '.join(sorted(model_names))
+
+    @functools.cached_property
+    def inner_type(self) -> str:
+        if self.type_alias is not None:
+            return self.type_alias
+        return self.inner_type_original
 
     @functools.cached_property
     def public_type(self) -> str:
@@ -140,6 +147,7 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             is_public=is_public,
             define_as=field.define_as,
             define_default=get_literal_token_pattern(next(iter(rules))) if field.define_as else None,
+            type_alias=field.type_alias,
         )
         field_descriptors.append(descriptor)
     return field_descriptors

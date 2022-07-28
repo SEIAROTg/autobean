@@ -1,12 +1,11 @@
 import copy
 import decimal
 import datetime
-from typing import Optional, Type
+from typing import Optional
 from lark import exceptions
 import pytest
 from autobean.refactor.models import easy_models
 from autobean.refactor.models import raw_models
-from autobean.refactor.models.raw_models.escaped_string import EscapedString
 from . import base
 
 
@@ -138,13 +137,11 @@ class TestPushmeta(base.BaseTestModel):
         self.check_consistency(pushmeta)
 
     def test_from_children_without_value(self) -> None:
-        pushmeta = raw_models.Pushmeta.from_children(raw_models.MetaKey.from_value('foo'))
+        pushmeta = raw_models.Pushmeta.from_children(raw_models.MetaKey.from_value('foo'), None)
         assert pushmeta.raw_key.value == 'foo'
         assert pushmeta.raw_value is None
         assert self.print_model(pushmeta) == 'pushmeta foo:'
         self.check_consistency(pushmeta)
-
-    # TODO: get value, set value
 
 
 class TestPopmeta(base.BaseTestModel):

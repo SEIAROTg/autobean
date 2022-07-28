@@ -25,6 +25,11 @@ from .. import internal
 from ..${name} import ${', '.join(sorted(imports))}
 % endfor
 
+% for field in fields:
+% if field.type_alias is not None:
+${field.type_alias} = ${field.inner_type_original}
+% endif
+% endfor
 _Self = TypeVar('_Self', bound='${model_name}')
 % for field in fields:
 % if field.define_as:
@@ -116,7 +121,11 @@ class ${model_name}(base.RawTreeModel):
 % if not field.is_public:
         ${field.name} = ${field.inner_type}.from_default()
 % elif field.cardinality == FieldCardinality.OPTIONAL:
-        maybe_${field.name} = internal.Maybe${field.floating.name[0]}.from_children(${field.name}, separators=cls._${field.name}.separators)
+<%
+# mypy isn't good at inferring union type
+type_fix = f'[{field.type_alias}]' if field.type_alias is not None else ''
+%>\
+        maybe_${field.name} = internal.Maybe${field.floating.name[0]}${type_fix}.from_children(${field.name}, separators=cls._${field.name}.separators)
 % endif
 % endfor
 <%
