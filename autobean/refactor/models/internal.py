@@ -2,7 +2,6 @@ import abc
 import copy
 import datetime
 import decimal
-import enum
 from typing import Callable, Generic, Type, TypeVar, Optional, final, overload
 from . import base
 from . import placeholder
@@ -70,11 +69,6 @@ def _replace_node(node: _M, repl: _M) -> None:
     token_store.splice(repl.detach(), node.first_token, node.last_token)
     if isinstance(repl, base.RawTreeModel):
         repl.reattach(token_store)
-
-
-class Floating(enum.Enum):
-    LEFT = enum.auto()
-    RIGHT = enum.auto()
 
 
 class Maybe(base.RawTreeModel, Generic[_M]):
@@ -202,13 +196,8 @@ class required_field(field[_M]):
 
 
 class optional_field(field[Maybe[_M]]):
-    def __init__(self, *, floating: Floating, separators: tuple[base.RawTokenModel, ...]) -> None:
-        self._floating = floating
+    def __init__(self, *, separators: tuple[base.RawTokenModel, ...]) -> None:
         self._separators = separators
-
-    @property
-    def floating(self) -> Floating:
-        return self._floating
 
     @property
     def separators(self) -> tuple[base.RawTokenModel, ...]:
@@ -345,15 +334,6 @@ class SimpleDefaultRawTokenModel(SimpleRawTokenModel):
     @classmethod
     def from_default(cls: Type[_SelfSimpleDefaultRawTokenModel]) -> _SelfSimpleDefaultRawTokenModel:
         return cls.from_raw_text(cls.DEFAULT)  # type: ignore[arg-type]
-
-
-def list_fields(cls: Type[base.RawTreeModel]) -> list[field]:
-    for base_class in cls.mro():
-        if issubclass(base_class, base.RawTreeModel):
-            fields = [v for v in base_class.__dict__.values() if isinstance(v, field)]
-            if fields:
-                return fields
-    return []
 
 
 class required_string_property:

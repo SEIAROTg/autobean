@@ -66,7 +66,7 @@ class ${model_name}(base.RawTreeModel):
 % if field.cardinality == FieldCardinality.REQUIRED:
     _${field.name} = internal.required_field[${field.inner_type}]()
 % elif field.cardinality == FieldCardinality.OPTIONAL:
-    _${field.name} = internal.optional_field[${field.inner_type}](floating=internal.Floating.${field.floating.name}, separators=(Whitespace.from_default(),))
+    _${field.name} = internal.optional_field[${field.inner_type}](separators=(Whitespace.from_default(),))
 % else:
 <% assert False %>\
 % endif

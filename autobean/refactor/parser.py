@@ -1,4 +1,5 @@
 import copy
+import enum
 import pathlib
 from typing import Iterator, Type, TypeVar
 import lark
@@ -27,6 +28,11 @@ class PostLex(lark.lark.PostLex):
 
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
         return stream
+
+
+class _Floating(enum.Enum):
+    LEFT = enum.auto()
+    RIGHT = enum.auto()
 
 
 class Parser:
@@ -96,11 +102,11 @@ class ModelBuilder:
         self._built_tokens.extend(self._right_floating_placeholders)
         self._right_floating_placeholders.clear()
 
-    def _add_placeholder(self, floating: internal.Floating) -> models.Placeholder:
+    def _add_placeholder(self, floating: _Floating) -> models.Placeholder:
         placeholder = models.Placeholder.from_default()
-        if floating == internal.Floating.RIGHT:
+        if floating == _Floating.RIGHT:
             self._right_floating_placeholders.append(placeholder)
-        elif floating == internal.Floating.LEFT:
+        elif floating == _Floating.LEFT:
             if self._right_floating_placeholders:
                 raise ValueError('Floating direction cannot be satisified.')
             self._built_tokens.append(placeholder)
@@ -117,19 +123,14 @@ class ModelBuilder:
 
     def _add_tree(self, tree: lark.Tree) -> models.RawTreeModel:
         model_type = self._tree_models[tree.data]
-        fields = internal.list_fields(model_type)
-        if fields:
-            assert len(tree.children) == len(fields)
-            children = []
-            for child, field in zip(tree.children, fields):
-                if isinstance(field, internal.required_field):
-                    children.append(self._add_required_node(child))
-                elif isinstance(field, internal.optional_field):
-                    children.append(self._add_optional_node(child, field.floating))
-                else:
-                    assert False
-        else:
-            children = [self._add_required_node(child) for child in tree.children]
+        children = []
+        for child in tree.children:
+            if isinstance(child, lark.Tree) and child.data == 'maybe_left':
+                children.append(self._add_optional_node(child, _Floating.LEFT))
+            elif isinstance(child, lark.Tree) and child.data == 'maybe_right':
+                children.append(self._add_optional_node(child, _Floating.RIGHT))
+            else:
+                children.append(self._add_required_node(child))
         return model_type.from_parsed_children(self._token_store, *children)
 
     def _add_required_node(self, node: lark.Token | lark.Tree) -> models.RawModel:
@@ -139,12 +140,13 @@ class ModelBuilder:
             return self._add_tree(node)
         assert False
 
-    def _add_optional_node(self, node: lark.Token | lark.Tree | None, floating: internal.Floating) -> models.RawModel:
+    def _add_optional_node(self, node: lark.Tree, floating: _Floating) -> models.RawModel:
         placeholder = self._add_placeholder(floating)
-        inner = self._add_required_node(node) if node is not None else None
-        if floating == internal.Floating.LEFT:
+        inner_node, = node.children
+        inner = self._add_required_node(inner_node) if inner_node is not None else None
+        if floating == _Floating.LEFT:
             return internal.MaybeL(self._token_store, inner, placeholder)
-        if floating == internal.Floating.RIGHT:
+        if floating == _Floating.RIGHT:
             return internal.MaybeR(self._token_store, inner, placeholder)
         assert False
 

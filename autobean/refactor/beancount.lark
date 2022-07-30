@@ -24,14 +24,14 @@ DOCUMENT:     "document"
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
 include:      INCLUDE ESCAPED_STRING
-plugin:       PLUGIN ESCAPED_STRING [ESCAPED_STRING]
+plugin:       PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING}
 pushtag:      PUSHTAG TAG
 poptag:       POPTAG TAG
-pushmeta:     PUSHMETA META_KEY [meta_value]
+pushmeta:     PUSHMETA META_KEY maybe_left{meta_value}
 popmeta:      POPMETA META_KEY
 
 // Entries
-balance:      DATE BALANCE ACCOUNT number_expr [tolerance] CURRENCY
+balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY
 close:        DATE CLOSE ACCOUNT
 commodity:    DATE COMMODITY CURRENCY
 pad:          DATE PAD ACCOUNT ACCOUNT
@@ -127,3 +127,7 @@ amount: number_expr CURRENCY
 // Tolerance
 TILDE:        "~"
 tolerance:    TILDE number_expr
+
+// [internal] Optional field wrapper
+maybe_left{inner}: [inner]
+maybe_right{inner}: [inner]

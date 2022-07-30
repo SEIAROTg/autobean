@@ -32,7 +32,7 @@ class Pushmeta(base.RawTreeModel):
 
     _label = internal.required_field[PushmetaLabel]()
     _key = internal.required_field[MetaKey]()
-    _value = internal.optional_field[MetaValue](floating=internal.Floating.LEFT, separators=(Whitespace.from_default(),))
+    _value = internal.optional_field[MetaValue](separators=(Whitespace.from_default(),))
 
     raw_key = internal.required_node_property(_key)
     raw_value = internal.optional_node_property(_value)

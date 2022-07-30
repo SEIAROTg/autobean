@@ -28,7 +28,7 @@ class Balance(base.RawTreeModel):
     _label = internal.required_field[BalanceLabel]()
     _account = internal.required_field[Account]()
     _number = internal.required_field[NumberExpr]()
-    _tolerance = internal.optional_field[Tolerance](floating=internal.Floating.LEFT, separators=(Whitespace.from_default(),))
+    _tolerance = internal.optional_field[Tolerance](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
 
     raw_date = internal.required_node_property(_date)

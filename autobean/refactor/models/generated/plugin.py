@@ -22,7 +22,7 @@ class Plugin(base.RawTreeModel):
 
     _label = internal.required_field[PluginLabel]()
     _name = internal.required_field[EscapedString]()
-    _config = internal.optional_field[EscapedString](floating=internal.Floating.LEFT, separators=(Whitespace.from_default(),))
+    _config = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
 
     raw_name = internal.required_node_property(_name)
     raw_config = internal.optional_node_property(_config)
