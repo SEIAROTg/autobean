@@ -131,3 +131,4 @@ class TestPlugin(base.BaseTestModel):
         assert plugin.raw_config is None
         assert self.print_model(plugin) == 'plugin "foo"'
         self.check_consistency(plugin)
+        self.check_flavor_consistency(plugin)

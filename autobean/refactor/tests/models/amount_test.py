@@ -80,3 +80,4 @@ class TestAmount(base.BaseTestModel):
         assert amount.raw_currency.value == 'USD'
         assert self.print_model(amount) == '100.00 USD'
         self.check_consistency(amount)
+        self.check_flavor_consistency(amount)

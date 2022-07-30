@@ -109,3 +109,4 @@ class TestPrice(base.BaseTestModel):
         assert price.raw_amount.raw_currency.value == 'USD'
         assert self.print_model(price) == '2000-01-01 price GBP 1.5 USD'
         self.check_consistency(price)
+        self.check_flavor_consistency(price)

@@ -60,3 +60,4 @@ class TestInclude(base.BaseTestModel):
         assert include.raw_filename.value == 'foo'
         assert self.print_model(include) == 'include "foo"'
         self.check_consistency(include)
+        self.check_flavor_consistency(include)

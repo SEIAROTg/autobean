@@ -101,3 +101,4 @@ class TestNote(base.BaseTestModel):
         assert note.comment == 'foo'
         assert self.print_model(note) == '2000-01-01 note Assets:Foo "foo"'
         self.check_consistency(note)
+        self.check_flavor_consistency(note)

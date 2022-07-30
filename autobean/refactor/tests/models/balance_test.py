@@ -205,3 +205,4 @@ class Testbalance(base.BaseTestModel):
         assert balance.raw_currency.value == 'USD'
         assert self.print_model(balance) == '2000-01-01 balance Assets:Foo 100.00 USD'
         self.check_consistency(balance)
+        self.check_flavor_consistency(balance)

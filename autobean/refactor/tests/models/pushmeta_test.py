@@ -198,3 +198,4 @@ class TestPopmeta(base.BaseTestModel):
         assert popmeta.raw_key.value == 'foo'
         assert self.print_model(popmeta) == 'popmeta foo:'
         self.check_consistency(popmeta)
+        self.check_flavor_consistency(popmeta)

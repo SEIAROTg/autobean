@@ -1,4 +1,5 @@
 import copy
+import enum
 import inspect
 import io
 from typing import Any, Iterable, Optional
@@ -6,6 +7,27 @@ import pytest
 from autobean.refactor import parser as parser_lib
 from autobean.refactor import printer
 from autobean.refactor.models import raw_models
+from autobean.refactor.models import easy_models
+
+
+class _ModelFlavor(enum.Enum):
+    RAW = enum.auto()
+    EASY = enum.auto()
+
+
+def _get_model_flavor(model: raw_models.RawModel) -> Optional[_ModelFlavor]:
+    type_ = type(model)
+    maybe_raw = (
+        raw_models.TOKEN_MODELS.get(type_.RULE) is type_
+        or raw_models.TREE_MODELS.get(type_.RULE) is type_)
+    maybe_easy = (
+        easy_models.TOKEN_MODELS.get(type_.RULE) is type_
+        or easy_models.TREE_MODELS.get(type_.RULE) is type_)
+    if maybe_raw and not maybe_easy:
+        return _ModelFlavor.RAW
+    if maybe_easy and not maybe_raw:
+        return _ModelFlavor.EASY
+    return None
 
 
 def _get_comparable_properties(model: raw_models.RawModel) -> dict[str, Any]:
@@ -103,3 +125,21 @@ class BaseTestModel:
             elif isinstance(prop, raw_models.RawTreeModel) and prop is not tree:
                 assert prop.token_store is tree.token_store
                 self.check_consistency(prop)
+
+    def check_flavor_consistency(self, tree: raw_models.RawTreeModel) -> None:
+        model_flavors = set[Optional[_ModelFlavor]]()
+        self._check_flavor_consistency(tree, model_flavors)
+        model_flavors.discard(None)
+        assert len(model_flavors) <= 1, "inconsistent use of model flavors"
+
+    def _check_flavor_consistency(
+            self,
+            tree: raw_models.RawTreeModel,
+            model_flavors: set[Optional[_ModelFlavor]],
+    ) -> None:
+        for _, prop in _get_comparable_properties(tree).items():
+            if isinstance(prop, raw_models.RawTokenModel):
+                model_flavors.add(_get_model_flavor(prop))
+            elif isinstance(prop, raw_models.RawTreeModel) and prop is not tree:
+                model_flavors.add(_get_model_flavor(prop))
+                self._check_flavor_consistency(prop, model_flavors)

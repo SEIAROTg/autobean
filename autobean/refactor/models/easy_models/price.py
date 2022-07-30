@@ -4,6 +4,8 @@ from autobean.refactor.models import raw_models
 from autobean.refactor.models.raw_models import price
 from autobean.refactor.models.raw_models.price import PriceLabel
 from . import internal
+from . import Currency
+from . import Date
 
 internal.token_model(PriceLabel)
 
@@ -24,7 +26,7 @@ class Price(price.Price):
             amount: raw_models.Amount,
     ) -> _Self:
         return cls.from_children(
-            raw_models.Date.from_value(date),
-            raw_models.Currency.from_value(currency),
+            Date.from_value(date),
+            Currency.from_value(currency),
             amount,
         )

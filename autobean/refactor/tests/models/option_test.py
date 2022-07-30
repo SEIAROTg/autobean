@@ -99,3 +99,4 @@ class TestOption(base.BaseTestModel):
         assert option.raw_value.value == 'bar'
         assert self.print_model(option) == 'option "foo" "bar"'
         self.check_consistency(option)
+        self.check_flavor_consistency(option)

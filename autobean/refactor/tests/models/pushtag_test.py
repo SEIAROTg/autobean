@@ -108,6 +108,7 @@ class TestPoptag(base.BaseTestModel):
         assert poptag.raw_tag is tag
         assert self.print_model(poptag) == 'poptag #foo'
         self.check_consistency(poptag)
+        self.check_flavor_consistency(poptag)
 
     def test_from_value(self) -> None:
         poptag = easy_models.Poptag.from_value('foo')
