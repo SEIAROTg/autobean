@@ -1,8 +1,7 @@
 import datetime
 from lark import exceptions
 import pytest
-from autobean.refactor.models import easy_models
-from autobean.refactor.models import raw_models
+from autobean.refactor import models
 from . import base
 
 
@@ -15,7 +14,7 @@ class TestNote(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, date: datetime.date, account: str, comment: str) -> None:
-        note = self.easy_parser.parse(text, easy_models.Note)
+        note = self.parser.parse(text, models.Note)
         assert note.raw_date.value == date
         assert note.date == date
         assert note.raw_account.value == account
@@ -36,55 +35,55 @@ class TestNote(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.raw_parser.parse(text, raw_models.Note)
+            self.parser.parse(text, models.Note)
 
     def test_set_raw_date(self) -> None:
-        note = self.raw_parser.parse('2000-01-01 note Assets:Foo "foo"', raw_models.Note)
-        new_date = raw_models.Date.from_value(datetime.date(2012, 12, 12))
+        note = self.parser.parse('2000-01-01 note Assets:Foo "foo"', models.Note)
+        new_date = models.Date.from_value(datetime.date(2012, 12, 12))
         note.raw_date = new_date
         assert note.raw_date is new_date
         assert self.print_model(note) == '2012-12-12 note Assets:Foo "foo"'
 
     def test_set_date(self) -> None:
-        note = self.easy_parser.parse('2000-01-01  note Assets:Foo "foo"', easy_models.Note)
+        note = self.parser.parse('2000-01-01  note Assets:Foo "foo"', models.Note)
         assert note.date == datetime.date(2000, 1, 1)
         note.date = datetime.date(2012, 12, 12)
         assert note.date == datetime.date(2012, 12, 12)
         assert self.print_model(note) == '2012-12-12  note Assets:Foo "foo"'
 
     def test_set_raw_account(self) -> None:
-        note = self.raw_parser.parse('2000-01-01 note  Assets:Foo  "foo"', raw_models.Note)
-        new_account = raw_models.Account.from_value('Assets:Bar')
+        note = self.parser.parse('2000-01-01 note  Assets:Foo  "foo"', models.Note)
+        new_account = models.Account.from_value('Assets:Bar')
         note.raw_account = new_account
         assert note.raw_account is new_account
         assert self.print_model(note) == '2000-01-01 note  Assets:Bar  "foo"'
 
     def test_set_account(self) -> None:
-        note = self.easy_parser.parse('2000-01-01 note  Assets:Foo  "foo"', easy_models.Note)
+        note = self.parser.parse('2000-01-01 note  Assets:Foo  "foo"', models.Note)
         assert note.account == 'Assets:Foo'
         note.account = 'Assets:Bar'
         assert note.account == 'Assets:Bar'
         assert self.print_model(note) == '2000-01-01 note  Assets:Bar  "foo"'
 
     def test_set_raw_comment(self) -> None:
-        note = self.raw_parser.parse('2000-01-01 note Assets:Foo  "foo"', raw_models.Note)
-        new_comment = raw_models.EscapedString.from_value('bar')
+        note = self.parser.parse('2000-01-01 note Assets:Foo  "foo"', models.Note)
+        new_comment = models.EscapedString.from_value('bar')
         note.raw_comment = new_comment
         assert note.raw_comment is new_comment
         assert self.print_model(note) == '2000-01-01 note Assets:Foo  "bar"'
 
     def test_set_comment(self) -> None:
-        note = self.easy_parser.parse('2000-01-01 note Assets:Foo  "foo"', easy_models.Note)
+        note = self.parser.parse('2000-01-01 note Assets:Foo  "foo"', models.Note)
         assert note.comment == 'foo'
         note.comment = 'bar'
         assert note.comment == 'bar'
         assert self.print_model(note) == '2000-01-01 note Assets:Foo  "bar"'
 
     def test_from_children(self) -> None:
-        date = raw_models.Date.from_value(datetime.date(2000, 1, 1))
-        account = raw_models.Account.from_value('Assets:Foo')
-        comment = raw_models.EscapedString.from_value('foo')
-        note = raw_models.Note.from_children(date, account, comment)
+        date = models.Date.from_value(datetime.date(2000, 1, 1))
+        account = models.Account.from_value('Assets:Foo')
+        comment = models.EscapedString.from_value('foo')
+        note = models.Note.from_children(date, account, comment)
         assert note.raw_date is date
         assert note.raw_account is account
         assert note.raw_comment is comment
@@ -92,7 +91,7 @@ class TestNote(base.BaseTestModel):
         self.check_consistency(note)
 
     def test_from_value(self) -> None:
-        note = easy_models.Note.from_value(
+        note = models.Note.from_value(
             datetime.date(2000, 1, 1),
             'Assets:Foo',
             'foo')
@@ -101,4 +100,3 @@ class TestNote(base.BaseTestModel):
         assert note.comment == 'foo'
         assert self.print_model(note) == '2000-01-01 note Assets:Foo "foo"'
         self.check_consistency(note)
-        self.check_flavor_consistency(note)

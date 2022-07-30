@@ -1,6 +1,6 @@
 from lark import exceptions
 import pytest
-from autobean.refactor.models import raw_models
+from autobean.refactor import models
 from . import base
 
 
@@ -19,7 +19,7 @@ class TestIgnored(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str) -> None:
-        file = self.raw_parser.parse(text, raw_models.File)
+        file = self.parser.parse(text, models.File)
         self.check_deepcopy_tree(file)
 
     @pytest.mark.parametrize(
@@ -30,4 +30,4 @@ class TestIgnored(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.raw_parser.parse(text, raw_models.File)
+            self.parser.parse(text, models.File)

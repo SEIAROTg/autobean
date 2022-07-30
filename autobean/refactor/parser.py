@@ -1,15 +1,15 @@
 import copy
 import pathlib
-from typing import Iterator, Optional, Type, TypeVar
+from typing import Iterator, Type, TypeVar
 import lark
 from lark import exceptions
 from lark import lexer
 from lark import load_grammar
-from autobean.refactor.models import raw_models
-from autobean.refactor.models.raw_models import internal
+from autobean.refactor import models
+from autobean.refactor.models import internal
 
-_T = TypeVar('_T', bound=raw_models.RawTokenModel)
-_U = TypeVar('_U', bound=raw_models.RawTreeModel)
+_T = TypeVar('_T', bound=models.RawTokenModel)
+_U = TypeVar('_U', bound=models.RawTreeModel)
 
 
 with open(pathlib.Path(__file__).parent / 'beancount.lark') as f:
@@ -31,13 +31,13 @@ class PostLex(lark.lark.PostLex):
 
 class Parser:
     _lark: lark.Lark
-    _token_models: dict[str, Type[raw_models.RawTokenModel]]
-    _tree_models: dict[str, Type[raw_models.RawTreeModel]]
+    _token_models: dict[str, Type[models.RawTokenModel]]
+    _tree_models: dict[str, Type[models.RawTreeModel]]
 
     def __init__(
             self,
-            token_models: dict[str, Type[raw_models.RawTokenModel]],
-            tree_models: dict[str, Type[raw_models.RawTreeModel]],
+            token_models: dict[str, Type[models.RawTokenModel]],
+            tree_models: dict[str, Type[models.RawTreeModel]],
     ):
         start = ['_unused'] + list(tree_models.keys())
         self._lark = lark.Lark(
@@ -79,15 +79,15 @@ class Parser:
 
 
 class ModelBuilder:
-    def __init__(self, tokens: list[lark.Token], token_models: dict[str, Type[raw_models.RawTokenModel]], tree_models: dict[str, Type[raw_models.RawTreeModel]]):
+    def __init__(self, tokens: list[lark.Token], token_models: dict[str, Type[models.RawTokenModel]], tree_models: dict[str, Type[models.RawTreeModel]]):
         self._tokens = tokens
         self._token_models = token_models 
         self._tree_models = tree_models
-        self._built_tokens: list[raw_models.RawTokenModel] = []
+        self._built_tokens: list[models.RawTokenModel] = []
         self._token_to_index = {id(token): i for i, token in enumerate(tokens)}
         self._cursor = 0
-        self._right_floating_placeholders: list[raw_models.Placeholder] = []
-        self._token_store = raw_models.TokenStore.from_tokens([])
+        self._right_floating_placeholders: list[models.Placeholder] = []
+        self._token_store = models.TokenStore.from_tokens([])
 
     def _fix_gap(self, cursor: int) -> None:
         for token in self._tokens[self._cursor:cursor]:
@@ -96,8 +96,8 @@ class ModelBuilder:
         self._built_tokens.extend(self._right_floating_placeholders)
         self._right_floating_placeholders.clear()
 
-    def _add_placeholder(self, floating: internal.Floating) -> raw_models.Placeholder:
-        placeholder = raw_models.Placeholder.from_default()
+    def _add_placeholder(self, floating: internal.Floating) -> models.Placeholder:
+        placeholder = models.Placeholder.from_default()
         if floating == internal.Floating.RIGHT:
             self._right_floating_placeholders.append(placeholder)
         elif floating == internal.Floating.LEFT:
@@ -108,14 +108,14 @@ class ModelBuilder:
             assert False
         return placeholder
 
-    def _add_token(self, token: lark.Token) -> raw_models.RawTokenModel:
+    def _add_token(self, token: lark.Token) -> models.RawTokenModel:
         self._fix_gap(self._token_to_index[id(token)])
         built_token = self._token_models[token.type].from_raw_text(token.value)
         self._built_tokens.append(built_token)
         self._cursor += 1
         return built_token
 
-    def _add_tree(self, tree: lark.Tree) -> raw_models.RawTreeModel:
+    def _add_tree(self, tree: lark.Tree) -> models.RawTreeModel:
         model_type = self._tree_models[tree.data]
         fields = internal.list_fields(model_type)
         if fields:
@@ -132,14 +132,14 @@ class ModelBuilder:
             children = [self._add_required_node(child) for child in tree.children]
         return model_type.from_parsed_children(self._token_store, *children)
 
-    def _add_required_node(self, node: lark.Token | lark.Tree) -> raw_models.RawModel:
+    def _add_required_node(self, node: lark.Token | lark.Tree) -> models.RawModel:
         if isinstance(node, lark.Token):
             return self._add_token(node)
         if isinstance(node, lark.Tree):
             return self._add_tree(node)
         assert False
 
-    def _add_optional_node(self, node: lark.Token | lark.Tree | None, floating: internal.Floating) -> raw_models.RawModel:
+    def _add_optional_node(self, node: lark.Token | lark.Tree | None, floating: internal.Floating) -> models.RawModel:
         placeholder = self._add_placeholder(floating)
         inner = self._add_required_node(node) if node is not None else None
         if floating == internal.Floating.LEFT:

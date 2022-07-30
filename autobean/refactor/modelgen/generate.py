@@ -31,7 +31,7 @@ def generate_raw_models(meta_model: Type[MetaModel]) -> str:
 
 def raw_model_path(meta_model: Type[MetaModel]) -> str:
     filename = f'{stringcase.snakecase(meta_model.__name__)}.py'
-    return str(_CURRENT_DIR / '..' / 'models' / 'raw_models' / 'generated' / filename)
+    return str(_CURRENT_DIR / '..' / 'models' / 'generated' / filename)
 
 
 if __name__ == '__main__':

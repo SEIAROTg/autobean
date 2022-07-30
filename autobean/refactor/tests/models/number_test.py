@@ -1,7 +1,7 @@
 import decimal
 from lark import exceptions
 import pytest
-from autobean.refactor.models import raw_models
+from autobean.refactor import models
 from . import base
 
 
@@ -27,7 +27,7 @@ class TestNumber(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, value: decimal.Decimal) -> None:
-        token = self.raw_parser.parse_token(text, raw_models.Number)
+        token = self.parser.parse_token(text, models.Number)
         assert token.raw_text == text
         assert token.value == value
         self.check_deepcopy_token(token)
@@ -46,7 +46,7 @@ class TestNumber(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.raw_parser.parse_token(text, raw_models.Number)
+            self.parser.parse_token(text, models.Number)
 
     @pytest.mark.parametrize(
         'raw_text,new_text,expected_value', [
@@ -55,7 +55,7 @@ class TestNumber(base.BaseTestModel):
         ],
     )
     def test_set_raw_text(self, raw_text: str, new_text: str, expected_value: decimal.Decimal) -> None:
-        token = self.raw_parser.parse_token(raw_text, raw_models.Number)
+        token = self.parser.parse_token(raw_text, models.Number)
         token.raw_text = new_text
         assert token.raw_text == new_text
         assert token.value == expected_value
@@ -67,7 +67,7 @@ class TestNumber(base.BaseTestModel):
         ],
     )
     def test_set_value(self, raw_text: str, new_value: decimal.Decimal, expected_text: str) -> None:
-        token = self.raw_parser.parse_token(raw_text, raw_models.Number)
+        token = self.parser.parse_token(raw_text, models.Number)
         token.value = new_value
         assert token.value == new_value
         assert token.raw_text == expected_text

@@ -1,6 +1,6 @@
 from lark import exceptions
 import pytest
-from autobean.refactor.models import raw_models
+from autobean.refactor import models
 from . import base
 
 
@@ -18,7 +18,7 @@ class TestAccount(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str) -> None:
-        token = self.raw_parser.parse_token(text, raw_models.Account)
+        token = self.parser.parse_token(text, models.Account)
         assert token.raw_text == text
         assert token.value == text
         self.check_deepcopy_token(token)
@@ -30,16 +30,16 @@ class TestAccount(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.raw_parser.parse_token(text, raw_models.Account)
+            self.parser.parse_token(text, models.Account)
 
     def test_set_raw_text(self) -> None:
-        token = self.raw_parser.parse_token('Assets:Foo', raw_models.Account)
+        token = self.parser.parse_token('Assets:Foo', models.Account)
         token.raw_text = 'Liabilities:Foo'
         assert token.raw_text == 'Liabilities:Foo'
         assert token.value == 'Liabilities:Foo'
 
     def test_set_value(self) -> None:
-        token = self.raw_parser.parse_token('Assets:Foo', raw_models.Account)
+        token = self.parser.parse_token('Assets:Foo', models.Account)
         token.value = 'Liabilities:Foo'
         assert token.value == 'Liabilities:Foo'
         assert token.raw_text == 'Liabilities:Foo'

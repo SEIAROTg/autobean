@@ -1,6 +1,6 @@
 from lark import exceptions
 import pytest
-from autobean.refactor.models import raw_models
+from autobean.refactor import models
 from . import base
 
 
@@ -23,7 +23,7 @@ class TestCurrency(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str) -> None:
-        token = self.raw_parser.parse_token(text, raw_models.Currency)
+        token = self.parser.parse_token(text, models.Currency)
         assert token.raw_text == text
         assert token.value == text
         self.check_deepcopy_token(token)
@@ -39,16 +39,16 @@ class TestCurrency(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.raw_parser.parse_token(text, raw_models.Currency)
+            self.parser.parse_token(text, models.Currency)
 
     def test_set_raw_text(self) -> None:
-        token = self.raw_parser.parse_token('USD', raw_models.Currency)
+        token = self.parser.parse_token('USD', models.Currency)
         token.raw_text = 'AAPL'
         assert token.raw_text == 'AAPL'
         assert token.value == 'AAPL'
 
     def test_set_value(self) -> None:
-        token = self.raw_parser.parse_token('USD', raw_models.Currency)
+        token = self.parser.parse_token('USD', models.Currency)
         token.value = 'AAPL'
         assert token.value == 'AAPL'
         assert token.raw_text == 'AAPL'
