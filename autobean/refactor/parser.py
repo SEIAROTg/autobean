@@ -92,7 +92,7 @@ class ModelBuilder:
         self._built_tokens: list[models.RawTokenModel] = []
         self._token_to_index = {id(token): i for i, token in enumerate(tokens)}
         self._cursor = 0
-        self._right_floating_placeholders: list[models.Placeholder] = []
+        self._right_floating_placeholders: list[internal.Placeholder] = []
         self._token_store = models.TokenStore.from_tokens([])
 
     def _fix_gap(self, cursor: int) -> None:
@@ -102,8 +102,8 @@ class ModelBuilder:
         self._built_tokens.extend(self._right_floating_placeholders)
         self._right_floating_placeholders.clear()
 
-    def _add_placeholder(self, floating: _Floating) -> models.Placeholder:
-        placeholder = models.Placeholder.from_default()
+    def _add_placeholder(self, floating: _Floating) -> internal.Placeholder:
+        placeholder = internal.Placeholder.from_default()
         if floating == _Floating.RIGHT:
             self._right_floating_placeholders.append(placeholder)
         elif floating == _Floating.LEFT:

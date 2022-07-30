@@ -1,4 +1,4 @@
-from .base import RawTokenModel
+from ..base import RawTokenModel
 
 
 class Placeholder(RawTokenModel):

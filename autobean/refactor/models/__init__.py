@@ -26,7 +26,6 @@ from .number_paren_expr import *
 from .number_unary_expr import *
 from .option import *
 from .pad import *
-from .placeholder import *
 from .plugin import *
 from .popmeta import *
 from .poptag import *
