@@ -141,3 +141,10 @@ class Note(MetaModel):
     _label: 'NOTE' = field(define_as='NoteLabel')
     account: 'ACCOUNT'
     comment: 'ESCAPED_STRING'
+
+
+class Document(MetaModel):
+    date: 'DATE'
+    _label: 'DOCUMENT' = field(define_as='DocumentLabel')
+    account: 'ACCOUNT'
+    filename: 'ESCAPED_STRING'

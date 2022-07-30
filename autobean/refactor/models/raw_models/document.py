@@ -1,0 +1,1 @@
+from .generated.document import *

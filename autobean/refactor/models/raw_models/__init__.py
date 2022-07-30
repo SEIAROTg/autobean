@@ -8,6 +8,7 @@ from .close import *
 from .commodity import *
 from .currency import *
 from .date import *
+from .document import *
 from .escaped_string import *
 from .event import *
 from .file import *
