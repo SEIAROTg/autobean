@@ -134,3 +134,10 @@ class Query(MetaModel):
     _label: 'QUERY' = field(define_as='QueryLabel')
     name: 'ESCAPED_STRING'
     query_string: 'ESCAPED_STRING'
+
+
+class Note(MetaModel):
+    date: 'DATE'
+    _label: 'NOTE' = field(define_as='NoteLabel')
+    account: 'ACCOUNT'
+    comment: 'ESCAPED_STRING'

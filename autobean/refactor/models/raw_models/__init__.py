@@ -14,6 +14,7 @@ from .file import *
 from .include import *
 from .link import *
 from .meta_key import *
+from .note import *
 from .null import *
 from .number import *
 from .number_expr import *
@@ -21,8 +22,8 @@ from .option import *
 from .pad import *
 from .placeholder import *
 from .plugin import *
-from .price import *
 from .posting_flag import *
+from .price import *
 from .punctuation import *
 from .pushmeta import *
 from .pushtag import *
