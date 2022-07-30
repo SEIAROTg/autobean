@@ -8,7 +8,17 @@ from autobean.refactor import models
 from . import base
 
 
-_SimplifiedValue = Optional[models.MetaValue | decimal.Decimal | datetime.date | str | bool]
+_SimplifiedValue = Optional[
+    models.Account |
+    models.Currency |
+    models.Tag |
+    models.Null |
+    models.Amount |
+    decimal.Decimal |
+    datetime.date |
+    str |
+    bool
+]
 
 # (text, key, raw_value, value)
 _Testcase = tuple[str, str, Optional[models.MetaValue], _SimplifiedValue]
@@ -40,6 +50,18 @@ _VALID_TESTCASES_BAR_ROTATED = [
     *_VALID_TESTCASES_BAR[1:],
     _VALID_TESTCASES_BAR[0],
 ]
+_VALID_TESTCASES_DEFAULT_SPACING: list[_Testcase] = [
+    ('pushmeta foo:', 'foo', None, None),
+    ('pushmeta foo: "123"', 'foo', models.EscapedString.from_value('123'), '123'),
+    ('pushmeta foo: Assets:Foo', 'foo', models.Account.from_value('Assets:Foo'), models.Account.from_value('Assets:Foo')),
+    ('pushmeta foo: 2020-01-01', 'foo', models.Date.from_value(datetime.date(2020, 1, 1)), datetime.date(2020, 1, 1)),
+    ('pushmeta foo: USD', 'foo', models.Currency.from_value('USD'), models.Currency.from_value('USD')),
+    ('pushmeta foo: #foo', 'foo', models.Tag.from_value('foo'), models.Tag.from_value('foo')),
+    ('pushmeta foo: TRUE', 'foo', models.Bool.from_value(True), True),
+    ('pushmeta foo: NULL', 'foo', models.Null.from_raw_text('NULL'), models.Null.from_raw_text('NULL')),
+    ('pushmeta foo: 123', 'foo', models.NumberExpr.from_value(decimal.Decimal(123)), decimal.Decimal(123)),
+    ('pushmeta foo: 123 USD', 'foo', models.Amount.from_value(decimal.Decimal(123), 'USD'), models.Amount.from_value(decimal.Decimal(123), 'USD')),
+]
 
 
 class TestPushmeta(base.BaseTestModel):
@@ -49,7 +71,7 @@ class TestPushmeta(base.BaseTestModel):
             ('pushmeta\t foo:', 'foo', None, None),
         ],
     )
-    def test_parse_success(self, text: str, key: str, raw_value: models.MetaValue, value: _SimplifiedValue) -> None:
+    def test_parse_success(self, text: str, key: str, raw_value: Optional[models.MetaValue], value: _SimplifiedValue) -> None:
         del value  # unused
         pushmeta = self.parser.parse(text, models.Pushmeta)
         assert pushmeta.raw_key.value == key
@@ -125,19 +147,28 @@ class TestPushmeta(base.BaseTestModel):
         if value is not None:  # whitespaces may not match if value is created
             assert self.print_model(pushmeta) == text_after
 
-    def test_from_children_with_value(self) -> None:
+    @pytest.mark.parametrize(
+        'text,key,raw_value,value', _VALID_TESTCASES_DEFAULT_SPACING,
+    )
+    def test_from_children(self, text: str, key: str, raw_value: Optional[models.MetaValue], value: _SimplifiedValue) -> None:
         pushmeta = models.Pushmeta.from_children(
-            models.MetaKey.from_value('foo'),
-            models.EscapedString.from_value('bar'),
+            models.MetaKey.from_value(key),
+            copy.deepcopy(raw_value),
         )
-        assert pushmeta.raw_key.value == 'foo'
-        assert pushmeta.raw_value == models.EscapedString.from_value('bar')
-        assert self.print_model(pushmeta) == 'pushmeta foo: "bar"'
+        assert pushmeta.raw_key.value == key
+        assert pushmeta.raw_value == raw_value
+        assert self.print_model(pushmeta) == text
         self.check_consistency(pushmeta)
 
-    def test_from_children_without_value(self) -> None:
-        pushmeta = models.Pushmeta.from_children(models.MetaKey.from_value('foo'), None)
-        assert pushmeta.raw_key.value == 'foo'
-        assert pushmeta.raw_value is None
-        assert self.print_model(pushmeta) == 'pushmeta foo:'
+    @pytest.mark.parametrize(
+        'text,key,raw_value,value', _VALID_TESTCASES_DEFAULT_SPACING,
+    )
+    def test_from_value(self, text: str, key: str, raw_value: Optional[models.MetaValue], value: _SimplifiedValue) -> None:
+        pushmeta = models.Pushmeta.from_value(
+            key,
+            copy.deepcopy(value),
+        )
+        assert pushmeta.raw_key.value == key
+        assert pushmeta.raw_value == raw_value
+        assert self.print_model(pushmeta) == text
         self.check_consistency(pushmeta)
