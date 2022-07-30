@@ -33,6 +33,7 @@ class Maybe(base.RawTreeModel, Generic[_M]):
             self.placeholder.clone(token_store, token_transformer))
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
+        self._token_store = token_store
         if self.inner is not None:
             self.inner = self.inner.reattach(token_store, token_transformer)
         self._placeholder = self._placeholder.reattach(token_store, token_transformer)
@@ -65,10 +66,14 @@ class MaybeL(Maybe[_M]):
             *,
             separators: tuple[base.RawTokenModel, ...],
     ) -> _SelfMaybeL:
-        ph = Placeholder.from_default()
-        tokens = [ph, *copy.deepcopy(separators), *inner.detach()] if inner is not None else [ph]
+        placeholder = Placeholder.from_default()
+        tokens = (
+            [placeholder, *copy.deepcopy(separators), *inner.detach()]
+            if inner is not None else [placeholder])
         token_store = base.TokenStore.from_tokens(tokens)
-        return cls(token_store, inner, ph)
+        if inner is not None:
+            inner.reattach(token_store)
+        return cls(token_store, inner, placeholder)
 
     def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...],) -> None:
         self.token_store.insert_after(self.placeholder, [
@@ -103,8 +108,12 @@ class MaybeR(Maybe[_M]):
             separators: tuple[base.RawTokenModel, ...],
     ) -> _SelfMaybeR:
         placeholder = Placeholder.from_default()
-        tokens = [*inner.detach(), *copy.deepcopy(separators), placeholder] if inner is not None else [placeholder]
+        tokens = (
+            [*inner.detach(), *copy.deepcopy(separators), placeholder]
+            if inner is not None else [placeholder])
         token_store = base.TokenStore.from_tokens(tokens)
+        if inner is not None:
+            inner.reattach(token_store)
         return cls(token_store, inner, placeholder)
 
     def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...],) -> None:

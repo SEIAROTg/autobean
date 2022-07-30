@@ -8,10 +8,20 @@ from autobean.refactor import printer
 from autobean.refactor import models
 
 
-def _get_comparable_properties(model: models.RawModel) -> dict[str, Any]:
+_IGNORED_ATTRIBUTES = {
+    'token_store',
+    '_token_store',
+    'store_handle',
+    'tokens',
+    '_abc_impl',
+    '_is_protocol',
+}
+
+
+def _get_comparable_attributes(model: models.RawModel) -> dict[str, Any]:
     ret = {}
     for key, value in inspect.getmembers(model):
-        if key.startswith('_') or key in ('token_store', 'store_handle', 'tokens'):
+        if key.startswith('__') or key in _IGNORED_ATTRIBUTES:
             continue
         if callable(value) or value is model:
             continue
@@ -30,8 +40,8 @@ def _check_copy_eq(
         assert b.token_store is expected_token_store
         if isinstance(a, models.RawTokenModel) and a.token_store:
             assert a.token_store.get_index(a) + token_index_offset == b.token_store.get_index(b)
-        a_props = _get_comparable_properties(a)
-        b_props = _get_comparable_properties(b)
+        a_props = _get_comparable_attributes(a)
+        b_props = _get_comparable_attributes(b)
         assert a_props.keys() == b_props.keys()
         for key, a_value in a_props.items():
             b_value = b_props[key]
@@ -96,7 +106,7 @@ class BaseTestModel:
         _check_copy_eq(tree, c, token_store, 1)
 
     def check_consistency(self, tree: models.RawTreeModel) -> None:
-        for _, prop in _get_comparable_properties(tree).items():
+        for _, prop in _get_comparable_attributes(tree).items():
             if isinstance(prop, models.RawTokenModel):
                 assert prop.token_store is tree.token_store
             elif isinstance(prop, models.RawTreeModel) and prop is not tree:
