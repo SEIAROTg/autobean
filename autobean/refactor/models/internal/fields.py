@@ -1,6 +1,7 @@
 from typing import Type, TypeVar
 from .. import base
 from .maybe import Maybe
+from .repeated import Repeated
 from .base_property import base_property
 
 _V = TypeVar('_V')
@@ -23,6 +24,16 @@ class required_field(field[_M]):
 
 
 class optional_field(field[Maybe[_M]]):
+    def __init__(self, *, separators: tuple[base.RawTokenModel, ...]) -> None:
+        super().__init__()
+        self._separators = separators
+
+    @property
+    def separators(self) -> tuple[base.RawTokenModel, ...]:
+        return self._separators
+
+
+class repeated_field(field[Repeated[_M]]):
     def __init__(self, *, separators: tuple[base.RawTokenModel, ...]) -> None:
         super().__init__()
         self._separators = separators

@@ -125,10 +125,13 @@ class ModelBuilder:
         model_type = self._tree_models[tree.data]
         children = []
         for child in tree.children:
-            if isinstance(child, lark.Tree) and child.data == 'maybe_left':
+            is_tree = isinstance(child, lark.Tree)
+            if is_tree and child.data == 'maybe_left':
                 children.append(self._add_optional_node(child, _Floating.LEFT))
-            elif isinstance(child, lark.Tree) and child.data == 'maybe_right':
+            elif is_tree and child.data == 'maybe_right':
                 children.append(self._add_optional_node(child, _Floating.RIGHT))
+            elif is_tree and child.data == 'repeated':
+                children.append(self._add_repeated_node(child))
             else:
                 children.append(self._add_required_node(child))
         return model_type.from_parsed_children(self._token_store, *children)
@@ -149,6 +152,13 @@ class ModelBuilder:
         if floating == _Floating.RIGHT:
             return internal.MaybeR(self._token_store, inner, placeholder)
         assert False
+
+    def _add_repeated_node(self, node: lark.Tree) -> models.RawModel:
+        placeholder = self._add_placeholder(_Floating.LEFT)
+        items = [
+            self._add_required_node(child) for child in node.children
+        ]
+        return internal.Repeated(self._token_store, items, placeholder)
 
     def build(self, tree: lark.Tree, model_type: Type[_U]) -> _U:
         model = self._add_tree(tree)

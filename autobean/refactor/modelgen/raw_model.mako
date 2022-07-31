@@ -5,15 +5,18 @@ from autobean.refactor.modelgen.field_descriptor import FieldCardinality
 from autobean.refactor.meta_models.base import Floating
 
 typing_imports = {'TypeVar', 'Type', 'final'}
-if any(field.cardinality == FieldCardinality.OPTIONAL for field in fields):
-    typing_imports.add('Optional')
+for field in fields:
+    if field.cardinality == FieldCardinality.OPTIONAL:
+        typing_imports.add('Optional')
+    elif field.cardinality == FieldCardinality.REPEATED:
+        typing_imports.add('Iterable')
 model_imports = collections.defaultdict(set)
 model_imports_type_check_only = collections.defaultdict(set)
 model_imports['punctuation'].add('Whitespace')
 for field in fields:
     if field.define_as: continue
     for model_type in field.model_types:
-        if field.circular_dep:
+        if field.has_circular_dep:
             model_imports_type_check_only[model_type.module].add(model_type.name)
             typing_imports.add('TYPE_CHECKING')
         else:
@@ -67,6 +70,8 @@ class ${model_name}(base.RawTreeModel):
     _${field.name} = internal.required_field[${field.inner_type}]()
 % elif field.cardinality == FieldCardinality.OPTIONAL:
     _${field.name} = internal.optional_field[${field.inner_type}](separators=(Whitespace.from_default(),))
+% elif field.cardinality == FieldCardinality.REPEATED:
+    _${field.name} = internal.repeated_field[${field.inner_type}](separators=(Whitespace.from_default(),))
 % else:
 <% assert False %>\
 % endif
@@ -78,6 +83,8 @@ class ${model_name}(base.RawTreeModel):
     raw_${field.name} = internal.required_node_property(_${field.name})
 % elif field.cardinality == FieldCardinality.OPTIONAL:
     raw_${field.name} = internal.optional_node_property(_${field.name})
+% elif field.cardinality == FieldCardinality.REPEATED:
+    raw_${field.name} = internal.repeated_node_property(_${field.name})
 % else:
 <% assert False %>\
 % endif
@@ -88,7 +95,7 @@ class ${model_name}(base.RawTreeModel):
             self,
             token_store: base.TokenStore,
 % for field in fields:
-            ${field.name}: ${field.private_type},
+            ${field.name}: ${field.internal_type},
 % endfor
     ):
         super().__init__(token_store)
@@ -131,18 +138,28 @@ class ${model_name}(base.RawTreeModel):
             cls: Type[_Self],
 % for field in fields:
 <% if not field.is_public: continue %>\
-            ${field.name}: ${field.public_type},
+% if not field.is_optional:
+            ${field.name}: ${field.input_type},
+% elif field.cardinality == FieldCardinality.OPTIONAL:
+            ${field.name}: ${field.input_type} = None,
+% elif field.cardinality == FieldCardinality.REPEATED:
+            ${field.name}: ${field.input_type} = (),
+% else:
+<% assert False %>\
+% endif
 % endfor
     ) -> _Self:
 % for field in fields:
-% if not field.is_public:
-        ${field.name} = ${field.inner_type}.from_default()
-% elif field.cardinality == FieldCardinality.OPTIONAL:
 <%
 # mypy isn't good at inferring union type
 type_fix = f'[{field.type_alias}]' if field.type_alias is not None else ''
 %>\
+% if not field.is_public:
+        ${field.name} = ${field.inner_type}.from_default()
+% elif field.cardinality == FieldCardinality.OPTIONAL:
         maybe_${field.name} = internal.Maybe${field.floating.name[0]}${type_fix}.from_children(${field.name}, separators=cls._${field.name}.separators)
+% elif field.cardinality == FieldCardinality.REPEATED:
+        repeated_${field.name} = internal.Repeated${type_fix}.from_children(${field.name}, separators=cls._${field.name}.separators)
 % endif
 % endfor
 <%
@@ -154,10 +171,10 @@ args = []
 % if not skip_space and field.floating != Floating.LEFT:
             Whitespace.from_default(),
 % endif
+<% skip_space = False %>\
 % if field.cardinality == FieldCardinality.REQUIRED:
             *${field.name}.detach(),
 <%
-skip_space = False
 args.append(field.name)
 %>\
 % elif field.cardinality == FieldCardinality.OPTIONAL:
@@ -165,6 +182,11 @@ args.append(field.name)
 <%
 skip_space = field.floating == Floating.RIGHT
 args.append(f'maybe_{field.name}')
+%>\
+% elif field.cardinality == FieldCardinality.REPEATED:
+            *repeated_${field.name}.detach(),
+<%
+args.append(f'repeated_{field.name}')
 %>\
 % else:
 <% assert False %>\

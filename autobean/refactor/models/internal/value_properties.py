@@ -1,12 +1,15 @@
 import datetime
 import decimal
 import abc
-from typing import Generic, Optional, Type, TypeVar
-from .properties import required_node_property, optional_node_property
+import itertools
+from typing import Collection, Generic, Iterable, Iterator, MutableSequence, NoReturn, Optional, Type, TypeVar, overload
+from .properties import RepeatedNodeWrapper, repeated_node_property, required_node_property, optional_node_property
 from .. import base
+from . import indexes
 
 
 _V = TypeVar('_V')
+_M = TypeVar('_M', bound=base.RawModel)
 _U = TypeVar('_U', bound=base.RawTreeModel)
 _SV = TypeVar('_SV', bound='RWValue[str]')
 _DV = TypeVar('_DV', bound='RWValue[decimal.Decimal]')
@@ -96,3 +99,119 @@ class required_date_property:
     
     def __set__(self, instance: _U, value: datetime.date) -> None:
         self._inner_property.__get__(instance).value = value
+
+
+class RepeatedStringWrapper(MutableSequence[str], Generic[_SV]):
+    def __init__(self, inner_wrapper: RepeatedNodeWrapper[_SV | _M], inner_type: Type[_SV]):
+        self._inner_wrapper = inner_wrapper
+        self._inner_type = inner_type
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+    def __iter__(self) -> Iterator[str]:
+        return (item.value for item in self._inner_wrapper if isinstance(item, self._inner_type))
+
+    def _filtered_items(self) -> list[tuple[int, _SV]]:
+        return [(i, item) for i, item in enumerate(self._inner_wrapper) if isinstance(item, self._inner_type)]
+
+    @overload
+    def __getitem__(self, index: int) -> str:
+        ...
+    @overload
+    def __getitem__(self, index: slice) -> list[str]:
+        ...
+    def __getitem__(self, index: int | slice) -> str | list[str]:
+        items = self._filtered_items()
+        if isinstance(index, int):
+            return items[index][1].value
+        return [item[1].value for item in items[index]]
+
+    def __delitem__(self, index: int | slice) -> None:
+        items = self._filtered_items()
+        r = indexes.range_from_index(index, len(items))
+        self._inner_wrapper.drop_many(items[i][0] for i in r)
+
+    @overload
+    def __setitem__(self, index: int, value: str) -> None:
+        ...
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[str]) -> None:
+        ...
+    def __setitem__(self, index: int | slice, value: str | Iterable[str]) -> None:
+        items = self._filtered_items()
+        if isinstance(index, int):
+            assert isinstance(value, str)
+            values = [value]
+        else:
+            assert isinstance(value, Iterable)
+            values = list(value)
+        r = indexes.range_from_index(index, len(items))
+        items_to_update = items[indexes.slice_from_range(r)]
+        # We don't allow assignment with distinct length here because the underlying models may not be consecutive.
+        if len(items_to_update) != len(values):
+            raise ValueError(f'attempt to assign sequence of size {len(values)} to extended slice of size {len(items_to_update)}')
+        for item, value in zip(items_to_update, values):
+            item[1].value = value
+
+    def insert(self, index: int, value: str) -> None:
+        items = self._filtered_items()
+        if index >= len(items):
+            underlying_index = len(self._inner_wrapper)
+        elif index < -len(items):
+            underlying_index = 0
+        else:
+            underlying_index = items[index][0]
+        self._inner_wrapper.insert(underlying_index, self._inner_type.from_value(value))
+
+    def append(self, value: str) -> None:
+        self._inner_wrapper.append(self._inner_type.from_value(value))
+
+    def clear(self) -> None:
+        items = self._filtered_items()
+        self._inner_wrapper.drop_many(item[0] for item in items)
+
+    def extend(self, values: Iterable[str]) -> None:
+        self._inner_wrapper.extend(self._inner_type.from_value(value) for value in values)
+
+    def pop(self, index: int = -1) -> str:
+        items = self._filtered_items()
+        if not items:
+            raise IndexError('pop from empty list')
+        if not -len(items) <= index < len(items):
+            raise IndexError('pop index out of range')
+        underlying_index = items[index][0]
+        self._inner_wrapper.pop(underlying_index)
+        return items[index][1].value
+
+    def remove(self, value: str) -> None:
+        items = self._filtered_items()
+        for i, item in items:
+            if item.value == value:
+                self._inner_wrapper.pop(i)
+                return
+        raise ValueError(f'{value!r} not found in list')
+
+    def discard(self, value: str) -> None:
+        items = self._filtered_items()
+        self._inner_wrapper.drop_many(item[0] for item in items if item[1].value == value)
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, Collection) and
+            all(a == b for a, b in itertools.zip_longest(self, other)))
+
+
+class repeated_string_property(Generic[_SV]):
+    def __init__(self, inner_property: repeated_node_property[_SV | _M], inner_type: Type[_SV]):
+        self._inner_property = inner_property
+        self._inner_type = inner_type
+
+    def __set_name__(self, owner: base.RawTreeModel, name: str) -> None:
+        self._name = name
+
+    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> RepeatedStringWrapper:
+        inner_wrapper = self._inner_property.__get__(instance, owner)
+        wrapper = RepeatedStringWrapper(inner_wrapper, self._inner_type)
+        setattr(instance, self._name, wrapper)
+        return wrapper
