@@ -9,13 +9,13 @@ _M = TypeVar('_M', bound=base.RawModel)
 
 class field(base_property[_V, base.RawTreeModel]):
     def __set_name__(self, owner: Type[base.RawTreeModel], name: str) -> None:
-        self._attr = '_' + name
+        self._attr = name
 
     def _get(self, instance: base.RawTreeModel) -> _V:
-        return getattr(instance, self._attr)
+        return instance.__dict__[self._attr]
 
     def __set__(self, instance: base.RawTreeModel, value: _V) -> None:
-        setattr(instance, self._attr, value)
+        instance.__dict__[self._attr] = value
 
 
 class required_field(field[_M]):
