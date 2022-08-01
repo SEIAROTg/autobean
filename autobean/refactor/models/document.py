@@ -1,9 +1,12 @@
 import datetime
-from typing import Type, TypeVar
+import itertools
+from typing import Iterable, Type, TypeVar
 from . import internal
 from .date import Date
 from .account import Account
 from .escaped_string import EscapedString
+from .link import Link
+from .tag import Tag
 from .generated import document
 from .generated.document import DocumentLabel
 
@@ -15,6 +18,8 @@ class Document(document.Document):
     date = internal.required_date_property(document.Document.raw_date)
     account = internal.required_string_property(document.Document.raw_account)
     filename = internal.required_string_property(document.Document.raw_filename)
+    tags = internal.repeated_string_property(document.Document.raw_tags_links, Tag)
+    links = internal.repeated_string_property(document.Document.raw_tags_links, Link)
 
     @classmethod
     def from_value(
@@ -22,8 +27,12 @@ class Document(document.Document):
             date: datetime.date,
             account: str,
             filename: str,
+            tags: Iterable[str] = (),
+            links: Iterable[str] = (),
     ) -> _Self:
         return cls.from_children(
             Date.from_value(date),
             Account.from_value(account),
-            EscapedString.from_value(filename))
+            EscapedString.from_value(filename),
+            itertools.chain(map(Tag.from_value, tags), map(Link.from_value, links)),
+        )

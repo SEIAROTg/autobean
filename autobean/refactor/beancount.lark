@@ -39,7 +39,7 @@ event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING
 query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING
 price:        DATE PRICE CURRENCY amount
 note:         DATE NOTE ACCOUNT ESCAPED_STRING
-document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING
+document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link}
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -127,6 +127,9 @@ amount: number_expr CURRENCY
 // Tolerance
 TILDE:        "~"
 tolerance:    TILDE number_expr
+
+// tags / links
+_tag_or_link: TAG | LINK
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]

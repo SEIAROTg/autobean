@@ -148,3 +148,4 @@ class Document(MetaModel):
     _label: 'DOCUMENT' = field(define_as='DocumentLabel')
     account: 'ACCOUNT'
     filename: 'ESCAPED_STRING'
+    tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
