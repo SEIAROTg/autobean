@@ -20,3 +20,5 @@ class field:
     type_alias: Optional[str] = None
     has_circular_dep: bool = False
     is_optional: bool = False
+    separators: Optional[tuple[str, ...]] = None
+    separators_before: Optional[tuple[str, ...]] = None

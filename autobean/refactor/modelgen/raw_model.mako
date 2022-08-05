@@ -4,6 +4,15 @@ import stringcase
 from autobean.refactor.modelgen.field_descriptor import FieldCardinality
 from autobean.refactor.meta_models.base import Floating
 
+
+def fmt_separators(separators: tuple[str, ...]) -> str:
+    if len(separators) == 1:
+        inner = separators[0] + ','
+    else:
+        inner = ', '.join(separators)
+    return '(' + inner + ')'
+
+
 typing_imports = {'TypeVar', 'Type', 'final'}
 for field in fields:
     if field.cardinality == FieldCardinality.OPTIONAL:
@@ -69,9 +78,12 @@ class ${model_name}(base.RawTreeModel):
 % if field.cardinality == FieldCardinality.REQUIRED:
     _${field.name} = internal.required_field[${field.inner_type}]()
 % elif field.cardinality == FieldCardinality.OPTIONAL:
-    _${field.name} = internal.optional_field[${field.inner_type}](separators=(Whitespace.from_default(),))
+    _${field.name} = internal.optional_field[${field.inner_type}](separators=${fmt_separators(field.separators)})
 % elif field.cardinality == FieldCardinality.REPEATED:
-    _${field.name} = internal.repeated_field[${field.inner_type}](separators=(Whitespace.from_default(),))
+<%
+opt_separators_before = f', separators_before={fmt_separators(field.separators_before)}' if field.separators_before is not None else ''
+%>\
+    _${field.name} = internal.repeated_field[${field.inner_type}](separators=${fmt_separators(field.separators)}${opt_separators_before})
 % else:
 <% assert False %>\
 % endif

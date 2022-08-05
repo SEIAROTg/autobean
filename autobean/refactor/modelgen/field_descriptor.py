@@ -62,6 +62,8 @@ class FieldDescriptor:
     type_alias: Optional[str]
     has_circular_dep: bool
     is_optional: bool
+    separators: Optional[tuple[str, ...]]
+    separators_before: Optional[tuple[str, ...]]
 
     @functools.cached_property
     def inner_type_original(self) -> str:
@@ -137,12 +139,19 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             floating = base.Floating.LEFT
         single_token = len(model_types) == 1 and is_token(next(iter(model_types)).rule)
         if field.define_as and not single_token:
-            raise ValueError(f'Fields with define_as must be a single token.')
+            raise ValueError('Fields with define_as must be a single token.')
         default_constructable = len(model_types) == 1 and is_literal_token(next(iter(model_types)).rule)
         if not is_public and (not default_constructable or cardinality != FieldCardinality.REQUIRED):
-            raise ValueError(f'Private fields must be required and default constructable.')
+            raise ValueError('Private fields must be required and default constructable.')
         if field.is_optional and cardinality == FieldCardinality.REQUIRED:
-            raise ValueError(f'Required fields cannot be optional.')
+            raise ValueError('Required fields must not be optional.')
+        if field.separators is not None and cardinality == FieldCardinality.REQUIRED:
+            raise ValueError('Required fields must not specify separators.')
+        if field.separators_before is not None and cardinality == FieldCardinality.REQUIRED:
+            raise ValueError('Required fields must not specify separators_before.')
+        separators = field.separators
+        if field.separators is None and cardinality != FieldCardinality.REQUIRED:
+            separators = ('Whitespace.from_default()',)
         descriptor = FieldDescriptor(
             name=name,
             model_types=frozenset(model_types),
@@ -156,6 +165,8 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             type_alias=field.type_alias,
             has_circular_dep=field.has_circular_dep,
             is_optional=field.is_optional,
+            separators=separators,
+            separators_before=field.separators_before,
         )
         field_descriptors.append(descriptor)
     return field_descriptors
