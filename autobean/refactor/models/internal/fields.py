@@ -1,4 +1,4 @@
-from typing import Type, TypeVar
+from typing import Optional, Type, TypeVar
 from .. import base
 from .maybe import Maybe
 from .repeated import Repeated
@@ -34,10 +34,20 @@ class optional_field(field[Maybe[_M]]):
 
 
 class repeated_field(field[Repeated[_M]]):
-    def __init__(self, *, separators: tuple[base.RawTokenModel, ...]) -> None:
+    def __init__(
+            self,
+            *,
+            separators: tuple[base.RawTokenModel, ...],
+            separators_before: Optional[tuple[base.RawTokenModel, ...]] = None,
+    ) -> None:
         super().__init__()
         self._separators = separators
+        self._separators_before = separators_before
 
     @property
     def separators(self) -> tuple[base.RawTokenModel, ...]:
         return self._separators
+
+    @property
+    def separators_before(self) -> Optional[tuple[base.RawTokenModel, ...]]:
+        return self._separators_before

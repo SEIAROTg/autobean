@@ -1,6 +1,6 @@
 import copy
 import itertools
-from typing import Generic, Iterable, Type, TypeVar
+from typing import Generic, Iterable, Optional, Type, TypeVar
 from .. import base
 from .placeholder import Placeholder
 
@@ -42,16 +42,17 @@ class Repeated(base.RawTreeModel, Generic[_M]):
             items: Iterable[_M],
             *,
             separators: tuple[base.RawTokenModel, ...],
+            separators_before: Optional[tuple[base.RawTokenModel, ...]] = None,
     ) -> _Self:
         placeholder = Placeholder.from_default()
         items = list(items)
-        tokens = [
-            placeholder,
-            *itertools.chain.from_iterable([
-                *copy.deepcopy(separators),
-                *item.detach(),
-            ] for item in items),
-        ]
+        tokens: list[base.RawTokenModel] = [placeholder]
+        for i, item in enumerate(items):
+            if i == 0 and separators_before is not None:
+                tokens.extend(copy.deepcopy(separators_before))
+            else:
+                tokens.extend(copy.deepcopy(separators))
+            tokens.extend(item.detach())
         token_store = base.TokenStore.from_tokens(tokens)
         for item in items:
             item.reattach(token_store)

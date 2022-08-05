@@ -94,23 +94,44 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         else:
             self.drop_many(r)
 
-    def _tokens_to_insert(self, values: list[_M]) -> list[base.RawTokenModel]:
-        return list(itertools.chain.from_iterable([
-            *copy.deepcopy(self._field.separators),
-            *value.detach(),
-        ] for value in values))
+    def _insert_tokens(self, index: int, values: Iterable[base.RawModel]) -> None:
+        tokens: list[base.RawTokenModel] = []
+        ref = self._prev_last(index)
+        for i, value in enumerate(values):
+            if i or index or self._field.separators_before is None:
+                tokens.extend(copy.deepcopy(self._field.separators))
+                tokens.extend(value.detach())
+            elif len(self._repeated.items):
+                tokens.extend(value.detach())
+                tokens.extend(copy.deepcopy(self._field.separators))
+                t = self._repeated.token_store.get_prev(self._repeated.items[0].first_token)
+                assert t is not None
+                ref = t
+            else:
+                tokens.extend(copy.deepcopy(self._field.separators_before))
+                tokens.extend(value.detach())
+        self._repeated.token_store.insert_after(ref, tokens)
 
     def _prev_last(self, index: int) -> base.RawTokenModel:
         return (self._repeated.items[index - 1].last_token
             if index > 0 else self._repeated.placeholder)
 
     def _del_tokens(self, start: int, stop: int) -> None:
+        # Consecutive tokens must be deleted in the same call.
         if stop <= start:
             return
-        prev_last = self._prev_last(start)
-        first_token = self._repeated.token_store.get_next(prev_last)
-        assert first_token is not None
-        last_token = self._repeated.items[stop - 1].last_token
+        if start == 0 and stop < len(self._repeated.items) and self._field.separators_before is not None:
+            first_token = self._repeated.items[start].first_token
+            next_first = self._repeated.items[stop].first_token
+            t = self._repeated.token_store.get_prev(next_first)
+            assert t is not None
+            last_token = t
+        else:
+            prev_last = self._prev_last(start)
+            t = self._repeated.token_store.get_next(prev_last)
+            assert t is not None
+            first_token = t
+            last_token = self._repeated.items[stop - 1].last_token
         self._repeated.token_store.remove(first_token, last_token)
 
     @overload
@@ -129,31 +150,23 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         r = indexes.range_from_index(index, len(self._repeated.items))
         if r.step == 1:
             self._del_tokens(r.start, r.stop)
-            self._repeated.token_store.insert_after(
-                self._prev_last(r.start),
-                self._tokens_to_insert(values))
+            self._insert_tokens(r.start, values)
             self._repeated.items[indexes.slice_from_range(r)] = values
         else:
             if len(r) != len(values):
                 raise ValueError(f'attempt to assign sequence of size {len(values)} to extended slice of size {len(r)}')
             for i, value in zip(r, values):
                 self._del_tokens(i, i + 1)
-                self._repeated.token_store.insert_after(
-                    self._prev_last(i),
-                    self._tokens_to_insert([value]))
+                self._insert_tokens(i, [value])
                 self._repeated.items[i] = value
 
     def insert(self, index: int, value: _M) -> None:
         index = min(index, len(self._repeated.items))
-        self._repeated.token_store.insert_after(
-            self._prev_last(index),
-            self._tokens_to_insert([value]))
+        self._insert_tokens(index, [value])
         self._repeated.items.insert(index, value)
 
     def append(self, value: _M) -> None:
-        self._repeated.token_store.insert_after(
-            self._repeated.last_token,
-            self._tokens_to_insert([value]))
+        self._insert_tokens(len(self._repeated.items), [value])
         value.reattach(self._repeated.token_store)
         self._repeated.items.append(value)
 
@@ -163,17 +176,17 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
 
     def extend(self, values: Iterable[_M]) -> None:
         values = list(values)
-        self._repeated.token_store.insert_after(
-            self._repeated.last_token,
-            self._tokens_to_insert(values))
+        self._insert_tokens(len(self._repeated.items), values)
         self._repeated.items.extend(values)
 
     def pop(self, index: int = -1) -> _M:
-        value = self._repeated.items.pop(index)
+        value = self._repeated.items[index]
         tokens = value.tokens
-        self._repeated.token_store.remove(value.first_token, value.last_token)
+        r = indexes.range_from_index(index, len(self._repeated.items))
+        self._del_tokens(r.start, r.stop)
         token_store = base.TokenStore.from_tokens(tokens)
         value.reattach(token_store)
+        self._repeated.items.pop(index)
         return value
 
     def __deepcopy__(self, memo: dict[int, Any]) -> 'RepeatedNodeWrapper':
@@ -181,9 +194,13 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         return RepeatedNodeWrapper(repeated, self._field)
 
     def drop_many(self, indexes: Iterable[int]) -> None:
-        indexes = set(indexes)
-        for index in sorted(indexes, reverse=True):
-            self._del_tokens(index, index + 1)
+        indexes = sorted(indexes, reverse=True)
+        count = itertools.count()
+        ranges = (
+            list(r) for _, r in itertools.groupby(indexes, key=lambda i: i + next(count))
+        )
+        for r in ranges:
+            self._del_tokens(r[-1], r[0] + 1)
         self._repeated.items[:] = (
             item for i, item in enumerate(self._repeated.items) if i not in indexes
         )
