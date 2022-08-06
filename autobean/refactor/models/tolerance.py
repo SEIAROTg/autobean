@@ -10,7 +10,6 @@ _Self = TypeVar('_Self', bound='Tolerance')
 
 @internal.tree_model
 class Tolerance(tolerance.Tolerance, internal.RWValue[decimal.Decimal]):
-    number = internal.required_decimal_property(tolerance.Tolerance.raw_number)
 
     @property
     def value(self) -> decimal.Decimal:

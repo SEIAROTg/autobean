@@ -74,8 +74,6 @@ def _update_raw(raw_value: CustomRawValue, value: CustomValue) -> bool:
 # TODO: disambiguate values inserted through repeated wrapper
 @internal.tree_model
 class Custom(custom.Custom):
-    date = internal.required_date_property(custom.Custom.raw_date)
-    type = internal.required_string_property(custom.Custom.raw_type)
 
     @property
     def values(self) -> internal.RepeatedValueWrapper[CustomRawValue, CustomValue]:

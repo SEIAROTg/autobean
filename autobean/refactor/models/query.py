@@ -11,9 +11,6 @@ _Self = TypeVar('_Self', bound='Query')
 
 @internal.tree_model
 class Query(query.Query):
-    date = internal.required_date_property(query.Query.raw_date)
-    name = internal.required_string_property(query.Query.raw_name)
-    query_string = internal.required_string_property(query.Query.raw_query_string)
 
     @classmethod
     def from_value(cls: Type[_Self], date: datetime.date, name: str, query_string: str) -> _Self:

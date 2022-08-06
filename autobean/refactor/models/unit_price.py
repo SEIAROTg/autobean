@@ -12,9 +12,6 @@ _Self = TypeVar('_Self', bound='UnitPrice')
 @internal.tree_model
 class UnitPrice(unit_price.UnitPrice):
 
-    number = internal.optional_decimal_property(unit_price.UnitPrice.raw_number, NumberExpr)
-    currency = internal.optional_string_property(unit_price.UnitPrice.raw_currency, Currency)
-
     @classmethod
     def from_value(
             cls: Type[_Self],

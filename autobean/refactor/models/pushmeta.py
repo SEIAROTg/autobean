@@ -24,7 +24,6 @@ _Self = TypeVar('_Self', bound='Pushmeta')
 
 @internal.tree_model
 class Pushmeta(pushmeta.Pushmeta):
-    key = internal.required_string_property(pushmeta.Pushmeta.raw_key)
 
     @property
     def value(self) -> Optional[MetaValue]:

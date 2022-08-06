@@ -34,6 +34,11 @@ class Open(base.RawTreeModel):
     raw_currencies = internal.repeated_node_property(_currencies)
     raw_booking = internal.optional_node_property(_booking)
 
+    date = internal.required_date_property(raw_date)
+    account = internal.required_string_property(raw_account)
+    currencies = internal.repeated_string_property(raw_currencies, Currency)
+    booking = internal.optional_string_property(raw_booking, EscapedString)
+
     @final
     def __init__(
             self,

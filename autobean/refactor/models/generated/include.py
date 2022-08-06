@@ -25,6 +25,8 @@ class Include(base.RawTreeModel):
 
     raw_filename = internal.required_node_property(_filename)
 
+    filename = internal.required_string_property(raw_filename)
+
     @final
     def __init__(
             self,

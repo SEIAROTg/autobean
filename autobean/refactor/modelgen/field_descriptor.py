@@ -49,6 +49,29 @@ class ModelType:
     rule: str
     module: Optional[str]
 
+    @property
+    def value_type(self) -> str:
+        return {
+            # str
+            'Account': 'str',
+            'Currency': 'str',
+            'EscapedString': 'str',
+            'Link': 'str',
+            'Tag': 'str',
+            'MetaKey': 'str',
+            'TransactionFlag': 'str',
+            'PostingFlag': 'str',
+            # date
+            'Date': 'datetime.date',
+            # decimal
+            'NumberExpr': 'decimal.Decimal',
+            'Tolerance': 'decimal.Decimal',
+            # bool
+            'Bool': 'bool',
+            # raw
+            'Amount': 'Amount',
+        }.get(self.name, 'UNKNOWN')
+
 
 @dataclasses.dataclass(frozen=True)
 class FieldDescriptor:
@@ -75,6 +98,10 @@ class FieldDescriptor:
         if self.type_alias is not None:
             return self.type_alias
         return self.inner_type_original
+
+    @functools.cached_property
+    def value_type(self) -> str:
+        return ' | '.join(sorted({model_type.value_type for model_type in self.model_types}))
 
     @functools.cached_property
     def input_type(self) -> str:
@@ -104,6 +131,31 @@ class FieldDescriptor:
             return f'raw_{self.name}'
         else:
             return f'_{self.name}'
+
+    @functools.cached_property
+    def value_property_def(self) -> Optional[str]:
+        if not self.is_public:
+            return None
+        if len(self.model_types) != 1:
+            return None
+        if self.value_type == self.inner_type:
+            return f'raw_{self.name}'
+        if self.cardinality == FieldCardinality.REQUIRED:
+            if self.value_type == 'decimal.Decimal':
+                return f'internal.required_decimal_property(raw_{self.name})'
+            elif self.value_type == 'datetime.date':
+                return f'internal.required_date_property(raw_{self.name})'
+            elif self.value_type == 'str':
+                return f'internal.required_string_property(raw_{self.name})'
+        elif self.cardinality == FieldCardinality.OPTIONAL:
+            if self.value_type == 'decimal.Decimal':
+                return f'internal.optional_decimal_property(raw_{self.name}, {self.inner_type_original})'
+            elif self.value_type == 'str':
+                return f'internal.optional_string_property(raw_{self.name}, {self.inner_type_original})'
+        elif self.cardinality == FieldCardinality.REPEATED:
+            if self.value_type == 'str':
+                return f'internal.repeated_string_property(raw_{self.name}, {self.inner_type_original})'
+        return None
 
 
 def is_token(rule: str) -> bool:

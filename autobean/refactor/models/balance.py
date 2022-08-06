@@ -15,11 +15,6 @@ _Self = TypeVar('_Self', bound='Balance')
 
 @internal.tree_model
 class Balance(balance.Balance):
-    date = internal.required_date_property(balance.Balance.raw_date)
-    account = internal.required_string_property(balance.Balance.raw_account)
-    number = internal.required_decimal_property(balance.Balance.raw_number)
-    tolerance = internal.optional_decimal_property(balance.Balance.raw_tolerance, Tolerance)
-    currency = internal.required_string_property(balance.Balance.raw_currency)
 
     @classmethod
     def from_value(

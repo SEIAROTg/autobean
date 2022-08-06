@@ -30,6 +30,10 @@ class Event(base.RawTreeModel):
     raw_type = internal.required_node_property(_type)
     raw_description = internal.required_node_property(_description)
 
+    date = internal.required_date_property(raw_date)
+    type = internal.required_string_property(raw_type)
+    description = internal.required_string_property(raw_description)
+
     @final
     def __init__(
             self,

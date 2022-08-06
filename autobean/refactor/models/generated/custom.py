@@ -35,6 +35,9 @@ class Custom(base.RawTreeModel):
     raw_type = internal.required_node_property(_type)
     raw_values = internal.repeated_node_property(_values)
 
+    date = internal.required_date_property(raw_date)
+    type = internal.required_string_property(raw_type)
+
     @final
     def __init__(
             self,

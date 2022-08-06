@@ -9,7 +9,6 @@ _Self = TypeVar('_Self', bound='Include')
 
 @internal.tree_model
 class Include(include.Include):
-    filename = internal.required_string_property(include.Include.raw_filename)
 
     @classmethod
     def from_value(cls: Type[_Self], filename: str) -> _Self:

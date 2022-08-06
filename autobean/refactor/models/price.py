@@ -12,9 +12,6 @@ _Self = TypeVar('_Self', bound='Price')
 
 @internal.tree_model
 class Price(price.Price):
-    date = internal.required_date_property(price.Price.raw_date)
-    currency = internal.required_string_property(price.Price.raw_currency)
-    amount = price.Price.raw_amount
 
     @classmethod
     def from_value(

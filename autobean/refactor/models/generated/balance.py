@@ -37,6 +37,12 @@ class Balance(base.RawTreeModel):
     raw_tolerance = internal.optional_node_property(_tolerance)
     raw_currency = internal.required_node_property(_currency)
 
+    date = internal.required_date_property(raw_date)
+    account = internal.required_string_property(raw_account)
+    number = internal.required_decimal_property(raw_number)
+    tolerance = internal.optional_decimal_property(raw_tolerance, Tolerance)
+    currency = internal.required_string_property(raw_currency)
+
     @final
     def __init__(
             self,

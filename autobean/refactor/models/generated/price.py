@@ -31,6 +31,10 @@ class Price(base.RawTreeModel):
     raw_currency = internal.required_node_property(_currency)
     raw_amount = internal.required_node_property(_amount)
 
+    date = internal.required_date_property(raw_date)
+    currency = internal.required_string_property(raw_currency)
+    amount = raw_amount
+
     @final
     def __init__(
             self,

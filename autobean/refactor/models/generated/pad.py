@@ -30,6 +30,10 @@ class Pad(base.RawTreeModel):
     raw_account = internal.required_node_property(_account)
     raw_source_account = internal.required_node_property(_source_account)
 
+    date = internal.required_date_property(raw_date)
+    account = internal.required_string_property(raw_account)
+    source_account = internal.required_string_property(raw_source_account)
+
     @final
     def __init__(
             self,

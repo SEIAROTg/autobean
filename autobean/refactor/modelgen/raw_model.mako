@@ -106,6 +106,16 @@ opt_separators_before = f', separators_before={fmt_separators(field.separators_b
 % endif
 % endfor
 
+<% any_value_property = False %>\
+% for field in fields:
+% if field.value_property_def is not None:
+    ${field.name} = ${field.value_property_def}
+<% any_value_property = True %>\
+% endif
+% endfor
+% if any_value_property:
+
+% endif
     @final
     def __init__(
             self,

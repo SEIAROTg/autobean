@@ -25,6 +25,8 @@ class Pushtag(base.RawTreeModel):
 
     raw_tag = internal.required_node_property(_tag)
 
+    tag = internal.required_string_property(raw_tag)
+
     @final
     def __init__(
             self,

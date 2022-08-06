@@ -27,6 +27,9 @@ class Option(base.RawTreeModel):
     raw_key = internal.required_node_property(_key)
     raw_value = internal.required_node_property(_value)
 
+    key = internal.required_string_property(raw_key)
+    value = internal.required_string_property(raw_value)
+
     @final
     def __init__(
             self,

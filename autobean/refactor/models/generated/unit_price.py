@@ -28,6 +28,9 @@ class UnitPrice(base.RawTreeModel):
     raw_number = internal.optional_node_property(_number)
     raw_currency = internal.optional_node_property(_currency)
 
+    number = internal.optional_decimal_property(raw_number, NumberExpr)
+    currency = internal.optional_string_property(raw_currency, Currency)
+
     @final
     def __init__(
             self,

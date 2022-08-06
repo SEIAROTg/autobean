@@ -27,6 +27,9 @@ class Plugin(base.RawTreeModel):
     raw_name = internal.required_node_property(_name)
     raw_config = internal.optional_node_property(_config)
 
+    name = internal.required_string_property(raw_name)
+    config = internal.optional_string_property(raw_config, EscapedString)
+
     @final
     def __init__(
             self,

@@ -25,6 +25,8 @@ class Tolerance(base.RawTreeModel):
 
     raw_number = internal.required_node_property(_number)
 
+    number = internal.required_decimal_property(raw_number)
+
     @final
     def __init__(
             self,

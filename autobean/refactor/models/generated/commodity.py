@@ -28,6 +28,9 @@ class Commodity(base.RawTreeModel):
     raw_date = internal.required_node_property(_date)
     raw_currency = internal.required_node_property(_currency)
 
+    date = internal.required_date_property(raw_date)
+    currency = internal.required_string_property(raw_currency)
+
     @final
     def __init__(
             self,

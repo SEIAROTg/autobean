@@ -14,10 +14,6 @@ _Self = TypeVar('_Self', bound='Open')
 
 @internal.tree_model
 class Open(open.Open):
-    date = internal.required_date_property(open.Open.raw_date)
-    account = internal.required_string_property(open.Open.raw_account)
-    currencies = internal.repeated_string_property(open.Open.raw_currencies, Currency)
-    booking = internal.optional_string_property(open.Open.raw_booking, EscapedString)
 
     @classmethod
     def from_value(

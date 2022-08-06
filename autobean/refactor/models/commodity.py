@@ -11,8 +11,6 @@ _Self = TypeVar('_Self', bound='Commodity')
 
 @internal.tree_model
 class Commodity(commodity.Commodity):
-    date = internal.required_date_property(commodity.Commodity.raw_date)
-    currency = internal.required_string_property(commodity.Commodity.raw_currency)
 
     @classmethod
     def from_value(cls: Type[_Self], date: datetime.date, currency: str) -> _Self:

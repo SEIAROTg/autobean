@@ -9,7 +9,6 @@ _Self = TypeVar('_Self', bound='Popmeta')
 
 @internal.tree_model
 class Popmeta(popmeta.Popmeta):
-    key = internal.required_string_property(popmeta.Popmeta.raw_key)
 
     @classmethod
     def from_value(cls: Type[_Self], key: str) -> _Self:

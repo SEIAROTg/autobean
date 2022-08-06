@@ -31,6 +31,10 @@ class Note(base.RawTreeModel):
     raw_account = internal.required_node_property(_account)
     raw_comment = internal.required_node_property(_comment)
 
+    date = internal.required_date_property(raw_date)
+    account = internal.required_string_property(raw_account)
+    comment = internal.required_string_property(raw_comment)
+
     @final
     def __init__(
             self,

@@ -11,9 +11,6 @@ _Self = TypeVar('_Self', bound='Event')
 
 @internal.tree_model
 class Event(event.Event):
-    date = internal.required_date_property(event.Event.raw_date)
-    type = internal.required_string_property(event.Event.raw_type)
-    description = internal.required_string_property(event.Event.raw_description)
 
     @classmethod
     def from_value(cls: Type[_Self], date: datetime.date, type: str, description: str) -> _Self:

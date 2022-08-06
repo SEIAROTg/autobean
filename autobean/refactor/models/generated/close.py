@@ -28,6 +28,9 @@ class Close(base.RawTreeModel):
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
 
+    date = internal.required_date_property(raw_date)
+    account = internal.required_string_property(raw_account)
+
     @final
     def __init__(
             self,

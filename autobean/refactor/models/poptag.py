@@ -9,7 +9,6 @@ _Self = TypeVar('_Self', bound='Poptag')
 
 @internal.tree_model
 class Poptag(poptag.Poptag):
-    tag = internal.required_string_property(poptag.Poptag.raw_tag)
 
     @classmethod
     def from_value(cls: Type[_Self], tag: str) -> _Self:

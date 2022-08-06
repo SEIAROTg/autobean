@@ -15,9 +15,6 @@ _Self = TypeVar('_Self', bound='Document')
 
 @internal.tree_model
 class Document(document.Document):
-    date = internal.required_date_property(document.Document.raw_date)
-    account = internal.required_string_property(document.Document.raw_account)
-    filename = internal.required_string_property(document.Document.raw_filename)
     tags = internal.repeated_string_property(document.Document.raw_tags_links, Tag)
     links = internal.repeated_string_property(document.Document.raw_tags_links, Link)
 

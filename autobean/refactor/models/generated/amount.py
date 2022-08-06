@@ -21,6 +21,9 @@ class Amount(base.RawTreeModel):
     raw_number = internal.required_node_property(_number)
     raw_currency = internal.required_node_property(_currency)
 
+    number = internal.required_decimal_property(raw_number)
+    currency = internal.required_string_property(raw_currency)
+
     @final
     def __init__(
             self,

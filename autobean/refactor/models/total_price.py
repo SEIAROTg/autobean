@@ -12,9 +12,6 @@ _Self = TypeVar('_Self', bound='TotalPrice')
 @internal.tree_model
 class TotalPrice(total_price.TotalPrice):
 
-    number = internal.optional_decimal_property(total_price.TotalPrice.raw_number, NumberExpr)
-    currency = internal.optional_string_property(total_price.TotalPrice.raw_currency, Currency)
-
     @classmethod
     def from_value(
             cls: Type[_Self],

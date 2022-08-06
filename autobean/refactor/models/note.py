@@ -12,9 +12,6 @@ _Self = TypeVar('_Self', bound='Note')
 
 @internal.tree_model
 class Note(note.Note):
-    date = internal.required_date_property(note.Note.raw_date)
-    account = internal.required_string_property(note.Note.raw_account)
-    comment = internal.required_string_property(note.Note.raw_comment)
 
     @classmethod
     def from_value(

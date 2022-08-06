@@ -35,6 +35,10 @@ class Document(base.RawTreeModel):
     raw_filename = internal.required_node_property(_filename)
     raw_tags_links = internal.repeated_node_property(_tags_links)
 
+    date = internal.required_date_property(raw_date)
+    account = internal.required_string_property(raw_account)
+    filename = internal.required_string_property(raw_filename)
+
     @final
     def __init__(
             self,

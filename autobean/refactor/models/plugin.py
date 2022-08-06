@@ -9,8 +9,6 @@ _Self = TypeVar('_Self', bound='Plugin')
 
 @internal.tree_model
 class Plugin(plugin.Plugin):
-    name = internal.required_string_property(plugin.Plugin.raw_name)
-    config = internal.optional_string_property(plugin.Plugin.raw_config, EscapedString)
 
     @classmethod
     def from_value(cls: Type[_Self], name: str, config: Optional[str] = None) -> _Self:

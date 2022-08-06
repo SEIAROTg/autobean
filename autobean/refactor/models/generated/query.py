@@ -30,6 +30,10 @@ class Query(base.RawTreeModel):
     raw_name = internal.required_node_property(_name)
     raw_query_string = internal.required_node_property(_query_string)
 
+    date = internal.required_date_property(raw_date)
+    name = internal.required_string_property(raw_name)
+    query_string = internal.required_string_property(raw_query_string)
+
     @final
     def __init__(
             self,
