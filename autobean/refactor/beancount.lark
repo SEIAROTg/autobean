@@ -139,6 +139,14 @@ _tag_or_link: TAG | LINK
 // custom value
 _custom_value: ESCAPED_STRING | DATE | BOOL | amount | number_expr | ACCOUNT
 
+// posting
+_partial_amount: maybe_left{number_expr} maybe_left{CURRENCY}
+AT:                "@"
+ATAT:              "@@"
+unit_price: AT _partial_amount
+total_price: ATAT _partial_amount
+_price_annotation: unit_price | total_price
+
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
 maybe_right{inner}: [inner]

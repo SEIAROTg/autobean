@@ -33,6 +33,18 @@ class Tolerance(MetaModel):
     number: 'number_expr'
 
 
+class UnitPrice(MetaModel):
+    _label: 'AT' = field(define_as='At')
+    number: Optional['number_expr'] = field(floating=Floating.LEFT)
+    currency: Optional['CURRENCY'] = field(floating=Floating.LEFT)
+
+
+class TotalPrice(MetaModel):
+    _label: 'ATAT' = field(define_as='AtAt')
+    number: Optional['number_expr'] = field(floating=Floating.LEFT)
+    currency: Optional['CURRENCY'] = field(floating=Floating.LEFT)
+
+
 # Directives
 
 

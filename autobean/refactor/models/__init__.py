@@ -39,4 +39,6 @@ from .pushtag import *
 from .query import *
 from .tag import *
 from .tolerance import *
+from .total_price import *
 from .transaction_flag import *
+from .unit_price import *
