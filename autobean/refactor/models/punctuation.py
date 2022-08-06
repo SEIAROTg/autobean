@@ -25,3 +25,9 @@ class InlineComment(internal.SimpleRawTokenModel):
 @internal.token_model
 class LineComment(internal.SimpleRawTokenModel):
     RULE = 'COMMENT_LINE'
+
+
+@internal.token_model
+class Comma(internal.SimpleDefaultRawTokenModel):
+    RULE = '_COMMA'
+    DEFAULT = ','

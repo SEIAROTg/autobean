@@ -130,7 +130,7 @@ class ModelBuilder:
                 children.append(self._add_optional_node(child, _Floating.LEFT))
             elif is_tree and child.data == 'maybe_right':
                 children.append(self._add_optional_node(child, _Floating.RIGHT))
-            elif is_tree and child.data == 'repeated':
+            elif is_tree and child.data in ('repeated', 'repeated_sep'):
                 children.append(self._add_repeated_node(child))
             else:
                 children.append(self._add_required_node(child))

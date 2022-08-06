@@ -149,3 +149,13 @@ class Document(MetaModel):
     account: 'ACCOUNT'
     filename: 'ESCAPED_STRING'
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+
+
+class Open(MetaModel):
+    date: 'DATE'
+    _label: 'OPEN' = field(define_as='OpenLabel')
+    account: 'ACCOUNT'
+    currencies: list['CURRENCY'] = field(
+        separators=('Comma.from_default()', 'Whitespace.from_default()'),
+        separators_before=('Whitespace.from_default()',))
+    booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)

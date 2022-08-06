@@ -20,6 +20,7 @@ QUERY:        "query"
 PRICE:        "price"
 NOTE:         "note"
 DOCUMENT:     "document"
+OPEN:         "open"
 
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
@@ -40,6 +41,7 @@ query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING
 price:        DATE PRICE CURRENCY amount
 note:         DATE NOTE ACCOUNT ESCAPED_STRING
 document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link}
+open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING}
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -48,6 +50,7 @@ WS_INLINE: /(?<!^)[ \t]+/m | /^[ \t]+(?=\r|$)/m
 _NL: /\r*\n/
 COMMENT_INLINE: /;[^\r\n]*$/m
 COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
+_COMMA: ","
 
 %ignore WS_INLINE
 %ignore COMMENT_INLINE
@@ -137,3 +140,4 @@ maybe_right{inner}: [inner]
 
 // [internal] Repeated field wrapper
 repeated{inner}: (inner)*
+repeated_sep{inner, sep}: inner? (sep inner)*
