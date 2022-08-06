@@ -146,6 +146,10 @@ ATAT:              "@@"
 unit_price: AT _partial_amount
 total_price: ATAT _partial_amount
 _price_annotation: unit_price | total_price
+HASH:              "#"
+ASTERISK:          "*"
+compound_amount: maybe_left{number_expr} HASH maybe_left{number_expr} CURRENCY
+?cost_component: DATE | ASTERISK | ESCAPED_STRING | CURRENCY | number_expr | compound_amount
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]

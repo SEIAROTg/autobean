@@ -6,6 +6,8 @@ from .balance import *
 from .bool import *
 from .close import *
 from .commodity import *
+from .compound_amount import *
+from .cost_component import *
 from .currency import *
 from .custom import *
 from .date import *

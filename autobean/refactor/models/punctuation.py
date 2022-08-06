@@ -31,3 +31,9 @@ class LineComment(internal.SimpleRawTokenModel):
 class Comma(internal.SimpleDefaultRawTokenModel):
     RULE = '_COMMA'
     DEFAULT = ','
+
+
+@internal.token_model
+class Asterisk(internal.SimpleDefaultRawTokenModel):
+    RULE = 'ASTERISK'
+    DEFAULT = '*'

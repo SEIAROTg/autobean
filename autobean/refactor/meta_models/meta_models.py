@@ -45,6 +45,13 @@ class TotalPrice(MetaModel):
     currency: Optional['CURRENCY'] = field(floating=Floating.LEFT)
 
 
+class CompoundAmount(MetaModel):
+    number_per: Optional['number_expr'] = field(floating=Floating.RIGHT)
+    _hash: 'HASH' = field(define_as='Hash')
+    number_total: Optional['number_expr'] = field(floating=Floating.LEFT)
+    currency: 'CURRENCY'
+
+
 # Directives
 
 
