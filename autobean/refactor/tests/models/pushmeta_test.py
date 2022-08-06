@@ -5,23 +5,12 @@ from typing import Optional
 from lark import exceptions
 import pytest
 from autobean.refactor import models
+from autobean.refactor.models.pushmeta import MetaValue
 from . import base
 
 
-_SimplifiedValue = Optional[
-    models.Account |
-    models.Currency |
-    models.Tag |
-    models.Null |
-    models.Amount |
-    decimal.Decimal |
-    datetime.date |
-    str |
-    bool
-]
-
 # (text, key, raw_value, value)
-_Testcase = tuple[str, str, Optional[models.MetaValue], _SimplifiedValue]
+_Testcase = tuple[str, str, Optional[models.MetaRawValue], Optional[models.MetaValue]]
 _VALID_TESTCASES_FOO: list[_Testcase] = [
     ('pushmeta foo:', 'foo', None, None),
     ('pushmeta foo:  "123"', 'foo', models.EscapedString.from_value('123'), '123'),
@@ -71,7 +60,7 @@ class TestPushmeta(base.BaseTestModel):
             ('pushmeta\t foo:', 'foo', None, None),
         ],
     )
-    def test_parse_success(self, text: str, key: str, raw_value: Optional[models.MetaValue], value: _SimplifiedValue) -> None:
+    def test_parse_success(self, text: str, key: str, raw_value: Optional[models.MetaRawValue], value: Optional[MetaValue]) -> None:
         del value  # unused
         pushmeta = self.parser.parse(text, models.Pushmeta)
         assert pushmeta.raw_key.value == key
@@ -150,7 +139,7 @@ class TestPushmeta(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text,key,raw_value,value', _VALID_TESTCASES_DEFAULT_SPACING,
     )
-    def test_from_children(self, text: str, key: str, raw_value: Optional[models.MetaValue], value: _SimplifiedValue) -> None:
+    def test_from_children(self, text: str, key: str, raw_value: Optional[models.MetaRawValue], value: Optional[models.MetaValue]) -> None:
         pushmeta = models.Pushmeta.from_children(
             models.MetaKey.from_value(key),
             copy.deepcopy(raw_value),
@@ -163,7 +152,7 @@ class TestPushmeta(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text,key,raw_value,value', _VALID_TESTCASES_DEFAULT_SPACING,
     )
-    def test_from_value(self, text: str, key: str, raw_value: Optional[models.MetaValue], value: _SimplifiedValue) -> None:
+    def test_from_value(self, text: str, key: str, raw_value: Optional[models.MetaRawValue], value: Optional[models.MetaValue]) -> None:
         pushmeta = models.Pushmeta.from_value(
             key,
             copy.deepcopy(value),

@@ -1,6 +1,6 @@
 import datetime
 import decimal
-from typing import Callable, Optional, Type, TypeVar
+from typing import Callable, Optional, Type, TypeVar, Union
 from . import internal
 from .escaped_string import EscapedString
 from .number_expr import NumberExpr
@@ -13,10 +13,11 @@ from .amount import Amount
 from .date import Date
 from .bool import Bool
 from .generated import pushmeta
-from .generated.pushmeta import PushmetaLabel, MetaValue
+from .generated.pushmeta import PushmetaLabel, MetaRawValue
 
 _ValueTypeSimplified = str | datetime.date | decimal.Decimal | bool
-_ValueTypePreserved = Account | Currency | Tag | Null | Amount | None
+_ValueTypePreserved = Account | Currency | Tag | Null | Amount
+MetaValue = Union[_ValueTypeSimplified, _ValueTypePreserved]
 _V = TypeVar('_V', str, datetime.date, decimal.Decimal, bool)
 _Self = TypeVar('_Self', bound='Pushmeta')
 
@@ -26,13 +27,13 @@ class Pushmeta(pushmeta.Pushmeta):
     key = internal.required_string_property(pushmeta.Pushmeta.raw_key)
 
     @property
-    def value(self) -> _ValueTypeSimplified | _ValueTypePreserved:
+    def value(self) -> Optional[MetaValue]:
         if isinstance(self.raw_value, EscapedString | Date | NumberExpr | Bool):
             return self.raw_value.value
         return self.raw_value
 
     @value.setter
-    def value(self, value: _ValueTypeSimplified | _ValueTypePreserved) -> None:
+    def value(self, value: Optional[MetaValue | MetaRawValue]) -> None:
         match value:
             case str():
                 self._update_token(value, EscapedString, EscapedString.from_value)
@@ -49,7 +50,7 @@ class Pushmeta(pushmeta.Pushmeta):
             self,
             value: _V,
             token_type: Type[internal.RWValue[_V]],
-            token_ctor: Callable[[_V], MetaValue],
+            token_ctor: Callable[[_V], MetaRawValue],
     ) -> None:
         assert token_ctor == token_type.from_value
         if isinstance(self.raw_value, token_type):
@@ -58,18 +59,17 @@ class Pushmeta(pushmeta.Pushmeta):
             self.raw_value = token_ctor(value)
 
     @classmethod
-    def from_value(cls: Type[_Self], key: str, value: _ValueTypeSimplified | _ValueTypePreserved) -> _Self:
-        value_model: Optional[MetaValue]
+    def from_value(cls: Type[_Self], key: str, value: Optional[MetaValue | MetaRawValue]) -> _Self:
+        raw_value: Optional[MetaRawValue]
         match value:
             case str():
-                value_model = EscapedString.from_value(value)
+                raw_value = EscapedString.from_value(value)
             case datetime.date():
-                value_model = Date.from_value(value)
+                raw_value = Date.from_value(value)
             case decimal.Decimal():
-                value_model = NumberExpr.from_value(value)
+                raw_value = NumberExpr.from_value(value)
             case bool():
-                value_model = Bool.from_value(value)
+                raw_value = Bool.from_value(value)
             case _:
-                value_model = value
-
-        return cls.from_children(MetaKey.from_value(key), value_model)
+                raw_value = value
+        return cls.from_children(MetaKey.from_value(key), raw_value)

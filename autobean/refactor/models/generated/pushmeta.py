@@ -16,7 +16,7 @@ from ..number_expr import NumberExpr
 from ..punctuation import Whitespace
 from ..tag import Tag
 
-MetaValue = Account | Amount | Bool | Currency | Date | EscapedString | Null | NumberExpr | Tag
+MetaRawValue = Account | Amount | Bool | Currency | Date | EscapedString | Null | NumberExpr | Tag
 _Self = TypeVar('_Self', bound='Pushmeta')
 
 
@@ -32,7 +32,7 @@ class Pushmeta(base.RawTreeModel):
 
     _label = internal.required_field[PushmetaLabel]()
     _key = internal.required_field[MetaKey]()
-    _value = internal.optional_field[MetaValue](separators=(Whitespace.from_default(),))
+    _value = internal.optional_field[MetaRawValue](separators=(Whitespace.from_default(),))
 
     raw_key = internal.required_node_property(_key)
     raw_value = internal.optional_node_property(_value)
@@ -43,7 +43,7 @@ class Pushmeta(base.RawTreeModel):
             token_store: base.TokenStore,
             label: PushmetaLabel,
             key: MetaKey,
-            value: internal.Maybe[MetaValue],
+            value: internal.Maybe[MetaRawValue],
     ):
         super().__init__(token_store)
         self._label = label
@@ -84,10 +84,10 @@ class Pushmeta(base.RawTreeModel):
     def from_children(
             cls: Type[_Self],
             key: MetaKey,
-            value: Optional[MetaValue],
+            value: Optional[MetaRawValue],
     ) -> _Self:
         label = PushmetaLabel.from_default()
-        maybe_value = internal.MaybeL[MetaValue].from_children(value, separators=cls._value.separators)
+        maybe_value = internal.MaybeL[MetaRawValue].from_children(value, separators=cls._value.separators)
         tokens = [
             *label.detach(),
             Whitespace.from_default(),

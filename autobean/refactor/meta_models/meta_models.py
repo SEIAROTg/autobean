@@ -76,7 +76,7 @@ class Pushmeta(MetaModel):
         'NULL',
         'number_expr',
         'amount',
-    ]] = field(floating=Floating.LEFT, type_alias='MetaValue')
+    ]] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
 
 
 class Pushtag(MetaModel):
