@@ -25,3 +25,7 @@ class base_property(Generic[_V, _U], abc.ABC):
         if instance is None:
             return self
         return self._get(instance)
+
+    @abc.abstractmethod
+    def __set__(self, instance: _U, value: _V) -> None:
+        ...

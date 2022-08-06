@@ -3,9 +3,10 @@ import decimal
 import abc
 import itertools
 from typing import Callable, Collection, Generic, Iterable, Iterator, MutableSequence, Optional, Type, TypeVar, overload
-from .properties import RepeatedNodeWrapper, repeated_node_property, required_node_property, optional_node_property
 from .. import base
 from . import indexes
+from .properties import RepeatedNodeWrapper
+from .base_property import base_property
 
 
 _V = TypeVar('_V')
@@ -33,8 +34,8 @@ class RWValue(base.RawModel, abc.ABC, Generic[_V]):
         raise NotImplementedError()
 
 
-class required_string_property:
-    def __init__(self, inner_property: required_node_property[_SV]):
+class required_string_property(Generic[_U]):
+    def __init__(self, inner_property: base_property[_SV, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> str:
@@ -45,7 +46,7 @@ class required_string_property:
 
 
 class optional_string_property(Generic[_SV]):
-    def __init__(self, inner_property: optional_node_property[_SV], inner_type: Type[_SV]):
+    def __init__(self, inner_property: base_property[Optional[_SV], _U], inner_type: Type[_SV]):
         self._inner_property = inner_property
         self._inner_type = inner_type
 
@@ -62,8 +63,8 @@ class optional_string_property(Generic[_SV]):
             self._inner_property.__set__(instance, s)
 
 
-class required_decimal_property:
-    def __init__(self, inner_property: required_node_property[_DV]):
+class required_decimal_property(Generic[_U]):
+    def __init__(self, inner_property: base_property[_DV, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> decimal.Decimal:
@@ -73,8 +74,8 @@ class required_decimal_property:
         self._inner_property.__get__(instance).value = value
 
 
-class optional_decimal_property(Generic[_DV]):
-    def __init__(self, inner_property: optional_node_property[_DV], inner_type: Type[_DV]):
+class optional_decimal_property(Generic[_U]):
+    def __init__(self, inner_property: base_property[Optional[_DV], _U], inner_type: Type[_DV]):
         self._inner_property = inner_property
         self._inner_type = inner_type
 
@@ -91,8 +92,8 @@ class optional_decimal_property(Generic[_DV]):
             self._inner_property.__set__(instance, s)
 
 
-class required_date_property:
-    def __init__(self, inner_property: required_node_property[_DateV]):
+class required_date_property(Generic[_U]):
+    def __init__(self, inner_property: base_property[_DateV, _U]):
         self._inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> datetime.date:
@@ -100,6 +101,24 @@ class required_date_property:
     
     def __set__(self, instance: _U, value: datetime.date) -> None:
         self._inner_property.__get__(instance).value = value
+
+
+class optional_date_property(Generic[_U]):
+    def __init__(self, inner_property: base_property[Optional[_DateV], _U], inner_type: Type[_DateV]):
+        self._inner_property = inner_property
+        self._inner_type = inner_type
+
+    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[datetime.date]:
+        s = self._inner_property.__get__(instance, owner)
+        return s.value if s is not None else None
+    
+    def __set__(self, instance: _U, value: Optional[datetime.date]) -> None:
+        current = self._inner_property.__get__(instance)
+        if current is not None and value is not None:
+            current.value = value
+        else:
+            s = self._inner_type.from_value(value) if value is not None else None
+            self._inner_property.__set__(instance, s)
 
 
 class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
@@ -218,7 +237,7 @@ class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
 
 
 class repeated_string_property(Generic[_SV]):
-    def __init__(self, inner_property: repeated_node_property[_SV | _M], inner_type: Type[_SV]):
+    def __init__(self, inner_property: base_property[RepeatedNodeWrapper[_SV | _M], base.RawTreeModel], inner_type: Type[_SV]):
         self._inner_property = inner_property
         self._inner_type = inner_type
 

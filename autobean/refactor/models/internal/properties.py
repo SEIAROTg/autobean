@@ -1,16 +1,16 @@
 import copy
 import itertools
-from typing import Any, Callable, Collection, Iterable, MutableSequence, Optional, Sequence, TypeVar, overload
+from typing import Any, Callable, Collection, Iterable, MutableSequence, Optional, Sequence, Type, TypeVar, overload
 from .base_property import base_property
 from .fields import required_field, optional_field, repeated_field
 from .maybe import Maybe
 from .repeated import Repeated
-from .base_property import base_property
 from . import indexes
 from .. import base
 
 _M = TypeVar('_M', bound=base.RawModel)
 _U = TypeVar('_U', bound=base.RawTreeModel)
+_V = TypeVar('_V')
 
 
 def _replace_node(node: _M, repl: _M) -> None:
@@ -232,3 +232,55 @@ class repeated_node_property(base_property[RepeatedNodeWrapper[_M], base.RawTree
         _replace_node(repeated, value.repeated)
         self._inner_field.__set__(instance, value.repeated)
         instance.__dict__[self._attr] = value
+
+
+def _default_fset(instance: _U, value: _V) -> None:
+    raise NotImplementedError()
+
+
+class custom_node_property(base_property[_V, _U]):
+    def __init__(self, fget: Callable[[_U], _V]) -> None:
+        super().__init__()
+        self._fget = fget
+        self._fset: Callable[[_U, _V], None] = _default_fset
+
+    def setter(self, fset: Callable[[_U, _V], None]) -> 'custom_node_property[_V, _U]':
+        self._fset = fset
+        return self
+
+    def _get(self, instance: _U) -> _V:
+        return self._fget(instance)
+
+    def __set__(self, instance: _U, value: _V) -> None:
+        self._fset(instance, value)
+
+
+class unordered_node_property(base_property[Optional[_V], _U]):
+    def __init__(
+            self,
+            inner_property: base_property[MutableSequence[_V | _M], _U],
+            inner_type: Type[_V],
+            *,
+            prepend: bool = False,
+    ) -> None:
+        super().__init__()
+        self._inner_property = inner_property
+        self._inner_type = inner_type
+        self._prepend = prepend
+
+    def _get(self, instance: _U) -> Optional[_V]:
+        wrapper = self._inner_property.__get__(instance)
+        return next((item for item in wrapper if isinstance(item, self._inner_type)), None)
+
+    def __set__(self, instance: _U, value: Optional[_V]) -> None:
+        wrapper = self._inner_property.__get__(instance)
+        i = next((i for i, item in enumerate(wrapper) if isinstance(item, self._inner_type)), None)
+        if i is None and value is not None:
+            if self._prepend:
+                wrapper.insert(0, value)
+            else:
+                wrapper.append(value)
+        elif i is not None and value is None:
+            wrapper.pop(i)
+        elif i is not None and value is not None:
+            wrapper[i] = value
