@@ -110,7 +110,7 @@ class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
             type: Type[_V],
             from_raw_type: Callable[[_M], _V],
             to_raw_type: Callable[[_V], _M],
-            update_raw: Callable[[_M, _V], None],
+            update_raw: Callable[[_M, _V], bool],
     ):
         self._raw_wrapper = raw_wrapper
         self._raw_type = raw_type
@@ -166,9 +166,7 @@ class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
         if len(items_to_update) != len(values):
             raise ValueError(f'attempt to assign sequence of size {len(values)} to extended slice of size {len(items_to_update)}')
         for item, value in zip(items_to_update, values):
-            if isinstance(item[1], self._raw_type):
-                self._update_raw(item[1], value)
-            else:
+            if not self._update_raw(item[1], value):
                 self._raw_wrapper[item[0]] = self._to_raw_type(value)
 
     def insert(self, index: int, value: _V) -> None:
@@ -229,8 +227,9 @@ class repeated_string_property(Generic[_SV]):
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> RepeatedValueWrapper[_SV, str]:
         inner_wrapper = self._inner_property.__get__(instance, owner)
-        def update_raw(raw_value: _SV, value: str) -> None:
+        def update_raw(raw_value: _SV, value: str) -> bool:
             raw_value.value = value
+            return True
 
         wrapper = RepeatedValueWrapper(
             raw_wrapper=inner_wrapper,

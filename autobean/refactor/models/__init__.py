@@ -7,6 +7,7 @@ from .bool import *
 from .close import *
 from .commodity import *
 from .currency import *
+from .custom import *
 from .date import *
 from .document import *
 from .escaped_string import *

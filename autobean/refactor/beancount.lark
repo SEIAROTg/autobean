@@ -21,6 +21,7 @@ PRICE:        "price"
 NOTE:         "note"
 DOCUMENT:     "document"
 OPEN:         "open"
+CUSTOM:       "custom"
 
 // Directives
 option:       OPTION ESCAPED_STRING ESCAPED_STRING
@@ -42,6 +43,7 @@ price:        DATE PRICE CURRENCY amount
 note:         DATE NOTE ACCOUNT ESCAPED_STRING
 document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link}
 open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING}
+custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value}
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -133,6 +135,9 @@ tolerance:    TILDE number_expr
 
 // tags / links
 _tag_or_link: TAG | LINK
+
+// custom value
+_custom_value: ESCAPED_STRING | DATE | BOOL | amount | number_expr | ACCOUNT
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]

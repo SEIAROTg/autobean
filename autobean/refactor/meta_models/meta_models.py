@@ -84,7 +84,7 @@ class Pushtag(MetaModel):
     tag: 'TAG'
 
 
-# Directives
+# Entries
 
 
 class Balance(MetaModel):
@@ -159,3 +159,17 @@ class Open(MetaModel):
         separators=('Comma.from_default()', 'Whitespace.from_default()'),
         separators_before=('Whitespace.from_default()',))
     booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
+
+
+class Custom(MetaModel):
+    date: 'DATE'
+    _label: 'CUSTOM' = field(define_as='CustomLabel')
+    type: 'ESCAPED_STRING'
+    values: list[Union[
+        'ESCAPED_STRING',
+        'DATE',
+        'BOOL',
+        'amount',
+        'number_expr',
+        'ACCOUNT',
+    ]] = field(type_alias='CustomRawValue')
