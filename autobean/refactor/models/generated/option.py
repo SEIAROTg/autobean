@@ -92,3 +92,14 @@ class Option(base.RawTreeModel):
         key.reattach(token_store)
         value.reattach(token_store)
         return cls(token_store, label, key, value)
+
+    @classmethod
+    def from_value(
+            cls: Type[_Self],
+            key: str,
+            value: str,
+    ) -> _Self:
+        return cls.from_children(
+            EscapedString.from_value(key),
+            EscapedString.from_value(value),
+        )

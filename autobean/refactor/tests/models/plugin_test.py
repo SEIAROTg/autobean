@@ -125,7 +125,7 @@ class TestPlugin(base.BaseTestModel):
         self.check_consistency(plugin)
 
     def test_from_value_without_config(self) -> None:
-        plugin = models.Plugin.from_value('foo')
+        plugin = models.Plugin.from_value('foo', None)
         assert plugin.raw_name.value == 'foo'
         assert plugin.raw_config is None
         assert self.print_model(plugin) == 'plugin "foo"'

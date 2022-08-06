@@ -80,3 +80,12 @@ class Popmeta(base.RawTreeModel):
         label.reattach(token_store)
         key.reattach(token_store)
         return cls(token_store, label, key)
+
+    @classmethod
+    def from_value(
+            cls: Type[_Self],
+            key: str,
+    ) -> _Self:
+        return cls.from_children(
+            MetaKey.from_value(key),
+        )

@@ -80,3 +80,12 @@ class Pushtag(base.RawTreeModel):
         label.reattach(token_store)
         tag.reattach(token_store)
         return cls(token_store, label, tag)
+
+    @classmethod
+    def from_value(
+            cls: Type[_Self],
+            tag: str,
+    ) -> _Self:
+        return cls.from_children(
+            Tag.from_value(tag),
+        )

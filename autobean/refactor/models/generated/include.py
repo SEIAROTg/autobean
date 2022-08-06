@@ -80,3 +80,12 @@ class Include(base.RawTreeModel):
         label.reattach(token_store)
         filename.reattach(token_store)
         return cls(token_store, label, filename)
+
+    @classmethod
+    def from_value(
+            cls: Type[_Self],
+            filename: str,
+    ) -> _Self:
+        return cls.from_children(
+            EscapedString.from_value(filename),
+        )

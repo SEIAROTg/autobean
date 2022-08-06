@@ -92,3 +92,14 @@ class Plugin(base.RawTreeModel):
         name.reattach(token_store)
         maybe_config.reattach(token_store)
         return cls(token_store, label, name, maybe_config)
+
+    @classmethod
+    def from_value(
+            cls: Type[_Self],
+            name: str,
+            config: Optional[str],
+    ) -> _Self:
+        return cls.from_children(
+            EscapedString.from_value(name),
+            EscapedString.from_value(config) if config is not None else None,
+        )

@@ -3,7 +3,6 @@ from typing import Type, TypeVar
 from . import internal
 from .generated import tolerance
 from .generated.tolerance import Tilde
-from .number_expr import NumberExpr
 
 _Self = TypeVar('_Self', bound='Tolerance')
 
@@ -24,5 +23,4 @@ class Tolerance(tolerance.Tolerance, internal.RWValue[decimal.Decimal]):
             cls: Type[_Self],
             number: decimal.Decimal,
     ) -> _Self:
-        return cls.from_children(
-            NumberExpr.from_value(number))
+        return super().from_value(number)
