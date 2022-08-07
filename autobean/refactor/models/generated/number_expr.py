@@ -4,7 +4,6 @@
 from typing import TYPE_CHECKING, Type, TypeVar, final
 from .. import base
 from .. import internal
-from ..punctuation import Whitespace
 if TYPE_CHECKING:
   from ..number_add_expr import NumberAddExpr
 

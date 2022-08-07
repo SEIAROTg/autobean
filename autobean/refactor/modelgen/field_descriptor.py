@@ -197,12 +197,10 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             raise ValueError('Private fields must be required and default constructable.')
         if field.is_optional and cardinality == FieldCardinality.REQUIRED:
             raise ValueError('Required fields must not be optional.')
-        if field.separators is not None and cardinality == FieldCardinality.REQUIRED:
-            raise ValueError('Required fields must not specify separators.')
-        if field.separators_before is not None and cardinality == FieldCardinality.REQUIRED:
-            raise ValueError('Required fields must not specify separators_before.')
+        if field.separators_before is not None and cardinality != FieldCardinality.REPEATED:
+            raise ValueError('Only repeated fields may specify separators_before.')
         separators = field.separators
-        if field.separators is None and cardinality != FieldCardinality.REQUIRED:
+        if field.separators is None:
             separators = ('Whitespace.from_default()',)
         descriptor = FieldDescriptor(
             name=name,
