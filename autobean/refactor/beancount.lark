@@ -152,7 +152,7 @@ DBL_LEFT_BRACE:    "{{"
 DBL_RIGHT_BRACE:   "}}"
 HASH:              "#"
 ASTERISK:          "*"
-compound_amount: maybe_left{number_expr} HASH maybe_left{number_expr} CURRENCY
+compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 ?cost_component: DATE | ASTERISK | ESCAPED_STRING | CURRENCY | number_expr | amount | compound_amount
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE

@@ -144,12 +144,14 @@ class ModelBuilder:
         assert False
 
     def _add_optional_node(self, node: lark.Tree, floating: _Floating) -> models.RawModel:
-        placeholder = self._add_placeholder(floating)
         inner_node, = node.children
-        inner = self._add_required_node(inner_node) if inner_node is not None else None
         if floating == _Floating.LEFT:
+            placeholder = self._add_placeholder(floating)
+            inner = self._add_required_node(inner_node) if inner_node is not None else None
             return internal.MaybeL(self._token_store, inner, placeholder)
         if floating == _Floating.RIGHT:
+            inner = self._add_required_node(inner_node) if inner_node is not None else None
+            placeholder = self._add_placeholder(floating)
             return internal.MaybeR(self._token_store, inner, placeholder)
         assert False
 
