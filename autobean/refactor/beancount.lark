@@ -146,10 +146,16 @@ ATAT:              "@@"
 unit_price: AT _partial_amount
 total_price: ATAT _partial_amount
 _price_annotation: unit_price | total_price
+LEFT_BRACE:        "{"
+RIGHT_BRACE:       "}"
+DBL_LEFT_BRACE:    "{{"
+DBL_RIGHT_BRACE:   "}}"
 HASH:              "#"
 ASTERISK:          "*"
 compound_amount: maybe_left{number_expr} HASH maybe_left{number_expr} CURRENCY
-?cost_component: DATE | ASTERISK | ESCAPED_STRING | CURRENCY | number_expr | compound_amount
+?cost_component: DATE | ASTERISK | ESCAPED_STRING | CURRENCY | number_expr | amount | compound_amount
+unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
+total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]

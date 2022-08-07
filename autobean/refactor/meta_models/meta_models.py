@@ -52,6 +52,24 @@ class CompoundAmount(MetaModel):
     currency: 'CURRENCY'
 
 
+class UnitCost(MetaModel):
+    _left_brace: 'LEFT_BRACE' = field(define_as='LeftBrace')
+    components: list['cost_component'] = field(
+        type_alias='CostComponent',
+        separators=('Comma.from_default()', 'Whitespace.from_default()'),
+        separators_before=())
+    _right_brace: 'RIGHT_BRACE' = field(define_as='RightBrace', separators=())
+
+
+class TotalCost(MetaModel):
+    _dbl_left_brace: 'DBL_LEFT_BRACE' = field(define_as='DblLeftBrace')
+    components: list['cost_component'] = field(
+        type_alias='CostComponent',
+        separators=('Comma.from_default()', 'Whitespace.from_default()'),
+        separators_before=())
+    _dbl_right_brace: 'DBL_RIGHT_BRACE' = field(define_as='DblRightBrace', separators=())
+
+
 # Directives
 
 
