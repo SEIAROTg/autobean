@@ -7,7 +7,9 @@ from .bool import *
 from .close import *
 from .commodity import *
 from .compound_amount import *
+from .cost import *
 from .cost_component import *
+from .cost_spec import *
 from .currency import *
 from .custom import *
 from .date import *

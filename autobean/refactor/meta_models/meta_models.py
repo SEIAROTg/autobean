@@ -70,6 +70,10 @@ class TotalCost(MetaModel):
     _dbl_right_brace: 'DBL_RIGHT_BRACE' = field(define_as='DblRightBrace', separators=())
 
 
+class CostSpec(MetaModel):
+    cost: Union['cost.unit_cost', 'cost.total_cost']
+
+
 # Directives
 
 
