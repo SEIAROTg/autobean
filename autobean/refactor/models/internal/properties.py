@@ -94,19 +94,29 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         else:
             self.drop_many(r)
 
-    def _insert_tokens(self, index: int, values: Iterable[base.RawModel]) -> None:
+    def _insert_tokens(
+            self,
+            index: int,
+            values: Iterable[base.RawModel],
+            length: Optional[int] = None,
+            separators_before_last: Optional[base.RawTokenModel] = None,
+    ) -> None:
         tokens: list[base.RawTokenModel] = []
         ref = self._prev_last(index)
+        if length is None:
+            length = len(self._repeated.items)
         for i, value in enumerate(values):
             if i or index or self._field.separators_before is None:
                 tokens.extend(copy.deepcopy(self._field.separators))
                 tokens.extend(value.detach())
-            elif len(self._repeated.items):
+            elif length:
                 tokens.extend(value.detach())
                 tokens.extend(copy.deepcopy(self._field.separators))
-                t = self._repeated.token_store.get_prev(self._repeated.items[0].first_token)
-                assert t is not None
-                ref = t
+                if separators_before_last is None:
+                    separators_before_last = self._repeated.token_store.get_prev(
+                        self._repeated.items[0].first_token)
+                    assert separators_before_last is not None
+                ref = separators_before_last
             else:
                 tokens.extend(copy.deepcopy(self._field.separators_before))
                 tokens.extend(value.detach())
@@ -148,16 +158,20 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
             assert isinstance(value, Iterable)
             values = list(value)
         r = indexes.range_from_index(index, len(self._repeated.items))
+        separators_before_last = (
+            self._repeated.token_store.get_prev(self._repeated.items[0].first_token)
+            if self._repeated.items else None)
         if r.step == 1:
             self._del_tokens(r.start, r.stop)
-            self._insert_tokens(r.start, values)
+            self._insert_tokens(
+                r.start, values, len(self._repeated.items) - len(r), separators_before_last)
             self._repeated.items[indexes.slice_from_range(r)] = values
         else:
             if len(r) != len(values):
                 raise ValueError(f'attempt to assign sequence of size {len(values)} to extended slice of size {len(r)}')
             for i, value in zip(r, values):
                 self._del_tokens(i, i + 1)
-                self._insert_tokens(i, [value])
+                self._insert_tokens(i, [value], len(self._repeated.items) - 1, separators_before_last)
                 self._repeated.items[i] = value
 
     def insert(self, index: int, value: _M) -> None:
