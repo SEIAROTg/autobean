@@ -61,6 +61,7 @@ class ModelType:
             'MetaKey': 'str',
             'TransactionFlag': 'str',
             'PostingFlag': 'str',
+            'Indent': 'str',
             # date
             'Date': 'datetime.date',
             # decimal

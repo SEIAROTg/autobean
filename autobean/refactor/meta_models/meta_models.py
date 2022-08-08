@@ -74,6 +74,17 @@ class CostSpec(MetaModel):
     cost: Union['cost.unit_cost', 'cost.total_cost']
 
 
+class Posting(MetaModel):
+    indent: 'punctuation.INDENT'
+    flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT)
+    account: 'ACCOUNT' = field(separators=())
+    number: Optional['number_expr'] = field(floating=Floating.LEFT)
+    currency: Optional['CURRENCY'] = field(floating=Floating.LEFT)
+    cost: Optional['cost_spec'] = field(floating=Floating.LEFT)
+    price: Optional[Union['unit_price', 'total_price']] = field(
+        floating=Floating.LEFT, type_alias='PriceAnnotation')
+
+
 # Directives
 
 

@@ -210,7 +210,7 @@ args = []
 %>\
         tokens = [
 % for field in fields:
-% if not skip_space and field.floating != Floating.LEFT:
+% if not skip_space and field.cardinality == FieldCardinality.REQUIRED:
 % for sep in field.separators:
             ${sep},
 % endfor

@@ -7,7 +7,7 @@ class Newline(internal.SimpleRawTokenModel):
 
 
 @internal.token_model
-class Indent(internal.SimpleRawTokenModel):
+class Indent(internal.SimpleSingleValueRawTokenModel):
     RULE = 'INDENT'
 
 

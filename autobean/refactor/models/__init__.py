@@ -35,6 +35,7 @@ from .pad import *
 from .plugin import *
 from .popmeta import *
 from .poptag import *
+from .posting import *
 from .posting_flag import *
 from .price import *
 from .punctuation import *
