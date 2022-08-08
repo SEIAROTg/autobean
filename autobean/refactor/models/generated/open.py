@@ -98,8 +98,8 @@ class Open(base.RawTreeModel):
             cls: Type[_Self],
             date: Date,
             account: Account,
-            currencies: Iterable[Currency],
-            booking: Optional[EscapedString],
+            currencies: Iterable[Currency] = (),
+            booking: Optional[EscapedString] = None,
     ) -> _Self:
         label = OpenLabel.from_default()
         repeated_currencies = internal.Repeated.from_children(currencies, separators=cls._currencies.separators, separators_before=cls._currencies.separators_before)
@@ -126,8 +126,8 @@ class Open(base.RawTreeModel):
             cls: Type[_Self],
             date: datetime.date,
             account: str,
-            currencies: Iterable[str],
-            booking: Optional[str],
+            currencies: Iterable[str] = (),
+            booking: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
             Date.from_value(date),

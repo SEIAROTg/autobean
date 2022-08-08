@@ -91,7 +91,7 @@ class Option(MetaModel):
 class Plugin(MetaModel):
     _label: 'PLUGIN' = field(define_as='PluginLabel')
     name: 'ESCAPED_STRING'
-    config: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
+    config: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
 
 
 class Popmeta(MetaModel):
@@ -198,8 +198,9 @@ class Open(MetaModel):
     account: 'ACCOUNT'
     currencies: list['CURRENCY'] = field(
         separators=('Comma.from_default()', 'Whitespace.from_default()'),
-        separators_before=('Whitespace.from_default()',))
-    booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
+        separators_before=('Whitespace.from_default()',),
+        is_optional=True)
+    booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
 
 
 class Custom(MetaModel):

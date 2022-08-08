@@ -115,6 +115,17 @@ class FieldDescriptor:
             assert False
 
     @functools.cached_property
+    def value_input_type(self) -> str:
+        if self.cardinality == FieldCardinality.REQUIRED:
+            return self.value_type
+        elif self.cardinality == FieldCardinality.OPTIONAL:
+            return f'Optional[{self.value_type}]'
+        elif self.cardinality == FieldCardinality.REPEATED:
+            return f'Iterable[{self.value_type}]'
+        else:
+            assert False
+
+    @functools.cached_property
     def internal_type(self) -> str:
         if self.cardinality == FieldCardinality.REQUIRED:
             return self.inner_type

@@ -188,9 +188,9 @@ class CostSpec(cost_spec.CostSpec):
             number_per: Optional[decimal.Decimal],
             number_total: Optional[decimal.Decimal],
             currency: Optional[str],
-            date: Optional[datetime.date],
-            label: Optional[str],
-            merge: bool,
+            date: Optional[datetime.date] = None,
+            label: Optional[str] = None,
+            merge: bool = False,
     ) -> _Self:
         type_: Type[UnitCost | TotalCost]
         comps: list[CostComponent] = []

@@ -249,12 +249,14 @@ args.append(f'repeated_{field.name}')
             cls: Type[_Self],
 % for field in fields:
 <% if not field.is_public: continue %>\
-% if field.cardinality == FieldCardinality.REQUIRED:
-            ${field.name}: ${field.value_type},
+% if not field.is_optional:
+            ${field.name}: ${field.value_input_type},
 % elif field.cardinality == FieldCardinality.OPTIONAL:
-            ${field.name}: Optional[${field.value_type}],
+            ${field.name}: ${field.value_input_type} = None,
 % elif field.cardinality == FieldCardinality.REPEATED:
-            ${field.name}: Iterable[${field.value_type}],
+            ${field.name}: ${field.value_input_type} = (),
+% else:
+<% assert False %>\
 % endif
 % endfor
     ) -> _Self:

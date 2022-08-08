@@ -77,7 +77,7 @@ class Plugin(base.RawTreeModel):
     def from_children(
             cls: Type[_Self],
             name: EscapedString,
-            config: Optional[EscapedString],
+            config: Optional[EscapedString] = None,
     ) -> _Self:
         label = PluginLabel.from_default()
         maybe_config = internal.MaybeL.from_children(config, separators=cls._config.separators)
@@ -97,7 +97,7 @@ class Plugin(base.RawTreeModel):
     def from_value(
             cls: Type[_Self],
             name: str,
-            config: Optional[str],
+            config: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
             EscapedString.from_value(name),
