@@ -4,19 +4,10 @@
 from typing import Optional, Type, TypeVar, final
 from .. import base
 from .. import internal
-from ..account import Account
-from ..amount import Amount
-from ..bool import Bool
-from ..currency import Currency
-from ..date import Date
-from ..escaped_string import EscapedString
 from ..meta_key import MetaKey
-from ..null import Null
-from ..number_expr import NumberExpr
+from ..meta_value import MetaRawValue
 from ..punctuation import Whitespace
-from ..tag import Tag
 
-MetaRawValue = Account | Amount | Bool | Currency | Date | EscapedString | Null | NumberExpr | Tag
 _Self = TypeVar('_Self', bound='Pushmeta')
 
 

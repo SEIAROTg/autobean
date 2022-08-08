@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 % endif
 
 % for field in fields:
-% if field.type_alias is not None:
+% if field.type_alias is not None and field.type_alias != field.inner_type_original:
 ${field.type_alias} = ${field.inner_type_original}
 % endif
 % endfor

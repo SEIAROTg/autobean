@@ -7,7 +7,6 @@ from .. import internal
 from ..cost_component import CostComponent
 from ..punctuation import Comma, Whitespace
 
-CostComponent = CostComponent
 _Self = TypeVar('_Self', bound='TotalCost')
 
 
@@ -82,7 +81,7 @@ class TotalCost(base.RawTreeModel):
             components: Iterable[CostComponent],
     ) -> _Self:
         dbl_left_brace = DblLeftBrace.from_default()
-        repeated_components = internal.Repeated[CostComponent].from_children(components, separators=cls._components.separators, separators_before=cls._components.separators_before)
+        repeated_components = internal.Repeated.from_children(components, separators=cls._components.separators, separators_before=cls._components.separators_before)
         dbl_right_brace = DblRightBrace.from_default()
         tokens = [
             *dbl_left_brace.detach(),

@@ -214,6 +214,9 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
         separators = field.separators
         if field.separators is None:
             separators = ('Whitespace.from_default()',)
+        type_alias = field.type_alias
+        if type_alias:
+            type_alias = type_alias.rsplit('.', maxsplit=1)[-1]
         descriptor = FieldDescriptor(
             name=name,
             model_types=frozenset(model_types),
@@ -224,7 +227,7 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             define_default=(
                 get_literal_token_pattern(next(iter(model_types)).rule)
                 if field.define_as else None),
-            type_alias=field.type_alias,
+            type_alias=type_alias,
             has_circular_dep=field.has_circular_dep,
             is_optional=field.is_optional,
             separators=separators,
@@ -266,8 +269,12 @@ def _model_types_from_rules(rules: set[str], field: base.field) -> list[ModelTyp
         *module, rule = rule.rsplit('.', maxsplit=1)
         if not rule in _GRAMMAR:
             raise ValueError(f'Unknown rule: {rule}.')
+        if field.type_alias is not None and '.' in field.type_alias:
+            *_, name = field.type_alias.rsplit('.', maxsplit=1)
+        else:
+            name = field.define_as or stringcase.pascalcase(rule.lower())
         model_types.append(ModelType(
-            name=field.define_as or stringcase.pascalcase(rule.lower()),
+            name=name,
             rule=rule,
             module=module[0] if module else stringcase.snakecase(rule.lower())))
     return model_types

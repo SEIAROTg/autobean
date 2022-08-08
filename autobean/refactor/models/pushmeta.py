@@ -1,23 +1,16 @@
 import datetime
 import decimal
-from typing import Callable, Optional, Type, TypeVar, Union
+from typing import Callable, Optional, Type, TypeVar
 from . import internal
 from .escaped_string import EscapedString
 from .number_expr import NumberExpr
 from .meta_key import MetaKey
-from .account import Account
-from .currency import Currency
-from .tag import Tag
-from .null import Null
-from .amount import Amount
 from .date import Date
 from .bool import Bool
+from .meta_value import MetaRawValue, MetaValue
 from .generated import pushmeta
-from .generated.pushmeta import PushmetaLabel, MetaRawValue
+from .generated.pushmeta import PushmetaLabel
 
-_ValueTypeSimplified = str | datetime.date | decimal.Decimal | bool
-_ValueTypePreserved = Account | Currency | Tag | Null | Amount
-MetaValue = Union[_ValueTypeSimplified, _ValueTypePreserved]
 _V = TypeVar('_V', str, datetime.date, decimal.Decimal, bool)
 _Self = TypeVar('_Self', bound='Pushmeta')
 

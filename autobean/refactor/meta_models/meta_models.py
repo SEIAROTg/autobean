@@ -55,7 +55,6 @@ class CompoundAmount(MetaModel):
 class UnitCost(MetaModel):
     _left_brace: 'LEFT_BRACE' = field(define_as='LeftBrace')
     components: list['cost_component'] = field(
-        type_alias='CostComponent',
         separators=('Comma.from_default()', 'Whitespace.from_default()'),
         separators_before=())
     _right_brace: 'RIGHT_BRACE' = field(define_as='RightBrace', separators=())
@@ -64,7 +63,6 @@ class UnitCost(MetaModel):
 class TotalCost(MetaModel):
     _dbl_left_brace: 'DBL_LEFT_BRACE' = field(define_as='DblLeftBrace')
     components: list['cost_component'] = field(
-        type_alias='CostComponent',
         separators=('Comma.from_default()', 'Whitespace.from_default()'),
         separators_before=())
     _dbl_right_brace: 'DBL_RIGHT_BRACE' = field(define_as='DblRightBrace', separators=())
@@ -118,17 +116,7 @@ class Poptag(MetaModel):
 class Pushmeta(MetaModel):
     _label: 'PUSHMETA' = field(define_as='PushmetaLabel')
     key: 'META_KEY'
-    value: Optional[Union[
-        'ESCAPED_STRING',
-        'ACCOUNT',
-        'DATE',
-        'CURRENCY',
-        'TAG',
-        'BOOL',
-        'NULL',
-        'number_expr',
-        'amount',
-    ]] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
+    value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='meta_value.MetaRawValue')
 
 
 class Pushtag(MetaModel):
