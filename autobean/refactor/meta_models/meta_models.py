@@ -83,6 +83,12 @@ class Posting(MetaModel):
         floating=Floating.LEFT, type_alias='PriceAnnotation')
 
 
+class MetaItem(MetaModel):
+    indent: 'punctuation.INDENT'
+    key: 'META_KEY' = field(separators=())
+    value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='meta_value.MetaRawValue')
+
+
 # Directives
 
 

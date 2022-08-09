@@ -159,6 +159,9 @@ total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
 posting: INDENT maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation}
 
+// meta
+meta_item: INDENT META_KEY maybe_left{meta_value}
+
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
 maybe_right{inner}: [inner]
