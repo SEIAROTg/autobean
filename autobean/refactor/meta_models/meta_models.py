@@ -69,11 +69,11 @@ class TotalCost(MetaModel):
 
 
 class CostSpec(MetaModel):
-    cost: Union['cost.unit_cost', 'cost.total_cost']
+    cost: Union['unit_cost', 'total_cost']
 
 
 class Posting(MetaModel):
-    indent: 'punctuation.INDENT'
+    indent: 'INDENT'
     flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT)
     account: 'ACCOUNT' = field(separators=())
     number: Optional['number_expr'] = field(floating=Floating.LEFT)
@@ -84,9 +84,9 @@ class Posting(MetaModel):
 
 
 class MetaItem(MetaModel):
-    indent: 'punctuation.INDENT'
+    indent: 'INDENT'
     key: 'META_KEY' = field(separators=())
-    value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='meta_value.MetaRawValue')
+    value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
 
 
 # Directives
@@ -122,7 +122,7 @@ class Poptag(MetaModel):
 class Pushmeta(MetaModel):
     _label: 'PUSHMETA' = field(define_as='PushmetaLabel')
     key: 'META_KEY'
-    value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='meta_value.MetaRawValue')
+    value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
 
 
 class Pushtag(MetaModel):

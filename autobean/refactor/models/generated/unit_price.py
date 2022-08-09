@@ -3,8 +3,7 @@
 
 import decimal
 from typing import Optional, Type, TypeVar, final
-from .. import base
-from .. import internal
+from .. import base, internal
 from ..currency import Currency
 from ..number_expr import NumberExpr
 from ..punctuation import Whitespace
@@ -60,7 +59,7 @@ class UnitPrice(base.RawTreeModel):
             self._number.clone(token_store, token_transformer),
             self._currency.clone(token_store, token_transformer),
         )
-    
+
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._label = self._label.reattach(token_store, token_transformer)

@@ -3,8 +3,7 @@
 
 import decimal
 from typing import Type, TypeVar, final
-from .. import base
-from .. import internal
+from .. import base, internal
 from ..number_expr import NumberExpr
 from ..punctuation import Whitespace
 
@@ -53,7 +52,7 @@ class Tolerance(base.RawTreeModel):
             self._tilde.clone(token_store, token_transformer),
             self._number.clone(token_store, token_transformer),
         )
-    
+
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._tilde = self._tilde.reattach(token_store, token_transformer)

@@ -3,8 +3,7 @@
 
 import datetime
 from typing import Type, TypeVar, final
-from .. import base
-from .. import internal
+from .. import base, internal
 from ..amount import Amount
 from ..currency import Currency
 from ..date import Date
@@ -67,7 +66,7 @@ class Price(base.RawTreeModel):
             self._currency.clone(token_store, token_transformer),
             self._amount.clone(token_store, token_transformer),
         )
-    
+
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._date = self._date.reattach(token_store, token_transformer)

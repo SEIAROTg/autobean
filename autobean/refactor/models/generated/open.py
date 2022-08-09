@@ -3,8 +3,7 @@
 
 import datetime
 from typing import Iterable, Optional, Type, TypeVar, final
-from .. import base
-from .. import internal
+from .. import base, internal
 from ..account import Account
 from ..currency import Currency
 from ..date import Date
@@ -74,7 +73,7 @@ class Open(base.RawTreeModel):
             self._currencies.clone(token_store, token_transformer),
             self._booking.clone(token_store, token_transformer),
         )
-    
+
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._date = self._date.reattach(token_store, token_transformer)

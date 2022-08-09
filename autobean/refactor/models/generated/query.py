@@ -3,8 +3,7 @@
 
 import datetime
 from typing import Type, TypeVar, final
-from .. import base
-from .. import internal
+from .. import base, internal
 from ..date import Date
 from ..escaped_string import EscapedString
 from ..punctuation import Whitespace
@@ -66,7 +65,7 @@ class Query(base.RawTreeModel):
             self._name.clone(token_store, token_transformer),
             self._query_string.clone(token_store, token_transformer),
         )
-    
+
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._date = self._date.reattach(token_store, token_transformer)

@@ -6,7 +6,7 @@ import mako.template  # type: ignore[import]
 import stringcase  # type: ignore[import]
 from autobean.refactor.meta_models.base import MetaModel
 from autobean.refactor.meta_models import meta_models
-from autobean.refactor.modelgen import field_descriptor
+from autobean.refactor.modelgen import descriptor
 
 
 _CURRENT_DIR = pathlib.Path(__file__).parent
@@ -23,10 +23,7 @@ def collect_meta_models() -> list[Type[MetaModel]]:
 
 
 def generate_raw_models(meta_model: Type[MetaModel]) -> str:
-    return _RAW_MODEL_TMPL.render(
-        model_name=meta_model.__name__,
-        fields=field_descriptor.extract_field_descriptors(meta_model),
-    )
+    return _RAW_MODEL_TMPL.render(model=descriptor.build_descriptor(meta_model))
 
 
 def raw_model_path(meta_model: Type[MetaModel]) -> str:

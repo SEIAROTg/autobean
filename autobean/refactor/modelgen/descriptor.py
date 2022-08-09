@@ -1,9 +1,11 @@
+import collections
 import dataclasses
 import enum
 import functools
 import inspect
+import itertools
 import pathlib
-from typing import ForwardRef, Optional, Type, Union, get_args, get_origin
+from typing import ForwardRef, Iterable, Optional, Type, Union, get_args, get_origin
 from lark import load_grammar
 from lark import lexer
 from lark import grammar
@@ -36,6 +38,32 @@ def _load_grammar() -> _Grammar:
 _GRAMMAR = _load_grammar()
 
 
+def _model_name_to_module(model_name: str) -> str:
+    return {
+        'Comma': 'punctuation',
+        'Whitespace': 'punctuation',
+        'Newline': 'punctuation',
+        'Indent': 'punctuation',
+        'MetaRawValue': 'meta_value',
+        'UnitCost': 'cost',
+        'TotalCost': 'cost',
+    }.get(model_name) or stringcase.snakecase(model_name)
+
+
+def _rule_to_model_name(rule: str) -> str:
+    return {
+        'meta_value': 'MetaRawValue',
+    }.get(rule) or stringcase.pascalcase(rule.lower())
+
+
+def _fmt_separators(separators: tuple[str, ...]) -> str:
+    if len(separators) == 1:
+        inner = separators[0] + ','
+    else:
+        inner = ', '.join(separators)
+    return '(' + inner + ')'
+
+
 @enum.unique
 class FieldCardinality(enum.Enum):
     REQUIRED = enum.auto()
@@ -47,7 +75,6 @@ class FieldCardinality(enum.Enum):
 class ModelType:
     name: str
     rule: str
-    module: Optional[str]
 
     @property
     def value_type(self) -> str:
@@ -82,7 +109,6 @@ class FieldDescriptor:
     floating: Optional[base.Floating]
     is_public: bool
     define_as: Optional[str]
-    define_default: Optional[str]
     type_alias: Optional[str]
     has_circular_dep: bool
     is_optional: bool
@@ -145,6 +171,37 @@ class FieldDescriptor:
             return f'_{self.name}'
 
     @functools.cached_property
+    def define_default(self) -> Optional[str]:
+        if not self.define_as:
+            return None
+        return get_literal_token_pattern(next(iter(self.model_types)).rule)
+
+    @functools.cached_property
+    def field_def(self) -> str:
+        if self.cardinality == FieldCardinality.REQUIRED:
+            return f'internal.required_field[{self.inner_type}]()'
+        if self.cardinality == FieldCardinality.OPTIONAL:
+            assert self.separators
+            return f'internal.optional_field[{self.inner_type}](separators={_fmt_separators(self.separators)})'
+        if self.cardinality == FieldCardinality.REPEATED:
+            assert self.separators
+            opt_separators_before = (
+                f', separators_before={_fmt_separators(self.separators_before)}'
+                if self.separators_before is not None else '')
+            return f'internal.repeated_field[{self.inner_type}](separators={_fmt_separators(self.separators)}{opt_separators_before})'
+        assert False
+
+    @functools.cached_property
+    def raw_property_def(self) -> str:
+        if self.cardinality == FieldCardinality.REQUIRED:
+            return f'internal.required_node_property(_{self.name})'
+        if self.cardinality == FieldCardinality.OPTIONAL:
+            return f'internal.optional_node_property(_{self.name})'
+        if self.cardinality == FieldCardinality.REPEATED:
+            return f'internal.repeated_node_property(_{self.name})'
+        assert False
+
+    @functools.cached_property
     def value_property_def(self) -> Optional[str]:
         if not self.is_public:
             return None
@@ -169,6 +226,90 @@ class FieldDescriptor:
                 return f'internal.repeated_string_property(raw_{self.name}, {self.inner_type_original})'
         return None
 
+    @functools.cached_property
+    def from_children_default(self) -> str:
+        if not self.is_optional:
+            return ''
+        if self.cardinality == FieldCardinality.OPTIONAL:
+            return ' = None'
+        if self.cardinality == FieldCardinality.REPEATED:
+            return ' = ()'
+        assert False
+
+    @functools.cached_property
+    def from_value_default(self) -> str:
+        if not self.is_optional:
+            return ''
+        if self.cardinality == FieldCardinality.OPTIONAL:
+            return ' = None'
+        if self.cardinality == FieldCardinality.REPEATED:
+            return ' = ()'
+        assert False
+
+    @functools.cached_property
+    def construction_from_value(self) -> str:
+        if self.value_type == self.inner_type:
+            return self.name
+        if self.cardinality == FieldCardinality.REQUIRED:
+            return f'{self.inner_type_original}.from_value({self.name})'
+        if self.cardinality == FieldCardinality.OPTIONAL:
+            return f'{self.inner_type_original}.from_value({self.name}) if {self.name} is not None else None'
+        if self.cardinality == FieldCardinality.REPEATED:
+            return f'map({self.inner_type_original}.from_value, {self.name})'
+        assert False
+
+
+@dataclasses.dataclass
+class MetaModelDescriptor:
+    name: str
+    rule: str
+    fields: list[FieldDescriptor]
+
+    @functools.cached_property
+    def generate_from_value(self) -> bool:
+        return all(field.value_property_def for field in self.public_fields)
+
+    @functools.cached_property
+    def imports(self) -> dict[Optional[str], set[str]]:
+        ret = collections.defaultdict[Optional[str], set[str]](set)
+        ret['typing'].update(('TypeVar', 'Type', 'final'))
+        if self.type_check_only_imports:
+            ret['typing'].add('TYPE_CHECKING')
+        ret['..'].update(('base', 'internal'))
+        for field in self.fields:
+            if field.cardinality == FieldCardinality.OPTIONAL:
+                ret['typing'].add('Optional')
+            elif field.cardinality == FieldCardinality.REPEATED:
+                ret['typing'].add('Iterable')
+            for sep in itertools.chain(field.separators or (), field.separators_before or ()):
+                model_name = sep.split('.', 1)[0]
+                module = _model_name_to_module(model_name)
+                ret[f'..{module}'].add(model_name)
+            if self.generate_from_value:
+                for model_type in field.model_types:
+                    *modules, _ = model_type.value_type.rsplit('.', 1)
+                    if modules:
+                        ret[None].add(modules[0])
+            if not field.define_as and not field.has_circular_dep:
+                for model_type in field.model_types:
+                    module = _model_name_to_module(model_type.name)
+                    ret[f'..{module}'].add(model_type.name)
+        return ret
+
+    @functools.cached_property
+    def type_check_only_imports(self) -> dict[Optional[str], set[str]]:
+        ret = collections.defaultdict[Optional[str], set[str]](set)
+        for field in self.fields:
+            if not field.define_as and field.has_circular_dep:
+                for model_type in field.model_types:
+                    module = _model_name_to_module(model_type.name)
+                    ret[f'..{module}'].add(model_type.name)
+        return ret
+
+    @property
+    def public_fields(self) -> Iterable[FieldDescriptor]:
+        return (field for field in self.fields if field.is_public)
+
 
 def is_token(rule: str) -> bool:
     return isinstance(_GRAMMAR[rule], lexer.TerminalDef)
@@ -187,8 +328,9 @@ def get_literal_token_pattern(rule: str) -> Optional[str]:
     return None
 
 
-def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDescriptor]:
+def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
     field_descriptors: list[FieldDescriptor] = []
+    is_first = True
     for name, type_hint in inspect.get_annotations(meta_model).items():
         field = getattr(meta_model, name, None) or base.field()
         is_public = not name.startswith('_')
@@ -213,10 +355,10 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             raise ValueError('Only repeated fields may specify separators_before.')
         separators = field.separators
         if field.separators is None:
-            separators = ('Whitespace.from_default()',)
-        type_alias = field.type_alias
-        if type_alias:
-            type_alias = type_alias.rsplit('.', maxsplit=1)[-1]
+            if is_first and cardinality == FieldCardinality.REQUIRED:
+                separators = ()
+            else:
+                separators = ('Whitespace.from_default()',)
         descriptor = FieldDescriptor(
             name=name,
             model_types=frozenset(model_types),
@@ -224,17 +366,19 @@ def extract_field_descriptors(meta_model: Type[base.MetaModel]) -> list[FieldDes
             floating=floating,
             is_public=is_public,
             define_as=field.define_as,
-            define_default=(
-                get_literal_token_pattern(next(iter(model_types)).rule)
-                if field.define_as else None),
-            type_alias=type_alias,
+            type_alias=field.type_alias,
             has_circular_dep=field.has_circular_dep,
             is_optional=field.is_optional,
             separators=separators,
             separators_before=field.separators_before,
         )
         field_descriptors.append(descriptor)
-    return field_descriptors
+        is_first = False
+    return MetaModelDescriptor(
+        name=meta_model.__name__,
+        rule=stringcase.snakecase(meta_model.__name__),
+        fields=field_descriptors,
+    )
 
 
 def _rules_and_cardinality_from_type(type_hint: Type) -> tuple[set[str], FieldCardinality]:
@@ -266,15 +410,8 @@ def _rules_and_cardinality_from_type(type_hint: Type) -> tuple[set[str], FieldCa
 def _model_types_from_rules(rules: set[str], field: base.field) -> list[ModelType]:
     model_types = []
     for rule in rules:
-        *module, rule = rule.rsplit('.', maxsplit=1)
         if not rule in _GRAMMAR:
             raise ValueError(f'Unknown rule: {rule}.')
-        if field.type_alias is not None and '.' in field.type_alias:
-            *_, name = field.type_alias.rsplit('.', maxsplit=1)
-        else:
-            name = field.define_as or stringcase.pascalcase(rule.lower())
-        model_types.append(ModelType(
-            name=name,
-            rule=rule,
-            module=module[0] if module else stringcase.snakecase(rule.lower())))
+        name = field.define_as or _rule_to_model_name(rule)
+        model_types.append(ModelType(name=name, rule=rule))
     return model_types
