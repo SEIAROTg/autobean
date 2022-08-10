@@ -45,6 +45,7 @@ def _model_name_to_module(model_name: str) -> str:
         'Newline': 'punctuation',
         'Indent': 'punctuation',
         'MetaRawValue': 'meta_value',
+        'MetaValue': 'meta_value',
         'UnitCost': 'cost',
         'TotalCost': 'cost',
     }.get(model_name) or stringcase.snakecase(model_name)
@@ -73,6 +74,7 @@ def _model_name_to_value_type(model_name: str) -> Optional[str]:
         'Amount': 'Amount',
         'CostSpec': 'CostSpec',
         'PriceAnnotation': 'PriceAnnotation',
+        'MetaRawValue': 'MetaValue',
     }.get(model_name)
 
 
@@ -137,8 +139,8 @@ class FieldDescriptor:
 
     @functools.cached_property
     def value_types(self) -> Optional[list[str]]:
-        if self.type_alias is not None and _model_name_to_value_type(self.type_alias):
-            return [self.type_alias]
+        if self.type_alias and (value_type := _model_name_to_value_type(self.type_alias)):
+            return [value_type]
         values = []
         for model_type in self.model_types:
             if model_type.value_type is None:
@@ -165,14 +167,17 @@ class FieldDescriptor:
 
     @functools.cached_property
     def value_input_type(self) -> Optional[str]:
-        if self.value_type is None:
+        if not self.value_types or len(self.value_types) != 1:
             return None
+        value_type = self.value_type
+        if value_type == 'MetaValue':
+            value_type = 'MetaValue | MetaRawValue'
         if self.cardinality == FieldCardinality.REQUIRED:
-            return self.value_type
+            return value_type
         elif self.cardinality == FieldCardinality.OPTIONAL:
-            return f'Optional[{self.value_type}]'
+            return f'Optional[{value_type}]'
         elif self.cardinality == FieldCardinality.REPEATED:
-            return f'Iterable[{self.value_type}]'
+            return f'Iterable[{value_type}]'
         else:
             assert False
 
@@ -245,6 +250,8 @@ class FieldDescriptor:
                 return f'internal.optional_decimal_property(raw_{self.name}, {self.inner_type_original})'
             elif self.value_type == 'str':
                 return f'internal.optional_string_property(raw_{self.name}, {self.inner_type_original})'
+            elif self.value_type == 'MetaValue':
+                return f'meta_value_internal.optional_meta_value_property(raw_{self.name})'
         elif self.cardinality == FieldCardinality.REPEATED:
             if self.value_type == 'str':
                 return f'internal.repeated_string_property(raw_{self.name}, {self.inner_type_original})'
@@ -276,14 +283,18 @@ class FieldDescriptor:
     def construction_from_value(self) -> Optional[str]:
         if self.value_type == self.inner_type:
             return self.name
-        if len(self.model_types) > 1:
+        if not self.value_input_type:
             return None
+        if self.inner_type == 'MetaRawValue':
+            ctor = 'meta_value_internal.from_value'
+        else:
+            ctor = f'{self.inner_type}.from_value'
         if self.cardinality == FieldCardinality.REQUIRED:
-            return f'{self.inner_type}.from_value({self.name})'
+            return f'{ctor}({self.name})'
         if self.cardinality == FieldCardinality.OPTIONAL:
-            return f'{self.inner_type}.from_value({self.name}) if {self.name} is not None else None'
+            return f'{ctor}({self.name}) if {self.name} is not None else None'
         if self.cardinality == FieldCardinality.REPEATED:
-            return f'map({self.inner_type}.from_value, {self.name})'
+            return f'map({ctor}, {self.name})'
         assert False
 
 
@@ -322,6 +333,9 @@ class MetaModelDescriptor:
                     *modules, _ = model_type.value_type.rsplit('.', 1)
                     if modules:
                         ret[None].add(modules[0])
+                    if model_type.value_type == 'MetaValue':
+                        ret['..meta_value'].add('MetaValue')
+                        ret['..'].add('meta_value_internal')
             if not field.define_as and not field.has_circular_dep:
                 for model_type in field.model_types:
                     module = _model_name_to_module(model_type.name)

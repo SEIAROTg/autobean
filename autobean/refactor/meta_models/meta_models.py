@@ -84,7 +84,7 @@ class Posting(MetaModel):
 
 
 class MetaItem(MetaModel):
-    indent: 'INDENT'
+    indent: 'INDENT' = field(is_optional=True, default_value='    ', is_keyword_only=True)
     key: 'META_KEY' = field(separators=())
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
 
