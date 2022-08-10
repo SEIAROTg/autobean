@@ -179,9 +179,15 @@ args.append(f'repeated_{field.name}')
     @classmethod
     def from_value(
             cls: Type[_Self],
-% for field in model.public_fields:
+% for field in model.from_value_positional_fields:
             ${field.name}: ${field.value_input_type}${field.from_value_default},
 % endfor
+% if model.from_value_keyword_fields:
+            *,
+% for field in model.from_value_keyword_fields:
+            ${field.name}: ${field.value_input_type}${field.from_value_default},
+% endfor
+% endif
     ) -> _Self:
         return cls.from_children(
 % for field in model.public_fields:

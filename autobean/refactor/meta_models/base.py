@@ -1,6 +1,6 @@
 import dataclasses
 import enum
-from typing import Optional
+from typing import Any, Optional
 
 
 class MetaModel:
@@ -20,5 +20,7 @@ class field:
     type_alias: Optional[str] = None
     has_circular_dep: bool = False
     is_optional: bool = False
+    is_keyword_only: bool = False
+    default_value: Any = None
     separators: Optional[tuple[str, ...]] = None
     separators_before: Optional[tuple[str, ...]] = None

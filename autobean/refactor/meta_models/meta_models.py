@@ -73,8 +73,8 @@ class CostSpec(MetaModel):
 
 
 class Posting(MetaModel):
-    indent: 'INDENT'
-    flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT)
+    indent: 'INDENT' = field(is_optional=True, default_value='    ', is_keyword_only=True)
+    flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT, is_optional=True, is_keyword_only=True)
     account: 'ACCOUNT' = field(separators=())
     number: Optional['number_expr'] = field(floating=Floating.LEFT)
     currency: Optional['CURRENCY'] = field(floating=Floating.LEFT)

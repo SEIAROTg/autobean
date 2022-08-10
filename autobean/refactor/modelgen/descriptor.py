@@ -5,7 +5,7 @@ import functools
 import inspect
 import itertools
 import pathlib
-from typing import ForwardRef, Iterable, Optional, Type, Union, get_args, get_origin
+from typing import Any, ForwardRef, Iterable, Optional, Type, Union, get_args, get_origin
 from lark import load_grammar
 from lark import lexer
 from lark import grammar
@@ -50,6 +50,32 @@ def _model_name_to_module(model_name: str) -> str:
     }.get(model_name) or stringcase.snakecase(model_name)
 
 
+def _model_name_to_value_type(model_name: str) -> Optional[str]:
+    return {
+        # str
+        'Account': 'str',
+        'Currency': 'str',
+        'EscapedString': 'str',
+        'Link': 'str',
+        'Tag': 'str',
+        'MetaKey': 'str',
+        'TransactionFlag': 'str',
+        'PostingFlag': 'str',
+        'Indent': 'str',
+        # date
+        'Date': 'datetime.date',
+        # decimal
+        'NumberExpr': 'decimal.Decimal',
+        'Tolerance': 'decimal.Decimal',
+        # bool
+        'Bool': 'bool',
+        # raw
+        'Amount': 'Amount',
+        'CostSpec': 'CostSpec',
+        'PriceAnnotation': 'PriceAnnotation',
+    }.get(model_name)
+
+
 def _rule_to_model_name(rule: str) -> str:
     return {
         'meta_value': 'MetaRawValue',
@@ -77,28 +103,8 @@ class ModelType:
     rule: str
 
     @property
-    def value_type(self) -> str:
-        return {
-            # str
-            'Account': 'str',
-            'Currency': 'str',
-            'EscapedString': 'str',
-            'Link': 'str',
-            'Tag': 'str',
-            'MetaKey': 'str',
-            'TransactionFlag': 'str',
-            'PostingFlag': 'str',
-            'Indent': 'str',
-            # date
-            'Date': 'datetime.date',
-            # decimal
-            'NumberExpr': 'decimal.Decimal',
-            'Tolerance': 'decimal.Decimal',
-            # bool
-            'Bool': 'bool',
-            # raw
-            'Amount': 'Amount',
-        }.get(self.name, 'UNKNOWN')
+    def value_type(self) -> Optional[str]:
+        return _model_name_to_value_type(self.name)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -111,7 +117,10 @@ class FieldDescriptor:
     define_as: Optional[str]
     type_alias: Optional[str]
     has_circular_dep: bool
-    is_optional: bool
+    from_children_optional: bool
+    from_value_optional: bool
+    from_value_keyword_only: bool
+    default_value: Any
     separators: Optional[tuple[str, ...]]
     separators_before: Optional[tuple[str, ...]]
 
@@ -127,8 +136,21 @@ class FieldDescriptor:
         return self.inner_type_original
 
     @functools.cached_property
-    def value_type(self) -> str:
-        return ' | '.join(sorted({model_type.value_type for model_type in self.model_types}))
+    def value_types(self) -> Optional[list[str]]:
+        if self.type_alias is not None and _model_name_to_value_type(self.type_alias):
+            return [self.type_alias]
+        values = []
+        for model_type in self.model_types:
+            if model_type.value_type is None:
+                return None
+            values.append(model_type.value_type)
+        return values
+
+    @functools.cached_property
+    def value_type(self) -> Optional[str]:
+        if self.value_types is None:
+            return None
+        return ' | '.join(sorted(self.value_types))
 
     @functools.cached_property
     def input_type(self) -> str:
@@ -142,7 +164,9 @@ class FieldDescriptor:
             assert False
 
     @functools.cached_property
-    def value_input_type(self) -> str:
+    def value_input_type(self) -> Optional[str]:
+        if self.value_type is None:
+            return None
         if self.cardinality == FieldCardinality.REQUIRED:
             return self.value_type
         elif self.cardinality == FieldCardinality.OPTIONAL:
@@ -205,7 +229,7 @@ class FieldDescriptor:
     def value_property_def(self) -> Optional[str]:
         if not self.is_public:
             return None
-        if len(self.model_types) != 1:
+        if self.value_types is None or len(self.value_types) != 1:
             return None
         if self.value_type == self.inner_type:
             return f'raw_{self.name}'
@@ -228,7 +252,7 @@ class FieldDescriptor:
 
     @functools.cached_property
     def from_children_default(self) -> str:
-        if not self.is_optional:
+        if not self.from_children_optional or self.cardinality == FieldCardinality.REQUIRED:
             return ''
         if self.cardinality == FieldCardinality.OPTIONAL:
             return ' = None'
@@ -238,8 +262,10 @@ class FieldDescriptor:
 
     @functools.cached_property
     def from_value_default(self) -> str:
-        if not self.is_optional:
+        if not self.from_value_optional:
             return ''
+        if self.default_value:
+            return f' = {self.default_value!r}'
         if self.cardinality == FieldCardinality.OPTIONAL:
             return ' = None'
         if self.cardinality == FieldCardinality.REPEATED:
@@ -247,15 +273,17 @@ class FieldDescriptor:
         assert False
 
     @functools.cached_property
-    def construction_from_value(self) -> str:
+    def construction_from_value(self) -> Optional[str]:
         if self.value_type == self.inner_type:
             return self.name
+        if len(self.model_types) > 1:
+            return None
         if self.cardinality == FieldCardinality.REQUIRED:
-            return f'{self.inner_type_original}.from_value({self.name})'
+            return f'{self.inner_type}.from_value({self.name})'
         if self.cardinality == FieldCardinality.OPTIONAL:
-            return f'{self.inner_type_original}.from_value({self.name}) if {self.name} is not None else None'
+            return f'{self.inner_type}.from_value({self.name}) if {self.name} is not None else None'
         if self.cardinality == FieldCardinality.REPEATED:
-            return f'map({self.inner_type_original}.from_value, {self.name})'
+            return f'map({self.inner_type}.from_value, {self.name})'
         assert False
 
 
@@ -267,7 +295,9 @@ class MetaModelDescriptor:
 
     @functools.cached_property
     def generate_from_value(self) -> bool:
-        return all(field.value_property_def for field in self.public_fields)
+        return all(
+            field.value_input_type is not None and field.construction_from_value is not None
+            for field in self.public_fields)
 
     @functools.cached_property
     def imports(self) -> dict[Optional[str], set[str]]:
@@ -287,6 +317,8 @@ class MetaModelDescriptor:
                 ret[f'..{module}'].add(model_name)
             if self.generate_from_value:
                 for model_type in field.model_types:
+                    if model_type.value_type is None:
+                        continue
                     *modules, _ = model_type.value_type.rsplit('.', 1)
                     if modules:
                         ret[None].add(modules[0])
@@ -309,6 +341,14 @@ class MetaModelDescriptor:
     @property
     def public_fields(self) -> Iterable[FieldDescriptor]:
         return (field for field in self.fields if field.is_public)
+
+    @functools.cached_property
+    def from_value_positional_fields(self) -> list[FieldDescriptor]:
+        return [field for field in self.public_fields if not field.from_value_keyword_only]
+
+    @functools.cached_property
+    def from_value_keyword_fields(self) -> list[FieldDescriptor]:
+        return [field for field in self.public_fields if field.from_value_keyword_only]
 
 
 def is_token(rule: str) -> bool:
@@ -349,8 +389,12 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
         default_constructable = len(model_types) == 1 and is_literal_token(next(iter(model_types)).rule)
         if not is_public and (not default_constructable or cardinality != FieldCardinality.REQUIRED):
             raise ValueError('Private fields must be required and default constructable.')
-        if field.is_optional and cardinality == FieldCardinality.REQUIRED:
-            raise ValueError('Required fields must not be optional.')
+        if field.default_value is not None and not field.is_optional:
+            raise ValueError('Fields with default_value must set is_optional.')
+        if field.is_optional and (cardinality == FieldCardinality.REQUIRED and field.default_value is None):
+            raise ValueError('Required fields must not set is_optional or set default_value.')
+        if field.is_keyword_only and not field.is_optional:
+            raise ValueError('Fields with is_keyword_only must also set is_optional.')
         if field.separators_before is not None and cardinality != FieldCardinality.REPEATED:
             raise ValueError('Only repeated fields may specify separators_before.')
         separators = field.separators
@@ -368,12 +412,23 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
             define_as=field.define_as,
             type_alias=field.type_alias,
             has_circular_dep=field.has_circular_dep,
-            is_optional=field.is_optional,
+            from_children_optional=field.is_optional,
+            from_value_optional=field.is_optional,
+            from_value_keyword_only=field.is_keyword_only,
+            default_value=field.default_value,
             separators=separators,
             separators_before=field.separators_before,
         )
         field_descriptors.append(descriptor)
         is_first = False
+    required = False
+    for i in reversed(range(len(field_descriptors))):
+        if not field_descriptors[i].from_children_optional:
+            required = True
+        elif required:
+            field_descriptors[i] = dataclasses.replace(
+                field_descriptors[i], from_children_optional=False)
+        
     return MetaModelDescriptor(
         name=meta_model.__name__,
         rule=stringcase.snakecase(meta_model.__name__),
