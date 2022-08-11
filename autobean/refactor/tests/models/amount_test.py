@@ -17,11 +17,10 @@ class TestAmount(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, number: decimal.Decimal, currency: str) -> None:
-        amount = self.parser.parse(text, models.Amount)
-        assert amount.first_token is amount.raw_number.first_token
+        amount = self.parser.parse_inline(text, models.Amount)
         assert amount.raw_number.value == number
         assert amount.raw_currency.value == currency
-        assert amount.last_token is amount.raw_currency
+        assert self.print_model(amount) == text
         self.check_deepcopy_tree(amount)
         self.check_reattach_tree(amount)
 
@@ -34,31 +33,31 @@ class TestAmount(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.parser.parse(text, models.Amount)
+            self.parser.parse_inline(text, models.Amount)
 
     def test_set_raw_number(self) -> None:
-        amount = self.parser.parse('100.00  USD', models.Amount)
-        new_number = self.parser.parse('(100.00 + 20.00)', models.NumberExpr)
+        amount = self.parser.parse_inline('100.00  USD', models.Amount)
+        new_number = self.parser.parse_inline('(100.00 + 20.00)', models.NumberExpr)
         amount.raw_number = new_number
         assert amount.raw_number is new_number
         assert self.print_model(amount) == '(100.00 + 20.00)  USD'
 
     def test_set_raw_currency(self) -> None:
-        amount = self.parser.parse('(100.00 + 20.00)  USD', models.Amount)
+        amount = self.parser.parse_inline('(100.00 + 20.00)  USD', models.Amount)
         new_currency = models.Currency.from_value('EUR')
         amount.raw_currency = new_currency
         assert amount.raw_currency is new_currency
         assert self.print_model(amount) == '(100.00 + 20.00)  EUR'
 
     def test_set_number(self) -> None:
-        amount = self.parser.parse('(100.00 + 20.00)  USD', models.Amount)
+        amount = self.parser.parse_inline('(100.00 + 20.00)  USD', models.Amount)
         assert amount.number == decimal.Decimal('120.00')
         amount.number = decimal.Decimal('-12.34')
         assert amount.number == decimal.Decimal('-12.34')
         assert self.print_model(amount) == '-12.34  USD'
 
     def test_set_currency(self) -> None:
-        amount = self.parser.parse('(100.00 + 20.00)  USD', models.Amount)
+        amount = self.parser.parse_inline('(100.00 + 20.00)  USD', models.Amount)
         assert amount.currency == 'USD'
         amount.currency = 'EUR'
         assert amount.currency == 'EUR'

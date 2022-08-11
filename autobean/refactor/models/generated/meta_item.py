@@ -5,7 +5,7 @@ from typing import Optional, Type, TypeVar, final
 from .. import base, internal, meta_value_internal
 from ..meta_key import MetaKey
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Indent, Whitespace
+from ..punctuation import Eol, Indent, Whitespace
 
 _Self = TypeVar('_Self', bound='MetaItem')
 
@@ -17,6 +17,7 @@ class MetaItem(base.RawTreeModel):
     _indent = internal.required_field[Indent]()
     _key = internal.required_field[MetaKey]()
     _value = internal.optional_field[MetaRawValue](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_indent = internal.required_node_property(_indent)
     raw_key = internal.required_node_property(_key)
@@ -33,11 +34,13 @@ class MetaItem(base.RawTreeModel):
             indent: Indent,
             key: MetaKey,
             value: internal.Maybe[MetaRawValue],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._indent = indent
         self._key = key
         self._value = value
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -45,7 +48,7 @@ class MetaItem(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._value.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -53,6 +56,7 @@ class MetaItem(base.RawTreeModel):
             self._indent.clone(token_store, token_transformer),
             self._key.clone(token_store, token_transformer),
             self._value.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -60,6 +64,7 @@ class MetaItem(base.RawTreeModel):
         self._indent = self._indent.reattach(token_store, token_transformer)
         self._key = self._key.reattach(token_store, token_transformer)
         self._value = self._value.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -67,6 +72,7 @@ class MetaItem(base.RawTreeModel):
             and self._indent == other._indent
             and self._key == other._key
             and self._value == other._value
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -77,16 +83,19 @@ class MetaItem(base.RawTreeModel):
             value: Optional[MetaRawValue],
     ) -> _Self:
         maybe_value = internal.MaybeL[MetaRawValue].from_children(value, separators=cls._value.separators)
+        eol = Eol.from_default()
         tokens = [
             *indent.detach(),
             *key.detach(),
             *maybe_value.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         indent.reattach(token_store)
         key.reattach(token_store)
         maybe_value.reattach(token_store)
-        return cls(token_store, indent, key, maybe_value)
+        eol.reattach(token_store)
+        return cls(token_store, indent, key, maybe_value, eol)
 
     @classmethod
     def from_value(

@@ -14,10 +14,9 @@ class TestOption(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, key: str, value: str) -> None:
         option = self.parser.parse(text, models.Option)
-        assert option.first_token.raw_text == 'option'
         assert option.raw_key.value == key
         assert option.raw_value.value == value
-        assert option.last_token is option.raw_value
+        assert self.print_model(option) == text
         self.check_deepcopy_tree(option)
         self.check_reattach_tree(option)
 

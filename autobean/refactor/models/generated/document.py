@@ -7,7 +7,7 @@ from ..account import Account
 from ..date import Date
 from ..escaped_string import EscapedString
 from ..link import Link
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 from ..tag import Tag
 
 _Self = TypeVar('_Self', bound='Document')
@@ -28,6 +28,7 @@ class Document(base.RawTreeModel):
     _account = internal.required_field[Account]()
     _filename = internal.required_field[EscapedString]()
     _tags_links = internal.repeated_field[Link | Tag](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
@@ -47,6 +48,7 @@ class Document(base.RawTreeModel):
             account: Account,
             filename: EscapedString,
             tags_links: internal.Repeated[Link | Tag],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
@@ -54,6 +56,7 @@ class Document(base.RawTreeModel):
         self._account = account
         self._filename = filename
         self._tags_links = tags_links
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -61,7 +64,7 @@ class Document(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._tags_links.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -71,6 +74,7 @@ class Document(base.RawTreeModel):
             self._account.clone(token_store, token_transformer),
             self._filename.clone(token_store, token_transformer),
             self._tags_links.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -80,6 +84,7 @@ class Document(base.RawTreeModel):
         self._account = self._account.reattach(token_store, token_transformer)
         self._filename = self._filename.reattach(token_store, token_transformer)
         self._tags_links = self._tags_links.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -89,6 +94,7 @@ class Document(base.RawTreeModel):
             and self._account == other._account
             and self._filename == other._filename
             and self._tags_links == other._tags_links
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -101,6 +107,7 @@ class Document(base.RawTreeModel):
     ) -> _Self:
         label = DocumentLabel.from_default()
         repeated_tags_links = internal.Repeated.from_children(tags_links, separators=cls._tags_links.separators)
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
@@ -110,6 +117,7 @@ class Document(base.RawTreeModel):
             Whitespace.from_default(),
             *filename.detach(),
             *repeated_tags_links.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
@@ -117,4 +125,5 @@ class Document(base.RawTreeModel):
         account.reattach(token_store)
         filename.reattach(token_store)
         repeated_tags_links.reattach(token_store)
-        return cls(token_store, date, label, account, filename, repeated_tags_links)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, account, filename, repeated_tags_links, eol)

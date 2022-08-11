@@ -9,7 +9,7 @@ from ..cost_spec import CostSpec
 from ..currency import Currency
 from ..number_expr import NumberExpr
 from ..posting_flag import PostingFlag
-from ..punctuation import Indent, Whitespace
+from ..punctuation import Eol, Indent, Whitespace
 from ..total_price import TotalPrice
 from ..unit_price import UnitPrice
 
@@ -28,6 +28,7 @@ class Posting(base.RawTreeModel):
     _currency = internal.optional_field[Currency](separators=(Whitespace.from_default(),))
     _cost = internal.optional_field[CostSpec](separators=(Whitespace.from_default(),))
     _price = internal.optional_field[PriceAnnotation](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_indent = internal.required_node_property(_indent)
     raw_flag = internal.optional_node_property(_flag)
@@ -56,6 +57,7 @@ class Posting(base.RawTreeModel):
             currency: internal.Maybe[Currency],
             cost: internal.Maybe[CostSpec],
             price: internal.Maybe[PriceAnnotation],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._indent = indent
@@ -65,6 +67,7 @@ class Posting(base.RawTreeModel):
         self._currency = currency
         self._cost = cost
         self._price = price
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -72,7 +75,7 @@ class Posting(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._price.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -84,6 +87,7 @@ class Posting(base.RawTreeModel):
             self._currency.clone(token_store, token_transformer),
             self._cost.clone(token_store, token_transformer),
             self._price.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -95,6 +99,7 @@ class Posting(base.RawTreeModel):
         self._currency = self._currency.reattach(token_store, token_transformer)
         self._cost = self._cost.reattach(token_store, token_transformer)
         self._price = self._price.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -106,6 +111,7 @@ class Posting(base.RawTreeModel):
             and self._currency == other._currency
             and self._cost == other._cost
             and self._price == other._price
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -124,6 +130,7 @@ class Posting(base.RawTreeModel):
         maybe_currency = internal.MaybeL.from_children(currency, separators=cls._currency.separators)
         maybe_cost = internal.MaybeL.from_children(cost, separators=cls._cost.separators)
         maybe_price = internal.MaybeL[PriceAnnotation].from_children(price, separators=cls._price.separators)
+        eol = Eol.from_default()
         tokens = [
             *indent.detach(),
             *maybe_flag.detach(),
@@ -132,6 +139,7 @@ class Posting(base.RawTreeModel):
             *maybe_currency.detach(),
             *maybe_cost.detach(),
             *maybe_price.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         indent.reattach(token_store)
@@ -141,7 +149,8 @@ class Posting(base.RawTreeModel):
         maybe_currency.reattach(token_store)
         maybe_cost.reattach(token_store)
         maybe_price.reattach(token_store)
-        return cls(token_store, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price)
+        eol.reattach(token_store)
+        return cls(token_store, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, eol)
 
     @classmethod
     def from_value(

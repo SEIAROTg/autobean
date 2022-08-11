@@ -20,12 +20,11 @@ class TestCommodity(base.BaseTestModel):
             currency: str,
     ) -> None:
         commodity = self.parser.parse(text, models.Commodity)
-        assert commodity.first_token is commodity.raw_date
         assert commodity.raw_date.value == date
         assert commodity.date == date
         assert commodity.raw_currency.value == currency
         assert commodity.currency == currency
-        assert commodity.last_token is commodity.raw_currency
+        assert self.print_model(commodity) == text
         self.check_deepcopy_tree(commodity)
         self.check_reattach_tree(commodity)
 

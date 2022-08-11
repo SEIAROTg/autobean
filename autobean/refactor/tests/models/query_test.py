@@ -21,14 +21,13 @@ class TestQuery(base.BaseTestModel):
             query_string: str,
     ) -> None:
         query = self.parser.parse(text, models.Query)
-        assert query.first_token is query.raw_date
         assert query.raw_date.value == date
         assert query.date == date
         assert query.raw_name.value == type
         assert query.name == type
         assert query.raw_query_string.value == query_string
         assert query.query_string == query_string
-        assert query.last_token is query.raw_query_string
+        assert self.print_model(query) == text
         self.check_deepcopy_tree(query)
         self.check_reattach_tree(query)
 

@@ -12,7 +12,7 @@ from lark import grammar
 import stringcase  # type: ignore[import]
 from autobean.refactor.meta_models import base
 
-_Grammar = dict[str, lexer.TerminalDef | grammar.Rule]
+_Grammar = dict[str, lexer.TerminalDef | grammar.Rule | None]
 
 _CURRENT_DIR = pathlib.Path(__file__).parent
 
@@ -29,10 +29,13 @@ def _load_grammar() -> _Grammar:
     rules: list[grammar.Rule]
     all_rules = {rule.value for rule, _, _, _ in g.rule_defs}
     terminals, rules, _ = g.compile(all_rules, '*')
-    return {
+    compiled: _Grammar = {
         **{terminal.name: terminal for terminal in terminals},
         **{rule.origin.name: rule for rule in rules},
     }
+    for name, _ in g.term_defs:
+        compiled.setdefault(name, None)  # those from %declare
+    return compiled
 
 
 _GRAMMAR = _load_grammar()
@@ -44,6 +47,7 @@ def _model_name_to_module(model_name: str) -> str:
         'Whitespace': 'punctuation',
         'Newline': 'punctuation',
         'Indent': 'punctuation',
+        'Eol': 'punctuation',
         'MetaRawValue': 'meta_value',
         'MetaValue': 'meta_value',
         'UnitCost': 'cost',
@@ -369,9 +373,12 @@ def is_token(rule: str) -> bool:
     return isinstance(_GRAMMAR[rule], lexer.TerminalDef)
 
 
-def is_literal_token(rule: str) -> bool:
+def default_constructable(model_types: list[ModelType]) -> bool:
+    if len(model_types) != 1:
+        return False
+    rule = next(iter(model_types)).rule
     r = _GRAMMAR[rule]
-    return isinstance(r, lexer.TerminalDef) and r.pattern.type == 'str'
+    return r is None or isinstance(r, lexer.TerminalDef) and r.pattern.type == 'str'
 
 
 def get_literal_token_pattern(rule: str) -> Optional[str]:
@@ -400,8 +407,7 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
         single_token = len(model_types) == 1 and is_token(next(iter(model_types)).rule)
         if field.define_as and not single_token:
             raise ValueError('Fields with define_as must be a single token.')
-        default_constructable = len(model_types) == 1 and is_literal_token(next(iter(model_types)).rule)
-        if not is_public and (not default_constructable or cardinality != FieldCardinality.REQUIRED):
+        if not is_public and (not default_constructable(model_types) or cardinality != FieldCardinality.REQUIRED):
             raise ValueError('Private fields must be required and default constructable.')
         if field.default_value is not None and not field.is_optional:
             raise ValueError('Fields with default_value must set is_optional.')
@@ -437,7 +443,7 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
         is_first = False
     required = False
     for i in reversed(range(len(field_descriptors))):
-        if not field_descriptors[i].from_children_optional:
+        if not field_descriptors[i].from_children_optional and field_descriptors[i].is_public:
             required = True
         elif required:
             field_descriptors[i] = dataclasses.replace(

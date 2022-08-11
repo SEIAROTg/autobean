@@ -14,9 +14,8 @@ class TestPopmeta(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, key: str) -> None:
         popmeta = self.parser.parse(text, models.Popmeta)
-        assert popmeta.first_token.raw_text == 'popmeta'
         assert popmeta.raw_key.value == key
-        assert popmeta.last_token is popmeta.raw_key
+        assert self.print_model(popmeta) == text
         self.check_deepcopy_tree(popmeta)
         self.check_reattach_tree(popmeta)
 

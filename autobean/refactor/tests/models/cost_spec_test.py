@@ -124,7 +124,7 @@ class TestCostSpec(base.BaseTestModel):
             label: Optional[str],
             merge: bool,
     ) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         assert isinstance(cost_spec.raw_cost, cost_type)
         assert cost_spec.number_per == number_per
         assert cost_spec.number_total == number_total
@@ -146,11 +146,11 @@ class TestCostSpec(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.parser.parse(text, models.CostSpec)
+            self.parser.parse_inline(text, models.CostSpec)
 
     @pytest.mark.parametrize('text,value,expected', _NUMBER_PER_TESTCASES)
     def test_set_raw_number_per(self, text: str, value: Optional[decimal.Decimal], expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         number_per = models.NumberExpr.from_value(value) if value is not None else None
         cost_spec.raw_number_per = number_per
         assert cost_spec.raw_number_per is number_per
@@ -158,14 +158,14 @@ class TestCostSpec(base.BaseTestModel):
 
     @pytest.mark.parametrize('text,value,expected', _NUMBER_PER_TESTCASES)
     def test_set_number_per(self, text: str, value: Optional[decimal.Decimal], expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         cost_spec.number_per = value
         assert cost_spec.number_per == value
         assert self.print_model(cost_spec) == expected
 
     @pytest.mark.parametrize('text,value,expected', _NUMBER_TOTAL_TESTCASES)
     def test_set_raw_number_total(self, text: str, value: Optional[decimal.Decimal], expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         number_total = models.NumberExpr.from_value(value) if value is not None else None
         cost_spec.raw_number_total = number_total
         assert cost_spec.raw_number_total is number_total
@@ -173,14 +173,14 @@ class TestCostSpec(base.BaseTestModel):
 
     @pytest.mark.parametrize('text,value,expected', _NUMBER_TOTAL_TESTCASES)
     def test_set_number_total(self, text: str, value: Optional[decimal.Decimal], expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         cost_spec.number_total = value
         assert cost_spec.number_total == value
         assert self.print_model(cost_spec) == expected
 
     @pytest.mark.parametrize('text,value,expected', _CURRENCY_TESTCASES)
     def test_set_raw_currency(self, text: str, value: Optional[str], expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         currency = models.Currency.from_value(value) if value is not None else None
         cost_spec.raw_currency = currency
         assert cost_spec.raw_currency is currency
@@ -188,14 +188,14 @@ class TestCostSpec(base.BaseTestModel):
 
     @pytest.mark.parametrize('text,value,expected', _CURRENCY_TESTCASES)
     def test_set_currency(self, text: str, value: Optional[str], expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         cost_spec.currency = value
         assert cost_spec.currency == value
         assert self.print_model(cost_spec) == expected
 
     @pytest.mark.parametrize('text,value,expected', _MERGE_TEST_CASES)
     def test_set_merge(self, text: str, value: bool, expected: str) -> None:
-        cost_spec = self.parser.parse(text, models.CostSpec)
+        cost_spec = self.parser.parse_inline(text, models.CostSpec)
         cost_spec.merge = value
         assert cost_spec.merge == value
         assert self.print_model(cost_spec) == expected

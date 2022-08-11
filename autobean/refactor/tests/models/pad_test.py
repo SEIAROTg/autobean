@@ -21,14 +21,13 @@ class TestPad(base.BaseTestModel):
             source_account: str,
     ) -> None:
         pad = self.parser.parse(text, models.Pad)
-        assert pad.first_token is pad.raw_date
         assert pad.raw_date.value == date
         assert pad.date == date
         assert pad.raw_account.value == account
         assert pad.account == account
         assert pad.raw_source_account.value == source_account
         assert pad.source_account == source_account
-        assert pad.last_token is pad.raw_source_account
+        assert self.print_model(pad) == text
         self.check_deepcopy_tree(pad)
         self.check_reattach_tree(pad)
 

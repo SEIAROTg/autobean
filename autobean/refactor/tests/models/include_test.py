@@ -14,9 +14,8 @@ class TestInclude(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, filename: str) -> None:
         include = self.parser.parse(text, models.Include)
-        assert include.first_token.raw_text == 'include'
         assert include.raw_filename.value == filename
-        assert include.last_token is include.raw_filename
+        assert self.print_model(include) == text
         self.check_deepcopy_tree(include)
         self.check_reattach_tree(include)
 

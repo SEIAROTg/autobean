@@ -21,14 +21,13 @@ class TestEvent(base.BaseTestModel):
             description: str,
     ) -> None:
         event = self.parser.parse(text, models.Event)
-        assert event.first_token is event.raw_date
         assert event.raw_date.value == date
         assert event.date == date
         assert event.raw_type.value == type
         assert event.type == type
         assert event.raw_description.value == description
         assert event.description == description
-        assert event.last_token is event.raw_description
+        assert self.print_model(event) == text
         self.check_deepcopy_tree(event)
         self.check_reattach_tree(event)
 

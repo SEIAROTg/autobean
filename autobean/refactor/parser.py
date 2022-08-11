@@ -23,11 +23,23 @@ with open(pathlib.Path(__file__).parent / 'beancount.lark') as f:
     _GRAMMAR.ignore.clear()
 
 
-class PostLex(lark.lark.PostLex):
+class PostLexInline(lark.lark.PostLex):
     always_accept = _IGNORED_TOKENS
 
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
         return stream
+
+
+class PostLex(lark.lark.PostLex):
+    # Contextual lexer only sees _EOL and will thus reject _NL by default.
+    always_accept = _IGNORED_TOKENS | {'_NL'}
+
+    def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
+        for token in stream:
+            if token.type == '_NL':
+                yield lark.Token.new_borrow_pos('EOL', '', token)
+            yield token
+        yield lark.Token('EOL', '')
 
 
 class _Floating(enum.Enum):
@@ -48,6 +60,8 @@ class Parser:
         start = ['_unused'] + list(tree_models.keys())
         self._lark = lark.Lark(
             _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLex(), start=start)
+        self._lark_inline = lark.Lark(
+            _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLexInline(), start=start)
         self._token_models = token_models
         self._tree_models = tree_models
 
@@ -70,8 +84,14 @@ class Parser:
             raise exceptions.UnexpectedToken(tokens[1], {'$END'})
         return target.from_raw_text(tokens[0].value)
 
+    def parse_inline(self, text: str, target: Type[_U]) -> _U:
+        return self._parse(text, target, self._lark_inline)
+
     def parse(self, text: str, target: Type[_U]) -> _U:
-        parser = self._lark.parse_interactive(text=text, start=target.RULE)
+        return self._parse(text, target, self._lark)
+
+    def _parse(self, text: str, target: Type[_U], lark_instance: lark.Lark) -> _U:
+        parser = lark_instance.parse_interactive(text=text, start=target.RULE)
         tokens = []
 
         for token in parser.lexer_thread.lex(parser.parser_state):

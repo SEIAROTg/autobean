@@ -9,7 +9,7 @@ from ..account import Account
 from ..currency import Currency
 from ..date import Date
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 from ..tolerance import Tolerance
 
 _Self = TypeVar('_Self', bound='Balance')
@@ -31,6 +31,7 @@ class Balance(base.RawTreeModel):
     _number = internal.required_field[NumberExpr]()
     _tolerance = internal.optional_field[Tolerance](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
@@ -54,6 +55,7 @@ class Balance(base.RawTreeModel):
             number: NumberExpr,
             tolerance: internal.Maybe[Tolerance],
             currency: Currency,
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
@@ -62,6 +64,7 @@ class Balance(base.RawTreeModel):
         self._number = number
         self._tolerance = tolerance
         self._currency = currency
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -69,7 +72,7 @@ class Balance(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._currency.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -80,6 +83,7 @@ class Balance(base.RawTreeModel):
             self._number.clone(token_store, token_transformer),
             self._tolerance.clone(token_store, token_transformer),
             self._currency.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -90,6 +94,7 @@ class Balance(base.RawTreeModel):
         self._number = self._number.reattach(token_store, token_transformer)
         self._tolerance = self._tolerance.reattach(token_store, token_transformer)
         self._currency = self._currency.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -100,6 +105,7 @@ class Balance(base.RawTreeModel):
             and self._number == other._number
             and self._tolerance == other._tolerance
             and self._currency == other._currency
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -113,6 +119,7 @@ class Balance(base.RawTreeModel):
     ) -> _Self:
         label = BalanceLabel.from_default()
         maybe_tolerance = internal.MaybeL.from_children(tolerance, separators=cls._tolerance.separators)
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
@@ -124,6 +131,7 @@ class Balance(base.RawTreeModel):
             *maybe_tolerance.detach(),
             Whitespace.from_default(),
             *currency.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
@@ -132,7 +140,8 @@ class Balance(base.RawTreeModel):
         number.reattach(token_store)
         maybe_tolerance.reattach(token_store)
         currency.reattach(token_store)
-        return cls(token_store, date, label, account, number, maybe_tolerance, currency)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, account, number, maybe_tolerance, currency, eol)
 
     @classmethod
     def from_value(

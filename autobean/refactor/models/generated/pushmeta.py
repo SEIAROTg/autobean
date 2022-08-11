@@ -5,7 +5,7 @@ from typing import Optional, Type, TypeVar, final
 from .. import base, internal, meta_value_internal
 from ..meta_key import MetaKey
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Pushmeta')
 
@@ -23,6 +23,7 @@ class Pushmeta(base.RawTreeModel):
     _label = internal.required_field[PushmetaLabel]()
     _key = internal.required_field[MetaKey]()
     _value = internal.optional_field[MetaRawValue](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_key = internal.required_node_property(_key)
     raw_value = internal.optional_node_property(_value)
@@ -37,11 +38,13 @@ class Pushmeta(base.RawTreeModel):
             label: PushmetaLabel,
             key: MetaKey,
             value: internal.Maybe[MetaRawValue],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._label = label
         self._key = key
         self._value = value
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -49,7 +52,7 @@ class Pushmeta(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._value.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -57,6 +60,7 @@ class Pushmeta(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._key.clone(token_store, token_transformer),
             self._value.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -64,6 +68,7 @@ class Pushmeta(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._key = self._key.reattach(token_store, token_transformer)
         self._value = self._value.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -71,6 +76,7 @@ class Pushmeta(base.RawTreeModel):
             and self._label == other._label
             and self._key == other._key
             and self._value == other._value
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -81,17 +87,20 @@ class Pushmeta(base.RawTreeModel):
     ) -> _Self:
         label = PushmetaLabel.from_default()
         maybe_value = internal.MaybeL[MetaRawValue].from_children(value, separators=cls._value.separators)
+        eol = Eol.from_default()
         tokens = [
             *label.detach(),
             Whitespace.from_default(),
             *key.detach(),
             *maybe_value.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         label.reattach(token_store)
         key.reattach(token_store)
         maybe_value.reattach(token_store)
-        return cls(token_store, label, key, maybe_value)
+        eol.reattach(token_store)
+        return cls(token_store, label, key, maybe_value, eol)
 
     @classmethod
     def from_value(

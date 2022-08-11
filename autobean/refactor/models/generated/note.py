@@ -7,7 +7,7 @@ from .. import base, internal
 from ..account import Account
 from ..date import Date
 from ..escaped_string import EscapedString
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Note')
 
@@ -26,6 +26,7 @@ class Note(base.RawTreeModel):
     _label = internal.required_field[NoteLabel]()
     _account = internal.required_field[Account]()
     _comment = internal.required_field[EscapedString]()
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
@@ -43,12 +44,14 @@ class Note(base.RawTreeModel):
             label: NoteLabel,
             account: Account,
             comment: EscapedString,
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
         self._label = label
         self._account = account
         self._comment = comment
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -56,7 +59,7 @@ class Note(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._comment.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -65,6 +68,7 @@ class Note(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._account.clone(token_store, token_transformer),
             self._comment.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -73,6 +77,7 @@ class Note(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._account = self._account.reattach(token_store, token_transformer)
         self._comment = self._comment.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -81,6 +86,7 @@ class Note(base.RawTreeModel):
             and self._label == other._label
             and self._account == other._account
             and self._comment == other._comment
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -91,6 +97,7 @@ class Note(base.RawTreeModel):
             comment: EscapedString,
     ) -> _Self:
         label = NoteLabel.from_default()
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
@@ -99,13 +106,15 @@ class Note(base.RawTreeModel):
             *account.detach(),
             Whitespace.from_default(),
             *comment.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
         label.reattach(token_store)
         account.reattach(token_store)
         comment.reattach(token_store)
-        return cls(token_store, date, label, account, comment)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, account, comment, eol)
 
     @classmethod
     def from_value(

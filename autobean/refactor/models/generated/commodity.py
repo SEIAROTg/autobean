@@ -6,7 +6,7 @@ from typing import Type, TypeVar, final
 from .. import base, internal
 from ..currency import Currency
 from ..date import Date
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Commodity')
 
@@ -24,6 +24,7 @@ class Commodity(base.RawTreeModel):
     _date = internal.required_field[Date]()
     _label = internal.required_field[CommodityLabel]()
     _currency = internal.required_field[Currency]()
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_currency = internal.required_node_property(_currency)
@@ -38,11 +39,13 @@ class Commodity(base.RawTreeModel):
             date: Date,
             label: CommodityLabel,
             currency: Currency,
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
         self._label = label
         self._currency = currency
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -50,7 +53,7 @@ class Commodity(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._currency.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -58,6 +61,7 @@ class Commodity(base.RawTreeModel):
             self._date.clone(token_store, token_transformer),
             self._label.clone(token_store, token_transformer),
             self._currency.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -65,6 +69,7 @@ class Commodity(base.RawTreeModel):
         self._date = self._date.reattach(token_store, token_transformer)
         self._label = self._label.reattach(token_store, token_transformer)
         self._currency = self._currency.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -72,6 +77,7 @@ class Commodity(base.RawTreeModel):
             and self._date == other._date
             and self._label == other._label
             and self._currency == other._currency
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -81,18 +87,21 @@ class Commodity(base.RawTreeModel):
             currency: Currency,
     ) -> _Self:
         label = CommodityLabel.from_default()
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
             *label.detach(),
             Whitespace.from_default(),
             *currency.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
         label.reattach(token_store)
         currency.reattach(token_store)
-        return cls(token_store, date, label, currency)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, currency, eol)
 
     @classmethod
     def from_value(

@@ -1,7 +1,7 @@
 from lark import exceptions
 import pytest
 from autobean.refactor import models
-from . import base
+from ..models import base
 
 
 class TestIgnored(base.BaseTestModel):

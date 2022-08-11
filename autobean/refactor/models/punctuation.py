@@ -7,6 +7,12 @@ class Newline(internal.SimpleRawTokenModel):
 
 
 @internal.token_model
+class Eol(internal.SimpleDefaultRawTokenModel):
+    RULE = 'EOL'
+    DEFAULT = ''
+
+
+@internal.token_model
 class Indent(internal.SimpleSingleValueRawTokenModel):
     RULE = 'INDENT'
 

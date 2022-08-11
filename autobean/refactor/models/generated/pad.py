@@ -6,7 +6,7 @@ from typing import Type, TypeVar, final
 from .. import base, internal
 from ..account import Account
 from ..date import Date
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Pad')
 
@@ -25,6 +25,7 @@ class Pad(base.RawTreeModel):
     _label = internal.required_field[PadLabel]()
     _account = internal.required_field[Account]()
     _source_account = internal.required_field[Account]()
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
@@ -42,12 +43,14 @@ class Pad(base.RawTreeModel):
             label: PadLabel,
             account: Account,
             source_account: Account,
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
         self._label = label
         self._account = account
         self._source_account = source_account
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -55,7 +58,7 @@ class Pad(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._source_account.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -64,6 +67,7 @@ class Pad(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._account.clone(token_store, token_transformer),
             self._source_account.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -72,6 +76,7 @@ class Pad(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._account = self._account.reattach(token_store, token_transformer)
         self._source_account = self._source_account.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -80,6 +85,7 @@ class Pad(base.RawTreeModel):
             and self._label == other._label
             and self._account == other._account
             and self._source_account == other._source_account
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -90,6 +96,7 @@ class Pad(base.RawTreeModel):
             source_account: Account,
     ) -> _Self:
         label = PadLabel.from_default()
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
@@ -98,13 +105,15 @@ class Pad(base.RawTreeModel):
             *account.detach(),
             Whitespace.from_default(),
             *source_account.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
         label.reattach(token_store)
         account.reattach(token_store)
         source_account.reattach(token_store)
-        return cls(token_store, date, label, account, source_account)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, account, source_account, eol)
 
     @classmethod
     def from_value(

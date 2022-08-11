@@ -1,4 +1,4 @@
-file: (_NL* directive)* _NL*
+file: ((directive | EOL) _NL?)*
 ?directive: option
           | include
           | plugin
@@ -24,26 +24,26 @@ OPEN:         "open"
 CUSTOM:       "custom"
 
 // Directives
-option:       OPTION ESCAPED_STRING ESCAPED_STRING
-include:      INCLUDE ESCAPED_STRING
-plugin:       PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING}
-pushtag:      PUSHTAG TAG
-poptag:       POPTAG TAG
-pushmeta:     PUSHMETA META_KEY maybe_left{meta_value}
-popmeta:      POPMETA META_KEY
+option:       OPTION ESCAPED_STRING ESCAPED_STRING EOL
+include:      INCLUDE ESCAPED_STRING EOL
+plugin:       PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING} EOL
+pushtag:      PUSHTAG TAG EOL
+poptag:       POPTAG TAG EOL
+pushmeta:     PUSHMETA META_KEY maybe_left{meta_value} EOL
+popmeta:      POPMETA META_KEY EOL
 
 // Entries
-balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY
-close:        DATE CLOSE ACCOUNT
-commodity:    DATE COMMODITY CURRENCY
-pad:          DATE PAD ACCOUNT ACCOUNT
-event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING
-query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING
-price:        DATE PRICE CURRENCY amount
-note:         DATE NOTE ACCOUNT ESCAPED_STRING
-document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link}
-open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING}
-custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value}
+balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY EOL
+close:        DATE CLOSE ACCOUNT EOL
+commodity:    DATE COMMODITY CURRENCY EOL
+pad:          DATE PAD ACCOUNT ACCOUNT EOL
+event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING EOL
+query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING EOL
+price:        DATE PRICE CURRENCY amount EOL
+note:         DATE NOTE ACCOUNT ESCAPED_STRING EOL
+document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link} EOL
+open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} EOL
+custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} EOL
 
 // Punctuations
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -54,6 +54,7 @@ COMMENT_INLINE: /;[^\r\n]*$/m
 COMMENT_LINE: [INDENT] COMMENT_INLINE [_NL]
 _COMMA: ","
 
+%declare EOL
 %ignore WS_INLINE
 %ignore COMMENT_INLINE
 %ignore COMMENT_LINE
@@ -157,10 +158,10 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-posting: INDENT maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation}
+posting: INDENT maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL
 
 // meta
-meta_item: INDENT META_KEY maybe_left{meta_value}
+meta_item: INDENT META_KEY maybe_left{meta_value} EOL
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]

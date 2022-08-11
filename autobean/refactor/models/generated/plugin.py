@@ -4,7 +4,7 @@
 from typing import Optional, Type, TypeVar, final
 from .. import base, internal
 from ..escaped_string import EscapedString
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Plugin')
 
@@ -22,6 +22,7 @@ class Plugin(base.RawTreeModel):
     _label = internal.required_field[PluginLabel]()
     _name = internal.required_field[EscapedString]()
     _config = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_name = internal.required_node_property(_name)
     raw_config = internal.optional_node_property(_config)
@@ -36,11 +37,13 @@ class Plugin(base.RawTreeModel):
             label: PluginLabel,
             name: EscapedString,
             config: internal.Maybe[EscapedString],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._label = label
         self._name = name
         self._config = config
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -48,7 +51,7 @@ class Plugin(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._config.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -56,6 +59,7 @@ class Plugin(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._name.clone(token_store, token_transformer),
             self._config.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -63,6 +67,7 @@ class Plugin(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._name = self._name.reattach(token_store, token_transformer)
         self._config = self._config.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -70,6 +75,7 @@ class Plugin(base.RawTreeModel):
             and self._label == other._label
             and self._name == other._name
             and self._config == other._config
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -80,17 +86,20 @@ class Plugin(base.RawTreeModel):
     ) -> _Self:
         label = PluginLabel.from_default()
         maybe_config = internal.MaybeL.from_children(config, separators=cls._config.separators)
+        eol = Eol.from_default()
         tokens = [
             *label.detach(),
             Whitespace.from_default(),
             *name.detach(),
             *maybe_config.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         label.reattach(token_store)
         name.reattach(token_store)
         maybe_config.reattach(token_store)
-        return cls(token_store, label, name, maybe_config)
+        eol.reattach(token_store)
+        return cls(token_store, label, name, maybe_config, eol)
 
     @classmethod
     def from_value(

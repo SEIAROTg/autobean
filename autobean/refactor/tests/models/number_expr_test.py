@@ -99,7 +99,7 @@ class TestNumberExpr(base.BaseTestModel):
         ],
     )
     def test_parse_success(self, text: str, value: decimal.Decimal) -> None:
-        expr = self.parser.parse(text, models.NumberExpr)
+        expr = self.parser.parse_inline(text, models.NumberExpr)
         assert self.print_model(expr) == text
         assert expr.value == value
         self.check_deepcopy_tree(expr)
@@ -116,22 +116,22 @@ class TestNumberExpr(base.BaseTestModel):
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.parser.parse(text, models.NumberExpr)
+            self.parser.parse_inline(text, models.NumberExpr)
 
     def test_set_raw_number_add_expr(self) -> None:
-        expr = self.parser.parse('12+34*56+78', models.NumberExpr)
-        expr2 = self.parser.parse('48-36/24+12', models.NumberExpr)
+        expr = self.parser.parse_inline('12+34*56+78', models.NumberExpr)
+        expr2 = self.parser.parse_inline('48-36/24+12', models.NumberExpr)
         expr.raw_number_add_expr = expr2.raw_number_add_expr
         assert self.print_model(expr) == '48-36/24+12'
 
     def test_noop_set_raw_number_add_expr(self) -> None:
-        expr = self.parser.parse('12+34*56+78', models.NumberExpr)
+        expr = self.parser.parse_inline('12+34*56+78', models.NumberExpr)
         expr.raw_number_add_expr = expr.raw_number_add_expr
         assert self.print_model(expr) == '12+34*56+78'
 
     def test_reuse_active_token(self) -> None:
-        expr = self.parser.parse('12+34*56+78', models.NumberExpr)
-        expr2 = self.parser.parse('(48-36/24+12)', models.NumberExpr)
+        expr = self.parser.parse_inline('12+34*56+78', models.NumberExpr)
+        expr2 = self.parser.parse_inline('(48-36/24+12)', models.NumberExpr)
         paren_expr = expr2.raw_number_add_expr.raw_operands[0].raw_operands[0]
         assert isinstance(paren_expr, models.NumberParenExpr)
         with pytest.raises(ValueError):
@@ -150,105 +150,105 @@ class TestNumberExpr(base.BaseTestModel):
         assert self.print_model(expr) == expected
 
     def test_set_value(self) -> None:
-        expr = self.parser.parse('12+34*56+78', models.NumberExpr)
+        expr = self.parser.parse_inline('12+34*56+78', models.NumberExpr)
         expr.value = decimal.Decimal('-12.34')
         assert self.print_model(expr) == '-12.34'
 
     def _as_operand(self, value: str | int | decimal.Decimal) -> models.NumberExpr | int | decimal.Decimal:
         if isinstance(value, str):
-            return self.parser.parse(value, models.NumberExpr)
+            return self.parser.parse_inline(value, models.NumberExpr)
         return value
 
     @_addsub_testcases('+')
     def test_iadd(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         expr += self._as_operand(right)
         assert self.print_model(expr) == expected
 
     @_addsub_testcases('+')
     def test_add(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         ret = expr + self._as_operand(right)
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_raddsub_testcases('+')
     def test_radd(self, left: str | int | decimal.Decimal, right: str, expected: str) -> None:
-        expr = self.parser.parse(right, models.NumberExpr)
+        expr = self.parser.parse_inline(right, models.NumberExpr)
         ret = self._as_operand(left) + expr
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_addsub_testcases('-')
     def test_isub(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         expr -= self._as_operand(right)
         assert self.print_model(expr) == expected
 
     @_addsub_testcases('-')
     def test_sub(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         ret = expr - self._as_operand(right)
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_raddsub_testcases('-')
     def test_rsub(self, left: str | int | decimal.Decimal, right: str, expected: str) -> None:
-        expr = self.parser.parse(right, models.NumberExpr)
+        expr = self.parser.parse_inline(right, models.NumberExpr)
         ret = self._as_operand(left) - expr
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_muldiv_testcases('*')
     def test_imul(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         expr *= self._as_operand(right)
         assert self.print_model(expr) == expected
 
     @_muldiv_testcases('*')
     def test_mul(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         ret = expr * self._as_operand(right)
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_rmuldiv_testcases('*')
     def test_rmul(self, left: str | int | decimal.Decimal, right: str, expected: str) -> None:
-        expr = self.parser.parse(right, models.NumberExpr)
+        expr = self.parser.parse_inline(right, models.NumberExpr)
         ret = self._as_operand(left) * expr
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_muldiv_testcases('/')
     def test_idiv(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         expr /= self._as_operand(right)
         assert self.print_model(expr) == expected
 
     @_muldiv_testcases('/')
     def test_div(self, left: str, right: str | int | decimal.Decimal, expected: str) -> None:
-        expr = self.parser.parse(left, models.NumberExpr)
+        expr = self.parser.parse_inline(left, models.NumberExpr)
         ret = expr / self._as_operand(right)
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_rmuldiv_testcases('/')
     def test_rdiv(self, left: str | int | decimal.Decimal, right: str, expected: str) -> None:
-        expr = self.parser.parse(right, models.NumberExpr)
+        expr = self.parser.parse_inline(right, models.NumberExpr)
         ret = self._as_operand(left) / expr
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_negpos_testcases('+')
     def test_pos(self, inner: str, expected: str) -> None:
-        expr = self.parser.parse(inner, models.NumberExpr)
+        expr = self.parser.parse_inline(inner, models.NumberExpr)
         ret = +expr
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
 
     @_negpos_testcases('-')
     def test_neg(self, inner: str, expected: str) -> None:
-        expr = self.parser.parse(inner, models.NumberExpr)
+        expr = self.parser.parse_inline(inner, models.NumberExpr)
         ret = -expr
         assert self.print_model(ret) == expected
         assert ret.token_store is not expr.token_store
@@ -261,7 +261,7 @@ class TestNumberExpr(base.BaseTestModel):
         ],
     )
     def test_wrap_with_parenthesis(self, inner: str, expected: str) -> None:
-        expr = self.parser.parse(inner, models.NumberExpr)
+        expr = self.parser.parse_inline(inner, models.NumberExpr)
         initial_token_store = expr.token_store
         expr.wrap_with_parenthesis()
         assert self.print_model(expr) == expected

@@ -20,12 +20,11 @@ class TestClose(base.BaseTestModel):
             account: str,
     ) -> None:
         close = self.parser.parse(text, models.Close)
-        assert close.first_token is close.raw_date
         assert close.raw_date.value == date
         assert close.date == date
         assert close.raw_account.value == account
         assert close.account == account
-        assert close.last_token is close.raw_account
+        assert self.print_model(close) == text
         self.check_deepcopy_tree(close)
         self.check_reattach_tree(close)
 

@@ -4,7 +4,7 @@
 from typing import Type, TypeVar, final
 from .. import base, internal
 from ..escaped_string import EscapedString
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Include')
 
@@ -21,6 +21,7 @@ class Include(base.RawTreeModel):
 
     _label = internal.required_field[IncludeLabel]()
     _filename = internal.required_field[EscapedString]()
+    _eol = internal.required_field[Eol]()
 
     raw_filename = internal.required_node_property(_filename)
 
@@ -32,10 +33,12 @@ class Include(base.RawTreeModel):
             token_store: base.TokenStore,
             label: IncludeLabel,
             filename: EscapedString,
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._label = label
         self._filename = filename
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -43,25 +46,28 @@ class Include(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._filename.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
             self._label.clone(token_store, token_transformer),
             self._filename.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
         self._label = self._label.reattach(token_store, token_transformer)
         self._filename = self._filename.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Include)
             and self._label == other._label
             and self._filename == other._filename
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -70,15 +76,18 @@ class Include(base.RawTreeModel):
             filename: EscapedString,
     ) -> _Self:
         label = IncludeLabel.from_default()
+        eol = Eol.from_default()
         tokens = [
             *label.detach(),
             Whitespace.from_default(),
             *filename.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         label.reattach(token_store)
         filename.reattach(token_store)
-        return cls(token_store, label, filename)
+        eol.reattach(token_store)
+        return cls(token_store, label, filename, eol)
 
     @classmethod
     def from_value(

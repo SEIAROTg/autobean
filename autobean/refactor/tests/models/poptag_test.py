@@ -14,9 +14,8 @@ class TestPoptag(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, tag: str) -> None:
         poptag = self.parser.parse(text, models.Poptag)
-        assert poptag.first_token.raw_text == 'poptag'
         assert poptag.raw_tag.value == tag
-        assert poptag.last_token is poptag.raw_tag
+        assert self.print_model(poptag) == text
         self.check_deepcopy_tree(poptag)
         self.check_reattach_tree(poptag)
 

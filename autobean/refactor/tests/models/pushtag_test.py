@@ -14,9 +14,8 @@ class TestPushtag(base.BaseTestModel):
     )
     def test_parse_success(self, text: str, tag: str) -> None:
         pushtag = self.parser.parse(text, models.Pushtag)
-        assert pushtag.first_token.raw_text == 'pushtag'
         assert pushtag.raw_tag.value == tag
-        assert pushtag.last_token is pushtag.raw_tag
+        assert self.print_model(pushtag) == text
         self.check_deepcopy_tree(pushtag)
         self.check_reattach_tree(pushtag)
 

@@ -81,12 +81,14 @@ class Posting(MetaModel):
     cost: Optional['cost_spec'] = field(floating=Floating.LEFT)
     price: Optional[Union['unit_price', 'total_price']] = field(
         floating=Floating.LEFT, type_alias='PriceAnnotation')
+    _eol: 'EOL' = field(separators=())
 
 
 class MetaItem(MetaModel):
     indent: 'INDENT' = field(is_optional=True, default_value='    ', is_keyword_only=True)
     key: 'META_KEY' = field(separators=())
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
+    _eol: 'EOL' = field(separators=())
 
 
 # Directives
@@ -95,39 +97,46 @@ class MetaItem(MetaModel):
 class Include(MetaModel):
     _label: 'INCLUDE' = field(define_as='IncludeLabel')
     filename: 'ESCAPED_STRING'
+    _eol: 'EOL' = field(separators=())
 
 
 class Option(MetaModel):
     _label: 'OPTION' = field(define_as='OptionLabel')
     key: 'ESCAPED_STRING'
     value: 'ESCAPED_STRING'
+    _eol: 'EOL' = field(separators=())
 
 
 class Plugin(MetaModel):
     _label: 'PLUGIN' = field(define_as='PluginLabel')
     name: 'ESCAPED_STRING'
     config: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
+    _eol: 'EOL' = field(separators=())
 
 
 class Popmeta(MetaModel):
     _label: 'POPMETA' = field(define_as='PopmetaLabel')
     key: 'META_KEY'
+    _eol: 'EOL' = field(separators=())
 
 
 class Poptag(MetaModel):
     _label: 'POPTAG' = field(define_as='PoptagLabel')
     tag: 'TAG'
+    _eol: 'EOL' = field(separators=())
 
 
 class Pushmeta(MetaModel):
     _label: 'PUSHMETA' = field(define_as='PushmetaLabel')
     key: 'META_KEY'
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
+    _eol: 'EOL' = field(separators=())
 
 
 class Pushtag(MetaModel):
     _label: 'PUSHTAG' = field(define_as='PushtagLabel')
     tag: 'TAG'
+    _eol: 'EOL' = field(separators=())
 
 
 # Entries
@@ -140,18 +149,21 @@ class Balance(MetaModel):
     number: 'number_expr'
     tolerance: Optional['tolerance'] = field(floating=Floating.LEFT)
     currency: 'CURRENCY'
+    _eol: 'EOL' = field(separators=())
 
 
 class Close(MetaModel):
     date: 'DATE'
     _label: 'CLOSE' = field(define_as='CloseLabel')
     account: 'ACCOUNT'
+    _eol: 'EOL' = field(separators=())
 
 
 class Commodity(MetaModel):
     date: 'DATE'
     _label: 'COMMODITY' = field(define_as='CommodityLabel')
     currency: 'CURRENCY'
+    _eol: 'EOL' = field(separators=())
 
 
 class Event(MetaModel):
@@ -159,6 +171,7 @@ class Event(MetaModel):
     _label: 'EVENT' = field(define_as='EventLabel')
     type: 'ESCAPED_STRING'
     description: 'ESCAPED_STRING'
+    _eol: 'EOL' = field(separators=())
 
 
 class Pad(MetaModel):
@@ -166,6 +179,7 @@ class Pad(MetaModel):
     _label: 'PAD' = field(define_as='PadLabel')
     account: 'ACCOUNT'
     source_account: 'ACCOUNT'
+    _eol: 'EOL' = field(separators=())
 
 
 class Price(MetaModel):
@@ -173,6 +187,7 @@ class Price(MetaModel):
     _label: 'PRICE' = field(define_as='PriceLabel')
     currency: 'CURRENCY'
     amount: 'amount'
+    _eol: 'EOL' = field(separators=())
 
 
 class Query(MetaModel):
@@ -180,6 +195,7 @@ class Query(MetaModel):
     _label: 'QUERY' = field(define_as='QueryLabel')
     name: 'ESCAPED_STRING'
     query_string: 'ESCAPED_STRING'
+    _eol: 'EOL' = field(separators=())
 
 
 class Note(MetaModel):
@@ -187,6 +203,7 @@ class Note(MetaModel):
     _label: 'NOTE' = field(define_as='NoteLabel')
     account: 'ACCOUNT'
     comment: 'ESCAPED_STRING'
+    _eol: 'EOL' = field(separators=())
 
 
 class Document(MetaModel):
@@ -195,6 +212,7 @@ class Document(MetaModel):
     account: 'ACCOUNT'
     filename: 'ESCAPED_STRING'
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+    _eol: 'EOL' = field(separators=())
 
 
 class Open(MetaModel):
@@ -206,6 +224,7 @@ class Open(MetaModel):
         separators_before=('Whitespace.from_default()',),
         is_optional=True)
     booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
+    _eol: 'EOL' = field(separators=())
 
 
 class Custom(MetaModel):
@@ -220,3 +239,4 @@ class Custom(MetaModel):
         'number_expr',
         'ACCOUNT',
     ]] = field(type_alias='CustomRawValue')
+    _eol: 'EOL' = field(separators=())

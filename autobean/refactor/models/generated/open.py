@@ -8,7 +8,7 @@ from ..account import Account
 from ..currency import Currency
 from ..date import Date
 from ..escaped_string import EscapedString
-from ..punctuation import Comma, Whitespace
+from ..punctuation import Comma, Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Open')
 
@@ -28,6 +28,7 @@ class Open(base.RawTreeModel):
     _account = internal.required_field[Account]()
     _currencies = internal.repeated_field[Currency](separators=(Comma.from_default(), Whitespace.from_default()), separators_before=(Whitespace.from_default(),))
     _booking = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
@@ -48,6 +49,7 @@ class Open(base.RawTreeModel):
             account: Account,
             currencies: internal.Repeated[Currency],
             booking: internal.Maybe[EscapedString],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
@@ -55,6 +57,7 @@ class Open(base.RawTreeModel):
         self._account = account
         self._currencies = currencies
         self._booking = booking
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -62,7 +65,7 @@ class Open(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._booking.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -72,6 +75,7 @@ class Open(base.RawTreeModel):
             self._account.clone(token_store, token_transformer),
             self._currencies.clone(token_store, token_transformer),
             self._booking.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -81,6 +85,7 @@ class Open(base.RawTreeModel):
         self._account = self._account.reattach(token_store, token_transformer)
         self._currencies = self._currencies.reattach(token_store, token_transformer)
         self._booking = self._booking.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -90,6 +95,7 @@ class Open(base.RawTreeModel):
             and self._account == other._account
             and self._currencies == other._currencies
             and self._booking == other._booking
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -103,6 +109,7 @@ class Open(base.RawTreeModel):
         label = OpenLabel.from_default()
         repeated_currencies = internal.Repeated.from_children(currencies, separators=cls._currencies.separators, separators_before=cls._currencies.separators_before)
         maybe_booking = internal.MaybeL.from_children(booking, separators=cls._booking.separators)
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
@@ -111,6 +118,7 @@ class Open(base.RawTreeModel):
             *account.detach(),
             *repeated_currencies.detach(),
             *maybe_booking.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
@@ -118,7 +126,8 @@ class Open(base.RawTreeModel):
         account.reattach(token_store)
         repeated_currencies.reattach(token_store)
         maybe_booking.reattach(token_store)
-        return cls(token_store, date, label, account, repeated_currencies, maybe_booking)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, account, repeated_currencies, maybe_booking, eol)
 
     @classmethod
     def from_value(

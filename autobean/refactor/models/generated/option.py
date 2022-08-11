@@ -4,7 +4,7 @@
 from typing import Type, TypeVar, final
 from .. import base, internal
 from ..escaped_string import EscapedString
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Option')
 
@@ -22,6 +22,7 @@ class Option(base.RawTreeModel):
     _label = internal.required_field[OptionLabel]()
     _key = internal.required_field[EscapedString]()
     _value = internal.required_field[EscapedString]()
+    _eol = internal.required_field[Eol]()
 
     raw_key = internal.required_node_property(_key)
     raw_value = internal.required_node_property(_value)
@@ -36,11 +37,13 @@ class Option(base.RawTreeModel):
             label: OptionLabel,
             key: EscapedString,
             value: EscapedString,
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._label = label
         self._key = key
         self._value = value
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -48,7 +51,7 @@ class Option(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._value.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -56,6 +59,7 @@ class Option(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._key.clone(token_store, token_transformer),
             self._value.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -63,6 +67,7 @@ class Option(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._key = self._key.reattach(token_store, token_transformer)
         self._value = self._value.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -70,6 +75,7 @@ class Option(base.RawTreeModel):
             and self._label == other._label
             and self._key == other._key
             and self._value == other._value
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -79,18 +85,21 @@ class Option(base.RawTreeModel):
             value: EscapedString,
     ) -> _Self:
         label = OptionLabel.from_default()
+        eol = Eol.from_default()
         tokens = [
             *label.detach(),
             Whitespace.from_default(),
             *key.detach(),
             Whitespace.from_default(),
             *value.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         label.reattach(token_store)
         key.reattach(token_store)
         value.reattach(token_store)
-        return cls(token_store, label, key, value)
+        eol.reattach(token_store)
+        return cls(token_store, label, key, value, eol)
 
     @classmethod
     def from_value(

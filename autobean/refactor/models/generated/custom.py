@@ -9,7 +9,7 @@ from ..bool import Bool
 from ..date import Date
 from ..escaped_string import EscapedString
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..punctuation import Eol, Whitespace
 
 CustomRawValue = Account | Amount | Bool | Date | EscapedString | NumberExpr
 _Self = TypeVar('_Self', bound='Custom')
@@ -29,6 +29,7 @@ class Custom(base.RawTreeModel):
     _label = internal.required_field[CustomLabel]()
     _type = internal.required_field[EscapedString]()
     _values = internal.repeated_field[CustomRawValue](separators=(Whitespace.from_default(),))
+    _eol = internal.required_field[Eol]()
 
     raw_date = internal.required_node_property(_date)
     raw_type = internal.required_node_property(_type)
@@ -45,12 +46,14 @@ class Custom(base.RawTreeModel):
             label: CustomLabel,
             type: EscapedString,
             values: internal.Repeated[CustomRawValue],
+            eol: Eol,
     ):
         super().__init__(token_store)
         self._date = date
         self._label = label
         self._type = type
         self._values = values
+        self._eol = eol
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -58,7 +61,7 @@ class Custom(base.RawTreeModel):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._values.last_token
+        return self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
@@ -67,6 +70,7 @@ class Custom(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._type.clone(token_store, token_transformer),
             self._values.clone(token_store, token_transformer),
+            self._eol.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
@@ -75,6 +79,7 @@ class Custom(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._type = self._type.reattach(token_store, token_transformer)
         self._values = self._values.reattach(token_store, token_transformer)
+        self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -83,6 +88,7 @@ class Custom(base.RawTreeModel):
             and self._label == other._label
             and self._type == other._type
             and self._values == other._values
+            and self._eol == other._eol
         )
 
     @classmethod
@@ -94,6 +100,7 @@ class Custom(base.RawTreeModel):
     ) -> _Self:
         label = CustomLabel.from_default()
         repeated_values = internal.Repeated[CustomRawValue].from_children(values, separators=cls._values.separators)
+        eol = Eol.from_default()
         tokens = [
             *date.detach(),
             Whitespace.from_default(),
@@ -101,10 +108,12 @@ class Custom(base.RawTreeModel):
             Whitespace.from_default(),
             *type.detach(),
             *repeated_values.detach(),
+            *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         date.reattach(token_store)
         label.reattach(token_store)
         type.reattach(token_store)
         repeated_values.reattach(token_store)
-        return cls(token_store, date, label, type, repeated_values)
+        eol.reattach(token_store)
+        return cls(token_store, date, label, type, repeated_values, eol)

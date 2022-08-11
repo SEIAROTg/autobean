@@ -5,7 +5,7 @@ from lark import exceptions
 import pytest
 from autobean.refactor import models
 from autobean.refactor import parser as parser_lib
-from . import base
+from ..models import base
 
 _RAW_INDEXES = (
     0,
