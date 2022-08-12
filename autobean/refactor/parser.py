@@ -31,12 +31,12 @@ class PostLexInline(lark.lark.PostLex):
 
 
 class PostLex(lark.lark.PostLex):
-    # Contextual lexer only sees _EOL and will thus reject _NL by default.
-    always_accept = _IGNORED_TOKENS | {'_NL'}
+    # Contextual lexer only sees _EOL and will thus reject _NEWLINE by default.
+    always_accept = _IGNORED_TOKENS | {'_NEWLINE'}
 
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
         for token in stream:
-            if token.type == '_NL':
+            if token.type == '_NEWLINE':
                 yield lark.Token.new_borrow_pos('EOL', '', token)
             yield token
         yield lark.Token('EOL', '')
@@ -150,7 +150,7 @@ class ModelBuilder:
                 children.append(self._add_optional_node(child, _Floating.LEFT))
             elif is_tree and child.data == 'maybe_right':
                 children.append(self._add_optional_node(child, _Floating.RIGHT))
-            elif is_tree and child.data in ('repeated', 'repeated_sep'):
+            elif is_tree and child.data in ('repeated', 'repeated_pre', 'repeated_sep'):
                 children.append(self._add_repeated_node(child))
             else:
                 children.append(self._add_required_node(child))

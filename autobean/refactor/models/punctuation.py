@@ -2,8 +2,9 @@ from . import internal
 
 
 @internal.token_model
-class Newline(internal.SimpleRawTokenModel):
-    RULE = '_NL'
+class Newline(internal.SimpleDefaultRawTokenModel):
+    RULE = '_NEWLINE'
+    DEFAULT = '\n'
 
 
 @internal.token_model

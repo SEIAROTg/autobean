@@ -74,11 +74,13 @@ def _model_name_to_value_type(model_name: str) -> Optional[str]:
         'Tolerance': 'decimal.Decimal',
         # bool
         'Bool': 'bool',
+        # meta
+        'MetaRawValue': 'MetaValue',
         # raw
         'Amount': 'Amount',
         'CostSpec': 'CostSpec',
         'PriceAnnotation': 'PriceAnnotation',
-        'MetaRawValue': 'MetaValue',
+        'MetaItem': 'MetaItem',
     }.get(model_name)
 
 
@@ -176,6 +178,8 @@ class FieldDescriptor:
         value_type = self.value_type
         if value_type == 'MetaValue':
             value_type = 'MetaValue | MetaRawValue'
+        elif value_type == 'MetaItem' and FieldCardinality.REPEATED:
+            return 'Optional[Mapping[str, MetaValue | MetaRawValue]]'
         if self.cardinality == FieldCardinality.REQUIRED:
             return value_type
         elif self.cardinality == FieldCardinality.OPTIONAL:
@@ -231,6 +235,8 @@ class FieldDescriptor:
         if self.cardinality == FieldCardinality.OPTIONAL:
             return f'internal.optional_node_property(_{self.name})'
         if self.cardinality == FieldCardinality.REPEATED:
+            if self.inner_type == 'MetaItem':
+                return f'meta_item_internal.repeated_raw_meta_item_property(_{self.name})'
             return f'internal.repeated_node_property(_{self.name})'
         assert False
 
@@ -240,7 +246,7 @@ class FieldDescriptor:
             return None
         if self.value_types is None or len(self.value_types) != 1:
             return None
-        if self.value_type == self.inner_type:
+        if self.value_type == self.inner_type and self.value_type != 'MetaItem':
             return f'raw_{self.name}'
         if self.cardinality == FieldCardinality.REQUIRED:
             if self.value_type == 'decimal.Decimal':
@@ -259,6 +265,8 @@ class FieldDescriptor:
         elif self.cardinality == FieldCardinality.REPEATED:
             if self.value_type == 'str':
                 return f'internal.repeated_string_property(raw_{self.name}, {self.inner_type_original})'
+            elif self.value_type == 'MetaItem':
+                return f'meta_item_internal.repeated_meta_item_property(_{self.name})'
         return None
 
     @functools.cached_property
@@ -275,6 +283,8 @@ class FieldDescriptor:
     def from_value_default(self) -> str:
         if not self.from_value_optional:
             return ''
+        if self.value_type == 'MetaItem' and self.cardinality == FieldCardinality.REPEATED:
+            return ' = None'
         if self.default_value:
             return f' = {self.default_value!r}'
         if self.cardinality == FieldCardinality.OPTIONAL:
@@ -285,6 +295,8 @@ class FieldDescriptor:
 
     @functools.cached_property
     def construction_from_value(self) -> Optional[str]:
+        if self.inner_type == 'MetaItem' and self.cardinality == FieldCardinality.REPEATED:
+            return f'meta_item_internal.from_mapping({self.name}) if {self.name} is not None else ()'
         if self.value_type == self.inner_type:
             return self.name
         if not self.value_input_type:
@@ -340,6 +352,10 @@ class MetaModelDescriptor:
                     if model_type.value_type == 'MetaValue':
                         ret['..meta_value'].add('MetaValue')
                         ret['..'].add('meta_value_internal')
+                    elif model_type.value_type == 'MetaItem':
+                        ret['..meta_value'].update(('MetaRawValue', 'MetaValue'))
+                        ret['..'].add('meta_item_internal')
+                        ret['typing'].update(('Optional', 'Mapping'))
             if not field.define_as and not field.has_circular_dep:
                 for model_type in field.model_types:
                     module = _model_name_to_module(model_type.name)

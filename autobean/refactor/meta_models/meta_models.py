@@ -157,6 +157,8 @@ class Close(MetaModel):
     _label: 'CLOSE' = field(define_as='CloseLabel')
     account: 'ACCOUNT'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = field(
+        separators=('Newline.from_default()',), is_optional=True, is_keyword_only=True, default_value={})
 
 
 class Commodity(MetaModel):

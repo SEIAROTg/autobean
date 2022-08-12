@@ -1,4 +1,4 @@
-file: ((directive | EOL) _NL?)*
+file: ((directive | EOL) _NEWLINE?)*
 ?directive: option
           | include
           | plugin
@@ -34,7 +34,7 @@ popmeta:      POPMETA META_KEY EOL
 
 // Entries
 balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY EOL
-close:        DATE CLOSE ACCOUNT EOL
+close:        DATE CLOSE ACCOUNT EOL _meta_items
 commodity:    DATE COMMODITY CURRENCY EOL
 pad:          DATE PAD ACCOUNT ACCOUNT EOL
 event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING EOL
@@ -49,10 +49,10 @@ custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} EOL
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
 INDENT: /^[ \t]+(?=[^ \t\r\n])/m
 WS_INLINE: /(?<!^)[ \t]+/m | /^[ \t]+(?=\r|$)/m
-_NL: /\r*\n/
+_NEWLINE: /\r*\n/
 COMMENT_INLINE: /;[^\r\n]*$/m
 // indented cmoment line may appear anywhere but unindented ones cannot appear inside a indented block
-COMMENT_LINE: /^/m INDENT COMMENT_INLINE _NL?
+COMMENT_LINE: /^/m INDENT COMMENT_INLINE _NEWLINE?
 _COMMA: ","
 
 %declare EOL
@@ -163,6 +163,7 @@ posting: INDENT maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cos
 
 // meta
 meta_item: INDENT META_KEY maybe_left{meta_value} EOL
+_meta_items: repeated_pre{meta_item, _NEWLINE}
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
@@ -170,4 +171,5 @@ maybe_right{inner}: [inner]
 
 // [internal] Repeated field wrapper
 repeated{inner}: (inner)*
+repeated_pre{inner, pre}: (pre inner)*
 repeated_sep{inner, sep}: inner? (sep inner)*
