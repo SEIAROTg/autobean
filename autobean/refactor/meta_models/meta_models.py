@@ -4,6 +4,11 @@
 from typing import Optional, Union
 from .base import MetaModel, Floating, field
 
+_META = field(
+    separators=('Newline.from_default()',),
+    is_optional=True,
+    is_keyword_only=True,
+    default_value={})
 
 # Auxiliary
 
@@ -150,6 +155,7 @@ class Balance(MetaModel):
     tolerance: Optional['tolerance'] = field(floating=Floating.LEFT)
     currency: 'CURRENCY'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Close(MetaModel):
@@ -157,8 +163,7 @@ class Close(MetaModel):
     _label: 'CLOSE' = field(define_as='CloseLabel')
     account: 'ACCOUNT'
     _eol: 'EOL' = field(separators=())
-    meta: list['meta_item'] = field(
-        separators=('Newline.from_default()',), is_optional=True, is_keyword_only=True, default_value={})
+    meta: list['meta_item'] = _META
 
 
 class Commodity(MetaModel):
@@ -166,6 +171,7 @@ class Commodity(MetaModel):
     _label: 'COMMODITY' = field(define_as='CommodityLabel')
     currency: 'CURRENCY'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Event(MetaModel):
@@ -174,6 +180,7 @@ class Event(MetaModel):
     type: 'ESCAPED_STRING'
     description: 'ESCAPED_STRING'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Pad(MetaModel):
@@ -182,6 +189,7 @@ class Pad(MetaModel):
     account: 'ACCOUNT'
     source_account: 'ACCOUNT'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Price(MetaModel):
@@ -190,6 +198,7 @@ class Price(MetaModel):
     currency: 'CURRENCY'
     amount: 'amount'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Query(MetaModel):
@@ -198,6 +207,7 @@ class Query(MetaModel):
     name: 'ESCAPED_STRING'
     query_string: 'ESCAPED_STRING'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Note(MetaModel):
@@ -206,6 +216,7 @@ class Note(MetaModel):
     account: 'ACCOUNT'
     comment: 'ESCAPED_STRING'
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Document(MetaModel):
@@ -215,6 +226,7 @@ class Document(MetaModel):
     filename: 'ESCAPED_STRING'
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Open(MetaModel):
@@ -227,6 +239,7 @@ class Open(MetaModel):
         is_optional=True)
     booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
 
 
 class Custom(MetaModel):
@@ -242,3 +255,4 @@ class Custom(MetaModel):
         'ACCOUNT',
     ]] = field(type_alias='CustomRawValue')
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META

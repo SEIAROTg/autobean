@@ -1,8 +1,8 @@
 import datetime
 import decimal
-from typing import Iterable, Iterator, NoReturn, Type, TypeVar, Union, cast
+from typing import Iterable, Iterator, Mapping, NoReturn, Optional, Type, TypeVar, Union, cast
 
-from . import internal
+from . import internal, meta_item_internal
 from .generated import custom
 from .generated.custom import CustomLabel, CustomRawValue
 from .escaped_string import EscapedString
@@ -12,6 +12,8 @@ from .amount import Amount
 from .bool import Bool
 from .number_expr import NumberExpr
 from .number_unary_expr import NumberUnaryExpr
+from .meta_item import MetaItem
+from .meta_value import MetaRawValue, MetaValue
 
 _ValueTypeSimplified = str | datetime.date | bool | decimal.Decimal
 _ValueTypePreserved = Account | Amount
@@ -98,8 +100,9 @@ class Custom(custom.Custom):
             date: Date,
             type: EscapedString,
             values: Iterable[CustomRawValue],
+            meta: Iterable[MetaItem] = (),
     ) -> _Self:
-        return super().from_children(date, type, _disambiguate_values(values))
+        return super().from_children(date, type, _disambiguate_values(values), meta)
 
     @classmethod
     def from_value(
@@ -107,9 +110,12 @@ class Custom(custom.Custom):
             date: datetime.date,
             type: str,
             values: Iterable[CustomValue | CustomRawValue],
+            *,
+            meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
             Date.from_value(date),
             EscapedString.from_value(type),
             map(_unsimplify_value, values),
+            meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

@@ -342,10 +342,8 @@ class MetaModelDescriptor:
                 model_name = sep.split('.', 1)[0]
                 module = _model_name_to_module(model_name)
                 ret[f'..{module}'].add(model_name)
-            if self.generate_from_value:
-                for model_type in field.model_types:
-                    if model_type.value_type is None:
-                        continue
+            for model_type in field.model_types:
+                if self.generate_from_value and model_type.value_type:
                     *modules, _ = model_type.value_type.rsplit('.', 1)
                     if modules:
                         ret[None].add(modules[0])
@@ -356,6 +354,8 @@ class MetaModelDescriptor:
                         ret['..meta_value'].update(('MetaRawValue', 'MetaValue'))
                         ret['..'].add('meta_item_internal')
                         ret['typing'].update(('Optional', 'Mapping'))
+                if model_type.value_type == 'MetaItem':
+                    ret['..'].add('meta_item_internal')
             if not field.define_as and not field.has_circular_dep:
                 for model_type in field.model_types:
                     module = _model_name_to_module(model_type.name)
