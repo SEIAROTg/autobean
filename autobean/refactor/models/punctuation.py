@@ -14,24 +14,14 @@ class Eol(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.token_model
-class Indent(internal.SimpleSingleValueRawTokenModel):
-    RULE = 'INDENT'
-
-
-@internal.token_model
 class Whitespace(internal.SimpleDefaultRawTokenModel):
-    RULE = 'WS_INLINE'
+    RULE = '_WS_INLINE'
     DEFAULT = ' '
 
 
 @internal.token_model
-class InlineComment(internal.SimpleRawTokenModel):
-    RULE = 'COMMENT_INLINE'
-
-
-@internal.token_model
-class LineComment(internal.SimpleRawTokenModel):
-    RULE = 'COMMENT_LINE'
+class Comment(internal.SimpleRawTokenModel):
+    RULE = '_COMMENT'
 
 
 @internal.token_model

@@ -1,6 +1,7 @@
 import copy
 import enum
 import pathlib
+import re
 from typing import Iterator, Type, TypeVar
 import lark
 from lark import exceptions
@@ -31,15 +32,44 @@ class PostLexInline(lark.lark.PostLex):
 
 
 class PostLex(lark.lark.PostLex):
+    _NEWLINE_INDENT_SPLIT_RE = re.compile(r'(?=[ \t]|\Z)')
+    _NEWLINE_INDENT = '_NEWLINE_INDENT'
+    _NEWLINE = '_NEWLINE'
+    _EOL = 'EOL'
+    _INDENT = '_INDENT'
+    _DEDENT = '_DEDENT'
+    _WS_INLINE = '_WS_INLINE'
+
     # Contextual lexer only sees _EOL and will thus reject _NEWLINE by default.
-    always_accept = _IGNORED_TOKENS | {'_NEWLINE'}
+    always_accept = _IGNORED_TOKENS | {_NEWLINE_INDENT}
 
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
+        is_first = True
+        indented = False
+        token = None
         for token in stream:
-            if token.type == '_NEWLINE':
-                yield lark.Token.new_borrow_pos('EOL', '', token)
-            yield token
-        yield lark.Token('EOL', '')
+            if is_first:
+                if token.type == self._WS_INLINE:
+                    yield lark.Token.new_borrow_pos(self._INDENT, '', token)
+                    indented = True
+                is_first = False
+            if token.type == self._NEWLINE_INDENT:
+                newline_text, indent_text = re.split(self._NEWLINE_INDENT_SPLIT_RE, token.value, maxsplit=1)
+                yield lark.Token.new_borrow_pos(self._EOL, '', token)
+                yield lark.Token.new_borrow_pos(self._NEWLINE, newline_text, token)
+                if indent_text:
+                    if not indented:
+                        indented = True
+                        yield lark.Token.new_borrow_pos(self._INDENT, '', token)
+                    yield lark.Token.new_borrow_pos(self._WS_INLINE, indent_text, token)
+                elif indented:
+                    indented = False
+                    yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
+            else:
+                yield token
+        yield lark.Token(self._EOL, '')
+        if indented:
+            yield lark.Token(self._DEDENT, '')
 
 
 class _Floating(enum.Enum):
@@ -92,13 +122,19 @@ class Parser:
 
     def _parse(self, text: str, target: Type[_U], lark_instance: lark.Lark) -> _U:
         parser = lark_instance.parse_interactive(text=text, start=target.RULE)
+        comment_only = True
         tokens = []
-
         for token in parser.lexer_thread.lex(parser.parser_state):
-            tokens.append(token)
-            if token.type in _IGNORED_TOKENS:
-                continue
-            parser.feed_token(token)
+            if token.value and token.type not in ('_COMMENT', '_WS_INLINE', '_NEWLINE'):
+                comment_only = False
+            if token.type not in ('_INDENT', '_DEDENT'):
+                tokens.append(token)
+            if token.type == 'EOL':
+                if not comment_only:
+                    parser.feed_token(token)
+                comment_only = True
+            elif token.type not in _IGNORED_TOKENS:
+                parser.feed_token(token)
         tree = parser.feed_eof()
 
         return ModelBuilder(tokens, self._token_models, self._tree_models).build(tree, target)
@@ -150,7 +186,7 @@ class ModelBuilder:
                 children.append(self._add_optional_node(child, _Floating.LEFT))
             elif is_tree and child.data == 'maybe_right':
                 children.append(self._add_optional_node(child, _Floating.RIGHT))
-            elif is_tree and child.data in ('repeated', 'repeated_pre', 'repeated_sep'):
+            elif is_tree and child.data in ('repeated', 'repeated_sep'):
                 children.append(self._add_repeated_node(child))
             else:
                 children.append(self._add_required_node(child))

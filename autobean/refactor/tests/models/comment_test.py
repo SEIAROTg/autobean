@@ -16,19 +16,8 @@ class TestComment(base.BaseTestModel):
             ';""',
         ],
     )
-    def test_parse_success_inline(self, text: str) -> None:
-        token = self.parser.parse_token(text, models.InlineComment)
-        assert token.raw_text == text
-        self.check_deepcopy_token(token)
-
-    @pytest.mark.parametrize(
-        'text', [
-            ' ;foo',
-            ' ;foo\n',
-        ],
-    )
-    def test_parse_success_line(self, text: str) -> None:
-        token = self.parser.parse_token(text, models.LineComment)
+    def test_parse_success(self, text: str) -> None:
+        token = self.parser.parse_token(text, models.Comment)
         assert token.raw_text == text
         self.check_deepcopy_token(token)
 
@@ -39,22 +28,13 @@ class TestComment(base.BaseTestModel):
             ' ;foo',
             ' ;foo\n',
             ';foo\n',
+            ' ;foo',
+            ' ;foo\n',
         ],
     )
-    def test_parse_failure_inline(self, text: str) -> None:
+    def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
-            self.parser.parse_token(text, models.InlineComment)
-
-    @pytest.mark.parametrize(
-        'text', [
-            '\n;foo',
-            '',
-            ';foo',
-        ],
-    )
-    def test_parse_failure_line(self, text: str) -> None:
-        with pytest.raises(exceptions.UnexpectedInput):
-            self.parser.parse_token(text, models.LineComment)
+            self.parser.parse_token(text, models.Comment)
 
     def test_all_comments_in_file(self) -> None:
         text = '''\

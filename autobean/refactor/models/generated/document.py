@@ -30,7 +30,7 @@ class Document(base.RawTreeModel):
     _filename = internal.required_field[EscapedString]()
     _tags_links = internal.repeated_field[Link | Tag](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)

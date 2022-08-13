@@ -28,7 +28,7 @@ class Event(base.RawTreeModel):
     _type = internal.required_field[EscapedString]()
     _description = internal.required_field[EscapedString]()
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
 
     raw_date = internal.required_node_property(_date)
     raw_type = internal.required_node_property(_type)

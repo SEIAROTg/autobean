@@ -1,4 +1,4 @@
-file: ((directive | EOL) _NEWLINE?)*
+file: (directive | EOL | _INDENT _DEDENT)*
 ?directive: option
           | include
           | plugin
@@ -46,22 +46,24 @@ open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPE
 custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} EOL _meta_items
 
 // Punctuations
-ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
-INDENT: /^[ \t]+(?=[^ \t\r\n])/m
-WS_INLINE: /(?<!^)[ \t]+/m | /^[ \t]+(?=\r|$)/m
+_WS_INLINE: /[ \t]+/
 _NEWLINE: /\r*\n/
-COMMENT_INLINE: /;[^\r\n]*$/m
-// indented cmoment line may appear anywhere but unindented ones cannot appear inside a indented block
-COMMENT_LINE: /^/m INDENT COMMENT_INLINE _NEWLINE?
+_NEWLINE_INDENT: _NEWLINE _WS_INLINE?
+_COMMENT: /;[^\r\n]*$/m
 _COMMA: ","
 
 %declare EOL
-%ignore WS_INLINE
-%ignore COMMENT_INLINE
-%ignore COMMENT_LINE
+%declare _INDENT
+%declare _DEDENT
+%ignore _WS_INLINE
+%ignore _NEWLINE
+%ignore _COMMENT
 
 // TODO: remove once tokens are referenced elsewhere.
 _unused: TRANSACTION_FLAG
+
+// String
+ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
 
 // Account
 // See: https://github.com/beancount/beancount/blob/e1716b492c7619682a6d7c33c4873aa41954af1e/beancount/parser/lexer.l#L129-L130
@@ -95,11 +97,6 @@ TAG: /#[A-Za-z0-9-_\/.]+/
 // Link
 LINK: /\^[A-Za-z0-9-_\/.]+/
 
-// MetaKey
-// The beancount syntax matches the trailing colon with lookahead. We make it part of the key token itself to simplify
-// testing and avoid whitespaces being inserted before the colon.
-META_KEY: /[a-z][a-zA-Z0-9-_]+:/
-
 // Flag
 // This is v2 syntax. v3 has a different syntax due to support of single-letter currency:
 // (v3) FLAG: /[!&#?%]/ | /'[A-Z]/
@@ -128,8 +125,17 @@ number_unary_expr: UNARY_OP number_atom_expr
 // Amount
 amount: number_expr CURRENCY
 
+// MetaKey
+// The beancount syntax matches the trailing colon with lookahead. We make it part of the key token itself to simplify
+// testing and avoid whitespaces being inserted before the colon.
+META_KEY: /[a-z][a-zA-Z0-9-_]+:/
+
 // MetaValue
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
+
+// MetaItem
+meta_item: META_KEY maybe_left{meta_value} EOL
+_meta_items: _INDENT repeated{meta_item} _DEDENT | repeated{_NEVER}
 
 // Tolerance
 TILDE:        "~"
@@ -159,11 +165,7 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-posting: INDENT maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL
-
-// meta
-meta_item: INDENT META_KEY maybe_left{meta_value} EOL
-_meta_items: repeated_pre{meta_item, _NEWLINE}
+posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
@@ -171,5 +173,7 @@ maybe_right{inner}: [inner]
 
 // [internal] Repeated field wrapper
 repeated{inner}: (inner)*
-repeated_pre{inner, pre}: (pre inner)*
 repeated_sep{inner, sep}: inner? (sep inner)*
+
+// [internal]
+_NEVER: /^_^/

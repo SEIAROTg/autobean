@@ -85,8 +85,6 @@ class BaseTestModel:
 
     def check_reattach_tree(self, tree: models.RawTreeModel) -> None:
         c = copy.deepcopy(tree)  # make a copy so we don't alter input
-        comment_before = models.LineComment.from_raw_text('; before')
-        comment_after = models.LineComment.from_raw_text('; after')
         tokens = []
         token_map = {}
         for token in c.token_store:
@@ -94,16 +92,17 @@ class BaseTestModel:
             tokens.append(new_token)
             token_map[id(token)] = new_token
         token_store = models.TokenStore.from_tokens([
-            comment_before,
+            models.Comment.from_raw_text('; before'),
+            models.Newline.from_default(),
             *tokens,
-            comment_after,
+            models.Comment.from_raw_text('; before'),
         ])
         c.reattach(token_store, models.MappingTokenTransformer(token_map))
         assert c.token_store is token_store
         if tokens:
             assert c.first_token is tokens[0]
             assert c.last_token is tokens[-1]
-        _check_copy_eq(tree, c, token_store, 1)
+        _check_copy_eq(tree, c, token_store, 2)
 
     def check_consistency(self, tree: models.RawTreeModel) -> None:
         for _, prop in _get_comparable_attributes(tree).items():

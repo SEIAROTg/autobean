@@ -5,7 +5,7 @@ from typing import Optional, Union
 from .base import MetaModel, Floating, field
 
 _META = field(
-    separators=('Newline.from_default()',),
+    separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')',),
     is_optional=True,
     is_keyword_only=True,
     default_value={})
@@ -78,7 +78,6 @@ class CostSpec(MetaModel):
 
 
 class Posting(MetaModel):
-    indent: 'INDENT' = field(is_optional=True, default_value='    ', is_keyword_only=True)
     flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT, is_optional=True, is_keyword_only=True)
     account: 'ACCOUNT' = field(separators=())
     number: Optional['number_expr'] = field(floating=Floating.LEFT)
@@ -90,7 +89,6 @@ class Posting(MetaModel):
 
 
 class MetaItem(MetaModel):
-    indent: 'INDENT' = field(is_optional=True, default_value='    ', is_keyword_only=True)
     key: 'META_KEY' = field(separators=())
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
     _eol: 'EOL' = field(separators=())

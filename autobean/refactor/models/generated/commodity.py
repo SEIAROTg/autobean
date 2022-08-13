@@ -27,7 +27,7 @@ class Commodity(base.RawTreeModel):
     _label = internal.required_field[CommodityLabel]()
     _currency = internal.required_field[Currency]()
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
 
     raw_date = internal.required_node_property(_date)
     raw_currency = internal.required_node_property(_currency)

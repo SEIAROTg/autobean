@@ -12,6 +12,11 @@ _SIMPLE = '''\
     bar: "bar-value" ; bar
   baz: 123 +  456   ; baz\
 '''
+_UNINDENTED = '''\
+2000-01-01 close Assets:Foo ; foo
+bar: "bar-value" ; bar
+baz: 123 +  456   ; baz\
+'''
 _WITH_EMPTY_LINE = '''\
 2000-01-01 close Assets:Foo ; foo
     bar: "bar-value" ; bar
@@ -56,19 +61,19 @@ class TestMeta(base.BaseTestModel):
         assert close.meta[0].value == 'bar-value'
         assert close.raw_meta['bar'] is close.raw_meta[0]
         assert close.meta['bar'] == 'bar-value'
-        assert self.print_model(close.meta[0]) == '    bar: "bar-value" ; bar'
+        assert self.print_model(close.meta[0]) == 'bar: "bar-value" ; bar'
 
         assert close.raw_meta[1] is close.meta[1]
         assert close.meta[1].key == 'baz'
         assert close.meta[1].value == decimal.Decimal(579)
         assert close.raw_meta['baz'] is close.raw_meta[1]
         assert close.meta['baz'] == decimal.Decimal(579)
-        assert self.print_model(close.meta[1]) == '  baz: 123 +  456   ; baz'
+        assert self.print_model(close.meta[1]) == 'baz: 123 +  456   ; baz'
 
         assert self.print_model(close) == text
 
     @pytest.mark.parametrize(
-        'text', [_WITH_EMPTY_LINE, _WITH_INDENTED_EMPTY_LINE, _WITH_UNINDENTED_COMMENT],
+        'text', [_UNINDENTED, _WITH_EMPTY_LINE, _WITH_INDENTED_EMPTY_LINE, _WITH_UNINDENTED_COMMENT],
     )
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
@@ -175,7 +180,7 @@ class TestMeta(base.BaseTestModel):
         got_meta = simple_close.raw_meta[0]
         pop_meta = simple_close.raw_meta.pop(0)
         assert pop_meta is got_meta
-        assert self.print_model(pop_meta) == '    bar: "bar-value" ; bar'
+        assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
   baz: 123 +  456   ; baz\
@@ -191,7 +196,7 @@ class TestMeta(base.BaseTestModel):
         got_meta = simple_close.meta[0]
         pop_meta = simple_close.meta.pop(0)
         assert pop_meta is got_meta
-        assert self.print_model(pop_meta) == '    bar: "bar-value" ; bar'
+        assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
   baz: 123 +  456   ; baz\
@@ -207,7 +212,7 @@ class TestMeta(base.BaseTestModel):
         got_meta = simple_close.raw_meta['bar']
         pop_meta = simple_close.raw_meta.pop('bar')
         assert pop_meta is got_meta
-        assert self.print_model(pop_meta) == '    bar: "bar-value" ; bar'
+        assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
   baz: 123 +  456   ; baz\

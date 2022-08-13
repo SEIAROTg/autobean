@@ -9,7 +9,7 @@ from ..cost_spec import CostSpec
 from ..currency import Currency
 from ..number_expr import NumberExpr
 from ..posting_flag import PostingFlag
-from ..punctuation import Eol, Indent, Whitespace
+from ..punctuation import Eol, Whitespace
 from ..total_price import TotalPrice
 from ..unit_price import UnitPrice
 
@@ -21,7 +21,6 @@ _Self = TypeVar('_Self', bound='Posting')
 class Posting(base.RawTreeModel):
     RULE = 'posting'
 
-    _indent = internal.required_field[Indent]()
     _flag = internal.optional_field[PostingFlag](separators=(Whitespace.from_default(),))
     _account = internal.required_field[Account]()
     _number = internal.optional_field[NumberExpr](separators=(Whitespace.from_default(),))
@@ -30,7 +29,6 @@ class Posting(base.RawTreeModel):
     _price = internal.optional_field[PriceAnnotation](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
-    raw_indent = internal.required_node_property(_indent)
     raw_flag = internal.optional_node_property(_flag)
     raw_account = internal.required_node_property(_account)
     raw_number = internal.optional_node_property(_number)
@@ -38,7 +36,6 @@ class Posting(base.RawTreeModel):
     raw_cost = internal.optional_node_property(_cost)
     raw_price = internal.optional_node_property(_price)
 
-    indent = internal.required_string_property(raw_indent)
     flag = internal.optional_string_property(raw_flag, PostingFlag)
     account = internal.required_string_property(raw_account)
     number = internal.optional_decimal_property(raw_number, NumberExpr)
@@ -50,7 +47,6 @@ class Posting(base.RawTreeModel):
     def __init__(
             self,
             token_store: base.TokenStore,
-            indent: Indent,
             flag: internal.Maybe[PostingFlag],
             account: Account,
             number: internal.Maybe[NumberExpr],
@@ -60,7 +56,6 @@ class Posting(base.RawTreeModel):
             eol: Eol,
     ):
         super().__init__(token_store)
-        self._indent = indent
         self._flag = flag
         self._account = account
         self._number = number
@@ -71,7 +66,7 @@ class Posting(base.RawTreeModel):
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._indent.first_token
+        return self._flag.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
@@ -80,7 +75,6 @@ class Posting(base.RawTreeModel):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._indent.clone(token_store, token_transformer),
             self._flag.clone(token_store, token_transformer),
             self._account.clone(token_store, token_transformer),
             self._number.clone(token_store, token_transformer),
@@ -92,7 +86,6 @@ class Posting(base.RawTreeModel):
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._indent = self._indent.reattach(token_store, token_transformer)
         self._flag = self._flag.reattach(token_store, token_transformer)
         self._account = self._account.reattach(token_store, token_transformer)
         self._number = self._number.reattach(token_store, token_transformer)
@@ -104,7 +97,6 @@ class Posting(base.RawTreeModel):
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Posting)
-            and self._indent == other._indent
             and self._flag == other._flag
             and self._account == other._account
             and self._number == other._number
@@ -117,7 +109,6 @@ class Posting(base.RawTreeModel):
     @classmethod
     def from_children(
             cls: Type[_Self],
-            indent: Indent,
             flag: Optional[PostingFlag],
             account: Account,
             number: Optional[NumberExpr],
@@ -132,7 +123,6 @@ class Posting(base.RawTreeModel):
         maybe_price = internal.MaybeL[PriceAnnotation].from_children(price, separators=cls._price.separators)
         eol = Eol.from_default()
         tokens = [
-            *indent.detach(),
             *maybe_flag.detach(),
             *account.detach(),
             *maybe_number.detach(),
@@ -142,7 +132,6 @@ class Posting(base.RawTreeModel):
             *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        indent.reattach(token_store)
         maybe_flag.reattach(token_store)
         account.reattach(token_store)
         maybe_number.reattach(token_store)
@@ -150,7 +139,7 @@ class Posting(base.RawTreeModel):
         maybe_cost.reattach(token_store)
         maybe_price.reattach(token_store)
         eol.reattach(token_store)
-        return cls(token_store, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, eol)
+        return cls(token_store, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, eol)
 
     @classmethod
     def from_value(
@@ -161,11 +150,9 @@ class Posting(base.RawTreeModel):
             cost: Optional[CostSpec],
             price: Optional[PriceAnnotation],
             *,
-            indent: str = '    ',
             flag: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            Indent.from_value(indent),
             PostingFlag.from_value(flag) if flag is not None else None,
             Account.from_value(account),
             NumberExpr.from_value(number) if number is not None else None,

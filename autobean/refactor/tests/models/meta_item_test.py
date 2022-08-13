@@ -13,17 +13,17 @@ class TestMetaItem(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text,key,value', [
-            ('    foo: Assets:Foo', 'foo', models.Account.from_value('Assets:Foo')),
-            ('    foo: 100.00 USD', 'foo', models.Amount.from_value(_D('100.00'), 'USD')),
-            ('    foo: TRUE', 'foo', True),
-            ('    foo: USD', 'foo', models.Currency.from_value('USD')),
-            ('    foo: 2000-01-01', 'foo', datetime.date(2000, 1, 1)),
-            ('    foo: "bar"', 'foo', 'bar'),
-            ('    foo: NULL', 'foo', models.Null.from_default()),
-            ('    foo: 2000 - 01 - 01', 'foo', _D(1998)),
-            ('    foo: #bar', 'foo', models.Tag.from_value('bar')),
-            ('    foo:', 'foo', None),
-            ('\tfoo: 123', 'foo', _D(123)),
+            ('foo: Assets:Foo', 'foo', models.Account.from_value('Assets:Foo')),
+            ('foo: 100.00 USD', 'foo', models.Amount.from_value(_D('100.00'), 'USD')),
+            ('foo: TRUE', 'foo', True),
+            ('foo: USD', 'foo', models.Currency.from_value('USD')),
+            ('foo: 2000-01-01', 'foo', datetime.date(2000, 1, 1)),
+            ('foo: "bar"', 'foo', 'bar'),
+            ('foo: NULL', 'foo', models.Null.from_default()),
+            ('foo: 2000 - 01 - 01', 'foo', _D(1998)),
+            ('foo: #bar', 'foo', models.Tag.from_value('bar')),
+            ('foo:', 'foo', None),
+            ('foo: 123', 'foo', _D(123)),
         ],
     )
     def test_parse_success(
@@ -41,10 +41,8 @@ class TestMetaItem(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text', [
-            'foo: 123',
-            'foo:',
-            '    foo: bar:',
-            '    foo: ^bar',
+            'foo: bar:',
+            'foo: ^bar',
         ],
     )
     def test_parse_failure(self, text: str) -> None:
@@ -52,24 +50,24 @@ class TestMetaItem(base.BaseTestModel):
             self.parser.parse(text, models.MetaItem)
 
     def set_raw_key(self) -> None:
-        meta = self.parser.parse('    foo: 123', models.MetaItem)
+        meta = self.parser.parse('foo: 123', models.MetaItem)
         new_key = models.MetaKey.from_value('bar')
         meta.raw_key = new_key
         assert meta.raw_key is new_key
-        assert self.print_model(meta) == '    bar: 123'
+        assert self.print_model(meta) == 'bar: 123'
 
     def set_key(self) -> None:
-        meta = self.parser.parse('    foo: 123', models.MetaItem)
+        meta = self.parser.parse('foo: 123', models.MetaItem)
         meta.key = 'bar'
         assert meta.key == 'bar'
-        assert self.print_model(meta) == '    bar: 123'
+        assert self.print_model(meta) == 'bar: 123'
 
     @pytest.mark.parametrize(
         'text,raw_value,expected', [
-            ('    foo:', models.NumberExpr.from_value(_D(123)), '    foo: 123'),
-            ('    foo:  Assets:Foo', models.NumberExpr.from_value(_D(123)), '    foo:  123'),
-            ('    foo:  Assets:Foo', models.NumberExpr.from_value(_D(123)), '    foo:  123'),
-            ('    foo:  Assets:Foo', None, '    foo:'),
+            ('foo:', models.NumberExpr.from_value(_D(123)), 'foo: 123'),
+            ('foo:  Assets:Foo', models.NumberExpr.from_value(_D(123)), 'foo:  123'),
+            ('foo:  Assets:Foo', models.NumberExpr.from_value(_D(123)), 'foo:  123'),
+            ('foo:  Assets:Foo', None, 'foo:'),
         ],
     )
     def test_set_raw_value(self, text: str, raw_value: models.MetaRawValue, expected: str) -> None:
@@ -80,10 +78,10 @@ class TestMetaItem(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text,value,expected', [
-            ('    foo:', _D(123), '    foo: 123'),
-            ('    foo:  Assets:Foo', _D(123), '    foo:  123'),
-            ('    foo:  Assets:Foo', _D(123), '    foo:  123'),
-            ('    foo:  Assets:Foo', None, '    foo:'),
+            ('foo:', _D(123), 'foo: 123'),
+            ('foo:  Assets:Foo', _D(123), 'foo:  123'),
+            ('foo:  Assets:Foo', _D(123), 'foo:  123'),
+            ('foo:  Assets:Foo', None, 'foo:'),
         ],
     )
     def test_set_value(self, text: str, value: models.MetaRawValue, expected: str) -> None:
@@ -93,34 +91,28 @@ class TestMetaItem(base.BaseTestModel):
         assert self.print_model(meta) == expected
 
     def test_from_children_with_value(self) -> None:
-        indent = models.Indent.from_value('    ')
         key = models.MetaKey.from_value('foo')
         value = models.Amount.from_value(_D(123), 'USD')
-        meta = models.MetaItem.from_children(indent, key, value)
-        assert meta.raw_indent is indent
+        meta = models.MetaItem.from_children(key, value)
         assert meta.raw_key is key
         assert meta.raw_value is value
-        assert self.print_model(meta) == '    foo: 123 USD'
+        assert self.print_model(meta) == 'foo: 123 USD'
 
     def test_from_children_without_value(self) -> None:
-        indent = models.Indent.from_value('\t')
         key = models.MetaKey.from_value('foo')
-        meta = models.MetaItem.from_children(indent, key, None)
-        assert meta.raw_indent is indent
+        meta = models.MetaItem.from_children(key, None)
         assert meta.raw_key is key
         assert meta.raw_value is None
-        assert self.print_model(meta) == '\tfoo:'
+        assert self.print_model(meta) == 'foo:'
 
     def test_from_value_with_value(self) -> None:
         meta = models.MetaItem.from_value('foo', 'bar')
         assert meta.key == 'foo'
         assert meta.value == 'bar'
-        assert meta.indent == '    '
-        assert self.print_model(meta) == '    foo: "bar"'
+        assert self.print_model(meta) == 'foo: "bar"'
 
     def test_from_value_without_value(self) -> None:
         meta = models.MetaItem.from_value('foo', None)
         assert meta.key == 'foo'
         assert meta.value is None
-        assert meta.indent == '    '
-        assert self.print_model(meta) == '    foo:'
+        assert self.print_model(meta) == 'foo:'
