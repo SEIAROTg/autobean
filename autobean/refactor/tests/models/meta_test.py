@@ -277,3 +277,49 @@ class TestMeta(base.BaseTestModel):
     foo: 123
     bar: "bar-value"\
 '''
+
+    def test_raw_dict_views(self, simple_close: models.Close) -> None:
+        keys = simple_close.raw_meta.keys() 
+        assert list(keys) == ['bar', 'baz']
+        values = simple_close.raw_meta.values()
+        for actual, expected in itertools.zip_longest(values, simple_close.meta):
+            assert actual is expected
+        items = simple_close.raw_meta.items()
+        for actual, expected in itertools.zip_longest(items, simple_close.meta):
+            assert actual[0] == expected.key
+            assert actual[1] is expected
+        simple_close.meta['xxx'] = 'yyy'
+        assert len(keys) == len(values) == len(items) == 3
+
+    def test_raw_dict_views_reversed(self, simple_close: models.Close) -> None:
+        keys = simple_close.raw_meta.keys() 
+        assert list(reversed(keys)) == ['baz', 'bar']
+        values = simple_close.raw_meta.values()
+        for actual, expected in itertools.zip_longest(reversed(values), reversed(simple_close.meta)):
+            assert actual is expected
+        items = simple_close.raw_meta.items()
+        for actual, expected in itertools.zip_longest(reversed(items), reversed(simple_close.meta)):
+            assert actual[0] == expected.key
+            assert actual[1] is expected
+        simple_close.meta['xxx'] = 'yyy'
+        assert len(keys) == len(values) == len(items) == 3
+
+    def test_dict_views_reversed(self, simple_close: models.Close) -> None:
+        keys = simple_close.meta.keys() 
+        assert list(reversed(keys)) == ['baz', 'bar']
+        values = simple_close.meta.values()
+        for actual, expected in itertools.zip_longest(reversed(values), reversed(simple_close.meta)):
+            if isinstance(actual, models.RawModel):
+                assert actual is expected.value
+            else:
+                assert actual == expected.value
+        items = simple_close.meta.items()
+        for (actual_key, actual_value), expected in itertools.zip_longest(
+                reversed(items), reversed(simple_close.meta)):
+            assert actual_key == expected.key
+            if isinstance(actual_value, models.RawModel):
+                assert actual_value is expected.value
+            else:
+                assert actual_value == expected.value
+        simple_close.meta['xxx'] = 'yyy'
+        assert len(keys) == len(values) == len(items) == 3
