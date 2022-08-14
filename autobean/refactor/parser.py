@@ -87,7 +87,7 @@ class Parser:
             token_models: dict[str, Type[models.RawTokenModel]],
             tree_models: dict[str, Type[models.RawTreeModel]],
     ):
-        start = ['_unused'] + list(tree_models.keys())
+        start = list(tree_models.keys())
         self._lark = lark.Lark(
             _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLex(), start=start)
         self._lark_inline = lark.Lark(

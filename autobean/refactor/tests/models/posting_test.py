@@ -226,7 +226,7 @@ class TestPosting(base.BaseTestModel):
             price: Optional[models.PriceAnnotation],
     ) -> None:
         posting = models.Posting.from_value(
-            account, number, currency, cost, price, flag=flag)
+            account, number, currency, cost=cost, price=price, flag=flag)
         assert posting.flag == flag
         assert posting.account == account
         assert posting.number == number

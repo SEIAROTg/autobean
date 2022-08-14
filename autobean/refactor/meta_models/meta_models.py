@@ -1,11 +1,12 @@
 # pylance: disable
 # type: ignore
 
+import dataclasses
 from typing import Optional, Union
 from .base import MetaModel, Floating, field
 
 _META = field(
-    separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')',),
+    separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')'),
     is_optional=True,
     is_keyword_only=True,
     default_value={})
@@ -82,10 +83,12 @@ class Posting(MetaModel):
     account: 'ACCOUNT' = field(separators=())
     number: Optional['number_expr'] = field(floating=Floating.LEFT)
     currency: Optional['CURRENCY'] = field(floating=Floating.LEFT)
-    cost: Optional['cost_spec'] = field(floating=Floating.LEFT)
+    cost: Optional['cost_spec'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     price: Optional[Union['unit_price', 'total_price']] = field(
-        floating=Floating.LEFT, type_alias='PriceAnnotation')
+        floating=Floating.LEFT, type_alias='PriceAnnotation', is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = dataclasses.replace(
+        _META, separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'        \')'))
 
 
 class MetaItem(MetaModel):
@@ -254,3 +257,15 @@ class Custom(MetaModel):
     ]] = field(type_alias='CustomRawValue')
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
+
+
+class Transaction(MetaModel):
+    date: 'DATE'
+    flag: 'TRANSACTION_FLAG'
+    string0: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
+    string1: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
+    string2: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
+    tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+    _eol: 'EOL' = field(separators=())
+    meta: list['meta_item'] = _META
+    postings: list['posting'] = field(separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')'))

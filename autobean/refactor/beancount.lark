@@ -44,6 +44,8 @@ note:         DATE NOTE ACCOUNT ESCAPED_STRING EOL _meta_items
 document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link} EOL _meta_items
 open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} EOL _meta_items
 custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} EOL _meta_items
+transaction:  DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} EOL _meta_items_or_postings
+_meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER}
 
 // Punctuations
 _WS_INLINE: /[ \t]+/
@@ -58,9 +60,6 @@ _COMMA: ","
 %ignore _WS_INLINE
 %ignore _NEWLINE
 %ignore _COMMENT
-
-// TODO: remove once tokens are referenced elsewhere.
-_unused: TRANSACTION_FLAG
 
 // String
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -135,7 +134,7 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 
 // MetaItem
 meta_item: META_KEY maybe_left{meta_value} EOL
-_meta_items: _INDENT repeated{meta_item} _DEDENT | repeated{_NEVER}
+_meta_items: _INDENT repeated{meta_item} _DEDENT | repeated{NEVER}
 
 // Tolerance
 TILDE:        "~"
@@ -165,10 +164,12 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL
+posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL _posting_meta
+_posting_meta: repeated{meta_item} | _INDENT repeated{meta_item} _DEDENT  // allow posting to be parsed without transaction
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
+maybe_left_always{inner}: inner
 maybe_right{inner}: [inner]
 
 // [internal] Repeated field wrapper
@@ -176,4 +177,4 @@ repeated{inner}: (inner)*
 repeated_sep{inner, sep}: inner? (sep inner)*
 
 // [internal]
-_NEVER: /^_^/
+NEVER: /^_^/
