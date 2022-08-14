@@ -82,6 +82,7 @@ def _model_name_to_value_type(model_name: str) -> Optional[str]:
         'PriceAnnotation': 'PriceAnnotation',
         'MetaItem': 'MetaItem',
         'Posting': 'Posting',
+        'Directive': 'Directive',
     }.get(model_name)
 
 

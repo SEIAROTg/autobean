@@ -11,6 +11,7 @@ _META = field(
     is_keyword_only=True,
     default_value={})
 
+
 # Auxiliary
 
 
@@ -269,3 +270,34 @@ class Transaction(MetaModel):
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
     postings: list['posting'] = field(separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')'))
+
+
+# File
+
+
+class File(MetaModel):
+    directives: list[Union[
+        'option',
+        'include',
+        'plugin',
+        'pushtag',
+        'poptag',
+        'pushmeta',
+        'popmeta',
+        'balance',
+        'close',
+        'commodity',
+        'pad',
+        'event',
+        'query',
+        'price',
+        'note',
+        'document',
+        'open',
+        'custom',
+        'transaction',
+    ]] = field(
+        type_alias='Directive',
+        separators=('Newline.from_default()',),
+        separators_before=(),
+    )

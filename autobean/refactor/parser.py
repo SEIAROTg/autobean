@@ -153,6 +153,8 @@ class ModelBuilder:
 
     def _fix_gap(self, cursor: int) -> None:
         for token in self._tokens[self._cursor:cursor]:
+            if not token.value:  # skips EOL, _INDENT, _DEDENT, etc. if outside a model.
+                continue
             self._built_tokens.append(self._token_models[token.type].from_raw_text(token.value))
         self._cursor = cursor
         self._built_tokens.extend(self._right_floating_placeholders)
@@ -215,6 +217,7 @@ class ModelBuilder:
         placeholder = self._add_placeholder(_Floating.LEFT)
         items = [
             self._add_required_node(child) for child in node.children
+            if not (isinstance(child, lark.Tree) and child.data.endswith('_'))
         ]
         return internal.Repeated(self._token_store, items, placeholder)
 

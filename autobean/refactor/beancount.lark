@@ -1,7 +1,27 @@
-file: (directive | EOL | _INDENT _DEDENT)*
+file: repeated{_file_directive}
 ?directive: option
           | include
           | plugin
+          | pushtag
+          | poptag
+          | poptag
+          | pushmeta
+          | popmeta
+          | balance
+          | close
+          | commodity
+          | pad
+          | event
+          | query
+          | price
+          | note
+          | document
+          | open
+          | custom
+          | transaction
+// TODO: avoid removing ignored parts when removing a directive.
+file_ignored_: EOL | _INDENT _DEDENT
+_file_directive: directive | file_ignored_
 
 // Labels
 OPTION:       "option"
