@@ -5,6 +5,7 @@ from .amount import *
 from .balance import *
 from .bool import *
 from .close import *
+from .comment import *
 from .commodity import *
 from .compound_amount import *
 from .cost import *

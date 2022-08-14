@@ -20,11 +20,6 @@ class Whitespace(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.token_model
-class Comment(internal.SimpleRawTokenModel):
-    RULE = '_COMMENT'
-
-
-@internal.token_model
 class Comma(internal.SimpleDefaultRawTokenModel):
     RULE = '_COMMA'
     DEFAULT = ','

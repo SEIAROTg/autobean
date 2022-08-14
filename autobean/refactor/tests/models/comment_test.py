@@ -7,18 +7,19 @@ from . import base
 class TestComment(base.BaseTestModel):
 
     @pytest.mark.parametrize(
-        'text', [
-            ';foo',
-            '; foo',
-            '; 你好!',
-            ';',
-            ';"',
-            ';""',
+        'text, value', [
+            (';foo', 'foo'),
+            ('; foo', 'foo'),
+            ('; 你好!', '你好!'),
+            (';', ''),
+            (';"', '"'),
+            (';""', '""'),
         ],
     )
-    def test_parse_success(self, text: str) -> None:
+    def test_parse_success(self, text: str, value: str) -> None:
         token = self.parser.parse_token(text, models.Comment)
         assert token.raw_text == text
+        assert token.value == value
         self.check_deepcopy_token(token)
 
     @pytest.mark.parametrize(
@@ -35,6 +36,11 @@ class TestComment(base.BaseTestModel):
     def test_parse_failure(self, text: str) -> None:
         with pytest.raises(exceptions.UnexpectedInput):
             self.parser.parse_token(text, models.Comment)
+
+    def test_from_value(self) -> None:
+        comment = models.Comment.from_value('foo')
+        assert comment.value == 'foo'
+        assert comment.raw_text == '; foo'
 
     def test_all_comments_in_file(self) -> None:
         text = '''\
