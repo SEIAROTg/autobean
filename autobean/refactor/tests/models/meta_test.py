@@ -9,6 +9,7 @@ from . import base
 
 _SIMPLE = '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     bar: "bar-value" ; bar
     ; comment baz
@@ -16,29 +17,34 @@ _SIMPLE = '''\
 '''
 _UNINDENTED = '''\
 2000-01-01 close Assets:Foo ; foo
+foo: "foo-value" ; foo
 bar: "bar-value" ; bar
 baz: 123 +  456   ; baz\
 '''
 _WITH_EMPTY_LINE = '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     bar: "bar-value" ; bar
 
   baz: 123 +  456   ; baz\
 '''
 _WITH_INDENTED_EMPTY_LINE = f'''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     bar: "bar-value" ; bar
 {"    "}
   baz: 123 +  456   ; baz\
 '''
 _WITH_UNINDENTED_COMMENT = '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     bar: "bar-value" ; bar
 ; unindented comment
   baz: 123 +  456   ; baz\
 '''
 _WITH_INDENTED_COMMENT = '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     bar: "bar-value" ; bar
     ; indented comment
   baz: 123 +  456   ; baz\
@@ -56,21 +62,21 @@ class TestMeta(base.BaseTestModel):
     def test_parse_success(self, text: str) -> None:
         close = self.parser.parse(text, models.Close)
 
-        assert len(close.meta) == 2
-
-        assert close.raw_meta[0] is close.meta[0]
-        assert close.meta[0].key == 'bar'
-        assert close.meta[0].value == 'bar-value'
-        assert close.raw_meta['bar'] is close.raw_meta[0]
-        assert close.meta['bar'] == 'bar-value'
-        assert self.print_model(close.meta[0]) == 'bar: "bar-value" ; bar'
+        assert len(close.meta) == 3
 
         assert close.raw_meta[1] is close.meta[1]
-        assert close.meta[1].key == 'baz'
-        assert close.meta[1].value == decimal.Decimal(579)
-        assert close.raw_meta['baz'] is close.raw_meta[1]
+        assert close.meta[1].key == 'bar'
+        assert close.meta[1].value == 'bar-value'
+        assert close.raw_meta['bar'] is close.raw_meta[1]
+        assert close.meta['bar'] == 'bar-value'
+        assert self.print_model(close.meta[1]) == 'bar: "bar-value" ; bar'
+
+        assert close.raw_meta[2] is close.meta[2]
+        assert close.meta[2].key == 'baz'
+        assert close.meta[2].value == decimal.Decimal(579)
+        assert close.raw_meta['baz'] is close.raw_meta[2]
         assert close.meta['baz'] == decimal.Decimal(579)
-        assert self.print_model(close.meta[1]) == 'baz: 123 +  456   ; baz'
+        assert self.print_model(close.meta[2]) == 'baz: 123 +  456   ; baz'
 
         assert self.print_model(close) == text
 
@@ -93,9 +99,10 @@ class TestMeta(base.BaseTestModel):
 
     def test_raw_setitem_update_by_index(self, simple_close: models.Close) -> None:
         meta_item = models.MetaItem.from_value('qux', False)
-        simple_close.raw_meta[0] = meta_item
+        simple_close.raw_meta[1] = meta_item
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     qux: FALSE
     ; comment baz
@@ -104,9 +111,10 @@ class TestMeta(base.BaseTestModel):
 
     def test_setitem_update_by_index(self, simple_close: models.Close) -> None:
         meta_item = models.MetaItem.from_value('qux', False)
-        simple_close.meta[0] = meta_item
+        simple_close.meta[1] = meta_item
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     qux: FALSE
     ; comment baz
@@ -116,10 +124,11 @@ class TestMeta(base.BaseTestModel):
     def test_raw_setitem_update_by_key(self, simple_close: models.Close) -> None:
         date = models.Date.from_value(datetime.date(2012, 12, 12))
         simple_close.meta['baz'] = date
-        assert simple_close.raw_meta[1].raw_value is date
+        assert simple_close.raw_meta[2].raw_value is date
         assert simple_close.raw_meta['baz'].raw_value is date
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     bar: "bar-value" ; bar
     ; comment baz
@@ -130,6 +139,7 @@ class TestMeta(base.BaseTestModel):
         simple_close.meta['baz'] = datetime.date(2012, 12, 12)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     bar: "bar-value" ; bar
     ; comment baz
@@ -141,9 +151,10 @@ class TestMeta(base.BaseTestModel):
         simple_close.raw_meta['quux'] = meta_item
         assert simple_close.raw_meta['qux'] is meta_item
         assert 'quux' not in simple_close.raw_meta
-        assert simple_close.raw_meta[2] is meta_item
+        assert simple_close.raw_meta[3] is meta_item
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     bar: "bar-value" ; bar
     ; comment baz
@@ -155,6 +166,7 @@ class TestMeta(base.BaseTestModel):
         simple_close.meta['qux'] = False
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     bar: "bar-value" ; bar
     ; comment baz
@@ -163,17 +175,19 @@ class TestMeta(base.BaseTestModel):
 '''
 
     def test_raw_delitem_by_index(self, simple_close: models.Close) -> None:
-        del simple_close.raw_meta[0]
+        del simple_close.raw_meta[1]
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
     def test_delitem_by_index(self, simple_close: models.Close) -> None:
-        del simple_close.meta[0]
+        del simple_close.meta[1]
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
@@ -182,6 +196,7 @@ class TestMeta(base.BaseTestModel):
         del simple_close.raw_meta['bar']
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
@@ -190,41 +205,56 @@ class TestMeta(base.BaseTestModel):
         del simple_close.meta['bar']
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
+    ; comment baz
+  baz: 123 +  456   ; baz\
+'''
+
+    def test_del_first(self, simple_close: models.Close) -> None:
+        del simple_close.raw_meta[0]
+        assert self.print_model(simple_close) == '''\
+2000-01-01 close Assets:Foo ; foo
+    ; comment bar
+    bar: "bar-value" ; bar
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
     def test_raw_pop_by_index(self, simple_close: models.Close) -> None:
-        got_meta = simple_close.raw_meta[0]
-        pop_meta = simple_close.raw_meta.pop(0)
+        got_meta = simple_close.raw_meta[1]
+        pop_meta = simple_close.raw_meta.pop(1)
         assert pop_meta is got_meta
         assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
         simple_close.meta.append(pop_meta)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
 
     def test_pop_by_index(self, simple_close: models.Close) -> None:
-        got_meta = simple_close.meta[0]
-        pop_meta = simple_close.meta.pop(0)
+        got_meta = simple_close.meta[1]
+        pop_meta = simple_close.meta.pop(1)
         assert pop_meta is got_meta
         assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
         simple_close.meta.append(pop_meta)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
@@ -237,12 +267,14 @@ class TestMeta(base.BaseTestModel):
         assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
         simple_close.meta.append(pop_meta)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
@@ -251,6 +283,7 @@ class TestMeta(base.BaseTestModel):
     def test_pop_by_key(self) -> None:
         close = self.parser.parse('''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment bar
     bar: Assets:Bar ; bar
     ; comment baz
@@ -262,12 +295,14 @@ class TestMeta(base.BaseTestModel):
         assert pop_meta == models.Account.from_value('Assets:Bar')
         assert self.print_model(close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
         close.meta['qux'] = pop_meta
         assert self.print_model(close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    foo: "foo-value" ; foo
     ; comment baz
   baz: 123 +  456   ; baz
     qux: Assets:Bar\
@@ -308,7 +343,7 @@ class TestMeta(base.BaseTestModel):
 
     def test_raw_dict_views(self, simple_close: models.Close) -> None:
         keys = simple_close.raw_meta.keys() 
-        assert list(keys) == ['bar', 'baz']
+        assert list(keys) == ['foo', 'bar', 'baz']
         values = simple_close.raw_meta.values()
         for actual, expected in itertools.zip_longest(values, simple_close.meta):
             assert actual is expected
@@ -317,11 +352,11 @@ class TestMeta(base.BaseTestModel):
             assert actual[0] == expected.key
             assert actual[1] is expected
         simple_close.meta['xxx'] = 'yyy'
-        assert len(keys) == len(values) == len(items) == 3
+        assert len(keys) == len(values) == len(items) == 4
 
     def test_raw_dict_views_reversed(self, simple_close: models.Close) -> None:
         keys = simple_close.raw_meta.keys() 
-        assert list(reversed(keys)) == ['baz', 'bar']
+        assert list(reversed(keys)) == ['baz', 'bar', 'foo']
         values = simple_close.raw_meta.values()
         for actual, expected in itertools.zip_longest(reversed(values), reversed(simple_close.meta)):
             assert actual is expected
@@ -330,11 +365,11 @@ class TestMeta(base.BaseTestModel):
             assert actual[0] == expected.key
             assert actual[1] is expected
         simple_close.meta['xxx'] = 'yyy'
-        assert len(keys) == len(values) == len(items) == 3
+        assert len(keys) == len(values) == len(items) == 4
 
     def test_dict_views_reversed(self, simple_close: models.Close) -> None:
         keys = simple_close.meta.keys() 
-        assert list(reversed(keys)) == ['baz', 'bar']
+        assert list(reversed(keys)) == ['baz', 'bar', 'foo']
         values = simple_close.meta.values()
         for actual, expected in itertools.zip_longest(reversed(values), reversed(simple_close.meta)):
             if isinstance(actual, models.RawModel):
@@ -350,4 +385,4 @@ class TestMeta(base.BaseTestModel):
             else:
                 assert actual_value == expected.value
         simple_close.meta['xxx'] = 'yyy'
-        assert len(keys) == len(values) == len(items) == 3
+        assert len(keys) == len(values) == len(items) == 4
