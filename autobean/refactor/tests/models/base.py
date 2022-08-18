@@ -33,8 +33,13 @@ def _check_copy_eq(
         a: Any,
         b: Any,
         expected_token_store: Optional[models.TokenStore],
-        token_index_offset: int = 0) -> None:
+        token_index_offset: int = 0,
+        checked: Optional[set[tuple[int, int]]] = None) -> None:
     assert type(a) is type(b)
+    checked = set() if checked is None else checked
+    if (id(a), id(b)) in checked:
+        return
+    checked.add((id(a), id(b)))
     if isinstance(a, models.RawModel):
         assert a is not b
         assert b.token_store is expected_token_store
@@ -45,12 +50,12 @@ def _check_copy_eq(
         assert a_props.keys() == b_props.keys()
         for key, a_value in a_props.items():
             b_value = b_props[key]
-            _check_copy_eq(a_value, b_value, expected_token_store, token_index_offset)
+            _check_copy_eq(a_value, b_value, expected_token_store, token_index_offset, checked)
     elif isinstance(a, Iterable) and not isinstance(a, str | bytes):
         a_items, b_items = list(a), list(b)
         assert len(a_items) == len(b_items)
         for a_item, b_item in zip(a_items, b_items):
-            _check_copy_eq(a_item, b_item, expected_token_store, token_index_offset)
+            _check_copy_eq(a_item, b_item, expected_token_store, token_index_offset, checked)
     else:
         assert a == b
 
