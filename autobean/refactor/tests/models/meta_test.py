@@ -25,10 +25,10 @@ _WITH_EMPTY_LINE = '''\
 
   baz: 123 +  456   ; baz\
 '''
-_WITH_INDENTED_EMPTY_LINE = '''\
+_WITH_INDENTED_EMPTY_LINE = f'''\
 2000-01-01 close Assets:Foo ; foo
     bar: "bar-value" ; bar
-
+{"    "}
   baz: 123 +  456   ; baz\
 '''
 _WITH_UNINDENTED_COMMENT = '''\

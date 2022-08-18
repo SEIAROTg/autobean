@@ -20,7 +20,7 @@ file: repeated{_file_directive}
           | custom
           | transaction
 // TODO: avoid removing ignored parts when removing a directive.
-file_ignored_: EOL | _INDENT _DEDENT
+file_ignored_: EOL | _INDENT EOL* _DEDENT
 _file_directive: directive | file_ignored_
 
 // Labels

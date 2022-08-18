@@ -122,17 +122,21 @@ class Parser:
 
     def _parse(self, text: str, target: Type[_U], lark_instance: lark.Lark) -> _U:
         parser = lark_instance.parse_interactive(text=text, start=target.RULE)
-        comment_only = True
+        has_comment = False
+        has_non_comment = False
         tokens = []
         for token in parser.lexer_thread.lex(parser.parser_state):
+            if token.type == '_COMMENT':
+                has_comment = True
             if token.value and token.type not in ('_COMMENT', '_WS_INLINE', '_NEWLINE'):
-                comment_only = False
+                has_non_comment = True
             if token.type not in ('_INDENT', '_DEDENT'):
                 tokens.append(token)
             if token.type == 'EOL':
-                if not comment_only:
+                if not has_comment or has_non_comment:
                     parser.feed_token(token)
-                comment_only = True
+                has_comment = False
+                has_non_comment = False
             elif token.type not in _IGNORED_TOKENS:
                 parser.feed_token(token)
         tree = parser.feed_eof()
