@@ -153,10 +153,12 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
     def __setitem__(self, index: int | slice, value: _M | Iterable[_M]) -> None:
         if isinstance(index, int):
             assert not isinstance(value, Iterable)
-            values = [value]
-        else:
-            assert isinstance(value, Iterable)
-            values = list(value)
+            item = self._repeated.items[index]
+            self._repeated.token_store.splice(value.detach(), item.first_token, item.last_token)
+            self._repeated.items[index] = value
+            return
+        assert isinstance(value, Iterable)
+        values = list(value)
         r = indexes.range_from_index(index, len(self._repeated.items))
         separators_before_last = (
             self._repeated.token_store.get_prev(self._repeated.items[0].first_token)

@@ -9,7 +9,9 @@ from . import base
 
 _SIMPLE = '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     bar: "bar-value" ; bar
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 _UNINDENTED = '''\
@@ -94,7 +96,9 @@ class TestMeta(base.BaseTestModel):
         simple_close.raw_meta[0] = meta_item
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     qux: FALSE
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
@@ -103,7 +107,9 @@ class TestMeta(base.BaseTestModel):
         simple_close.meta[0] = meta_item
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     qux: FALSE
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
@@ -114,7 +120,9 @@ class TestMeta(base.BaseTestModel):
         assert simple_close.raw_meta['baz'].raw_value is date
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     bar: "bar-value" ; bar
+    ; comment baz
   baz: 2012-12-12   ; baz\
 '''
 
@@ -122,7 +130,9 @@ class TestMeta(base.BaseTestModel):
         simple_close.meta['baz'] = datetime.date(2012, 12, 12)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     bar: "bar-value" ; bar
+    ; comment baz
   baz: 2012-12-12   ; baz\
 '''
 
@@ -134,7 +144,9 @@ class TestMeta(base.BaseTestModel):
         assert simple_close.raw_meta[2] is meta_item
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     bar: "bar-value" ; bar
+    ; comment baz
   baz: 123 +  456   ; baz
     qux: FALSE\
 '''
@@ -143,7 +155,9 @@ class TestMeta(base.BaseTestModel):
         simple_close.meta['qux'] = False
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     bar: "bar-value" ; bar
+    ; comment baz
   baz: 123 +  456   ; baz
     qux: FALSE\
 '''
@@ -152,6 +166,7 @@ class TestMeta(base.BaseTestModel):
         del simple_close.raw_meta[0]
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
@@ -159,6 +174,7 @@ class TestMeta(base.BaseTestModel):
         del simple_close.meta[0]
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
@@ -166,6 +182,7 @@ class TestMeta(base.BaseTestModel):
         del simple_close.raw_meta['bar']
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
@@ -173,6 +190,7 @@ class TestMeta(base.BaseTestModel):
         del simple_close.meta['bar']
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
 
@@ -183,11 +201,13 @@ class TestMeta(base.BaseTestModel):
         assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
         simple_close.meta.append(pop_meta)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
@@ -199,11 +219,13 @@ class TestMeta(base.BaseTestModel):
         assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
         simple_close.meta.append(pop_meta)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
@@ -215,11 +237,13 @@ class TestMeta(base.BaseTestModel):
         assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
         simple_close.meta.append(pop_meta)
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
@@ -227,7 +251,9 @@ class TestMeta(base.BaseTestModel):
     def test_pop_by_key(self) -> None:
         close = self.parser.parse('''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment bar
     bar: Assets:Bar ; bar
+    ; comment baz
   baz: 123 +  456   ; baz\
 ''', models.Close)
         got_meta = close.meta['bar']
@@ -236,11 +262,13 @@ class TestMeta(base.BaseTestModel):
         assert pop_meta == models.Account.from_value('Assets:Bar')
         assert self.print_model(close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz\
 '''
         close.meta['qux'] = pop_meta
         assert self.print_model(close) == '''\
 2000-01-01 close Assets:Foo ; foo
+    ; comment baz
   baz: 123 +  456   ; baz
     qux: Assets:Bar\
 '''
