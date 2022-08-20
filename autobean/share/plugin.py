@@ -2,6 +2,7 @@ from typing import List, Dict, Tuple
 from typing import Any
 from beancount.core.data import Directive
 from beancount.ops import validation
+from beancount.ops import balance
 from autobean.utils import error_lib
 from autobean.utils.error_lib import ErrorLogger
 from autobean.share.include_context import include_context
@@ -19,6 +20,8 @@ def plugin(entries: list[Directive], options: dict[str, Any], viewpoint: str) ->
     include_context['is_top_level'] = False
     logger = ErrorLogger()
     errors = validation.validate(entries, options)
+    logger.log_errors(errors)
+    entries, errors = balance.check(entries, options)
     logger.log_errors(errors)
     entries = process_ledger(entries, viewpoint == 'nobody', options, logger)
     if viewpoint != 'nobody':
