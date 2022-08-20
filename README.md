@@ -17,6 +17,7 @@ A collection of plugins and scripts that help automating bookkeeping with [beanc
 * [autobean.include](autobean/include): Includes external beancount ledgers without disabling their plugins.
 * [autobean.truelayer](autobean/truelayer): Imports transactions from banks via [TrueLayer](https://truelayer.com/), a bank API aggregator.
 * [autobean.sorted](autobean/sorted): Checks that transactions are in non-descending order in each file.
+* [autobean.stock_split](autobean/stock_split): Simplifies stock split.
 
 ## Install
 
