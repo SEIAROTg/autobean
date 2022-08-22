@@ -67,7 +67,7 @@ def plugin(entries: list[Directive], options_map: dict[str, Any]) -> tuple[list[
 
         multiplier, commodity = entry.values[0].value
         postings = realizer.get_split_postings(commodity, multiplier)
-        results.append(Transaction(
+        txn = Transaction(
             date=entry.date,
             flag='*',
             payee=None,
@@ -76,6 +76,8 @@ def plugin(entries: list[Directive], options_map: dict[str, Any]) -> tuple[list[
             links=set(),
             postings=list(postings),
             meta=entry.meta,
-        ))
+        )
+        realizer.realize_transaction(txn)
+        results.append(txn)
 
     return results, logger.errors
