@@ -20,7 +20,7 @@ _Self = TypeVar('_Self', bound='CostSpec')
 @internal.tree_model
 class CostSpec(cost_spec.CostSpec):
     
-    @internal.custom_node_property
+    @internal.custom_property
     def raw_cost_components(self) -> MutableSequence[CostComponent]:
         return self.raw_cost.raw_components
 
@@ -32,7 +32,7 @@ class CostSpec(cost_spec.CostSpec):
     raw_label_comp = internal.unordered_node_property(raw_cost_components, EscapedString)
     raw_asterisk_comp = internal.unordered_node_property(raw_cost_components, Asterisk)
 
-    @internal.custom_node_property
+    @internal.custom_property
     def raw_number_per(self) -> Optional[NumberExpr]:
         if compound_amount := self.raw_compound_amount_comp:
             return compound_amount.raw_number_per
@@ -78,7 +78,7 @@ class CostSpec(cost_spec.CostSpec):
                 self._into_unit_cost(self.raw_cost)
                 self.raw_number_comp = value
 
-    @internal.custom_node_property
+    @internal.custom_property
     def raw_number_total(self) -> Optional[NumberExpr]:
         if compound_amount := self.raw_compound_amount_comp:
             return compound_amount.raw_number_total
@@ -123,7 +123,7 @@ class CostSpec(cost_spec.CostSpec):
                 self._into_total_cost(self.raw_cost)
                 self.raw_number_comp = value
 
-    @internal.custom_node_property
+    @internal.custom_property
     def raw_currency(self) -> Optional[Currency]:
         if compound_amount := self.raw_compound_amount_comp:
             return compound_amount.raw_currency

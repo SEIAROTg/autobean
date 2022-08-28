@@ -77,12 +77,9 @@ def _update_raw(raw_value: CustomRawValue, value: CustomValue) -> bool:
 @internal.tree_model
 class Custom(custom.Custom):
 
-    @property
+    @internal.cached_custom_property
     def values(self) -> internal.RepeatedValueWrapper[CustomRawValue, CustomValue]:
-        wrapper = self.__dict__.get('values')
-        if wrapper:
-            return wrapper
-        wrapper = internal.RepeatedValueWrapper[CustomRawValue, CustomValue, NoReturn](
+        return internal.RepeatedValueWrapper[CustomRawValue, CustomValue, NoReturn](
             raw_wrapper=self.raw_values,
             # cast as mypy isn't good at handling unions
             raw_type=cast(Type[CustomRawValue], CustomRawValue),
@@ -91,8 +88,6 @@ class Custom(custom.Custom):
             to_raw_type=_unsimplify_value,
             update_raw=_update_raw,
         )
-        self.__dict__['values'] = wrapper
-        return wrapper
 
     @classmethod
     def from_children(

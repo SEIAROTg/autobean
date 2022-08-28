@@ -27,7 +27,7 @@ class Transaction(transaction.Transaction):
             string1, string2 = string0, string1
         return super().from_parsed_children(token_store, date, flag, string0, string1, string2, tags_links, eol, meta, postings)
 
-    @internal.custom_node_property
+    @internal.custom_property
     def raw_payee(self) -> Optional[EscapedString]:
         return self.raw_string1
 
@@ -37,7 +37,7 @@ class Transaction(transaction.Transaction):
             self.raw_narration = EscapedString.from_value('') 
         self.raw_string1 = value
 
-    @internal.custom_node_property
+    @internal.custom_property
     def raw_narration(self) -> Optional[EscapedString]:
         return self.raw_string2
 

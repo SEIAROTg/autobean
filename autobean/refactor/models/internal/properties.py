@@ -254,13 +254,13 @@ def _default_fset(instance: _U, value: _V) -> None:
     raise NotImplementedError()
 
 
-class custom_node_property(base_property[_V, _U]):
+class custom_property(base_property[_V, _U]):
     def __init__(self, fget: Callable[[_U], _V]) -> None:
         super().__init__()
         self._fget = fget
         self._fset: Callable[[_U, _V], None] = _default_fset
 
-    def setter(self, fset: Callable[[_U, _V], None]) -> 'custom_node_property[_V, _U]':
+    def setter(self, fset: Callable[[_U, _V], None]) -> 'custom_property[_V, _U]':
         self._fset = fset
         return self
 
@@ -269,6 +269,22 @@ class custom_node_property(base_property[_V, _U]):
 
     def __set__(self, instance: _U, value: _V) -> None:
         self._fset(instance, value)
+
+
+class cached_custom_property(custom_property[_V, _U]):
+    def __set_name__(self, owner: _U, name: str) -> None:
+        self._attr = name
+
+    def _get(self, instance: _U) -> _V:
+        if self._attr in instance.__dict__:
+            return instance.__dict__[self._attr]
+        value = self._fget(instance)
+        instance.__dict__[self._attr] = value
+        return value
+
+    def __set__(self, instance: _U, value: _V) -> None:
+        super().__set__(instance, value)
+        instance.__dict__[self._attr] = value
 
 
 class unordered_node_property(base_property[Optional[_V], _U]):

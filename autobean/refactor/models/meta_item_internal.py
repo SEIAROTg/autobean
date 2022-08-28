@@ -235,32 +235,16 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
         return RepeatedMetaItemsView(self)
 
 
-class repeated_raw_meta_item_property:
+class repeated_raw_meta_item_property(internal.cached_custom_property[RepeatedRawMetaItemWrapper, base.RawTreeModel]):
     def __init__(self, inner_field: internal.repeated_field[MetaItem]):
-        self._inner_field = inner_field
-
-    def __set_name__(self, owner: base.RawTreeModel, name: str) -> None:
-        self._name = name
-
-    def __get__(self, instance: base.RawTreeModel, owner: Optional[Type[base.RawTreeModel]] = None) -> RepeatedRawMetaItemWrapper:
-        repeated = self._inner_field.__get__(instance, owner)
-        wrapper = RepeatedRawMetaItemWrapper(repeated, self._inner_field)
-        setattr(instance, self._name, wrapper)
-        return wrapper
+        super().__init__(
+            lambda instance: RepeatedRawMetaItemWrapper(inner_field.__get__(instance), inner_field))
 
 
-class repeated_meta_item_property:
+class repeated_meta_item_property(internal.cached_custom_property[RepeatedMetaItemWrapper, base.RawTreeModel]):
     def __init__(self, inner_field: internal.repeated_field[MetaItem]):
-        self._inner_field = inner_field
-
-    def __set_name__(self, owner: base.RawTreeModel, name: str) -> None:
-        self._name = name
-
-    def __get__(self, instance: base.RawTreeModel, owner: Optional[Type[base.RawTreeModel]] = None) -> RepeatedMetaItemWrapper:
-        repeated = self._inner_field.__get__(instance, owner)
-        wrapper = RepeatedMetaItemWrapper(repeated, self._inner_field)
-        setattr(instance, self._name, wrapper)
-        return wrapper
+        super().__init__(
+            lambda instance: RepeatedMetaItemWrapper(inner_field.__get__(instance), inner_field))
 
 
 def from_mapping(mapping: Mapping[str, MetaValue | MetaRawValue]) -> Iterator[MetaItem]:
