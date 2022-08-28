@@ -3,7 +3,7 @@ from . import internal
 
 @internal.token_model
 class Comment(internal.SingleValueRawTokenModel[str]):
-    RULE = '_COMMENT'
+    RULE = 'COMMENT'
 
     @classmethod
     def _parse_value(cls, raw_text: str) -> str:

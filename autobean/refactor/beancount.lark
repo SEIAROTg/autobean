@@ -71,7 +71,7 @@ _meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT |
 _WS_INLINE: /[ \t]+/
 _NEWLINE: /\r*\n/
 _NEWLINE_INDENT: _NEWLINE _WS_INLINE?
-_COMMENT: /;[^\r\n]*$/m
+COMMENT: /;[^\r\n]*$/m
 _COMMA: ","
 
 %declare EOL
@@ -79,7 +79,7 @@ _COMMA: ","
 %declare _DEDENT
 %ignore _WS_INLINE
 %ignore _NEWLINE
-%ignore _COMMENT
+%ignore COMMENT
 
 // String
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -154,7 +154,9 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 
 // MetaItem
 meta_item: META_KEY maybe_left{meta_value} EOL
-_meta_items: _INDENT repeated{meta_item} _DEDENT | repeated{NEVER}
+comment_line_: COMMENT EOL
+_meta_items_entity: meta_item | comment_line_
+_meta_items: _INDENT repeated{_meta_items_entity} _DEDENT | repeated{NEVER}
 
 // Tolerance
 TILDE:        "~"
