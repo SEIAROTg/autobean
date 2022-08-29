@@ -1,5 +1,4 @@
 import copy
-import itertools
 from typing import Generic, Iterable, Optional, Type, TypeVar
 from .. import base
 from .placeholder import Placeholder
@@ -14,14 +13,20 @@ class Repeated(base.RawTreeModel, Generic[_M]):
             token_store: base.TokenStore,
             items: Iterable[_M],
             placeholder: Placeholder,
+            inferred_indent: Optional[tuple[base.RawTokenModel, ...]] = None,
     ) -> None:
         super().__init__(token_store)
         self.items = list(items)
         self._placeholder = placeholder
+        self._inferred_indent = copy.deepcopy(inferred_indent)
 
     @property
     def placeholder(self) -> Placeholder:
         return self._placeholder
+
+    @property
+    def inferred_indent(self) -> Optional[tuple[base.RawTokenModel, ...]]:
+        return self._inferred_indent
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -43,6 +48,8 @@ class Repeated(base.RawTreeModel, Generic[_M]):
             *,
             separators: tuple[base.RawTokenModel, ...],
             separators_before: Optional[tuple[base.RawTokenModel, ...]] = None,
+            indent: Optional[tuple[base.RawTokenModel, ...]] = None,
+            indent_first: bool = True,
     ) -> _Self:
         placeholder = Placeholder.from_default()
         items = list(items)
@@ -52,17 +59,20 @@ class Repeated(base.RawTreeModel, Generic[_M]):
                 tokens.extend(copy.deepcopy(separators_before))
             else:
                 tokens.extend(copy.deepcopy(separators))
+            if indent and (indent_first or i):
+                tokens.extend(copy.deepcopy(indent))
             tokens.extend(item.detach())
         token_store = base.TokenStore.from_tokens(tokens)
         for item in items:
             item.reattach(token_store)
-        return cls(token_store, items, placeholder)
+        return cls(token_store, items, placeholder, indent)
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
             (item.clone(token_store, token_transformer) for item in self.items),
-            self.placeholder.clone(token_store, token_transformer))
+            self.placeholder.clone(token_store, token_transformer),
+            self._inferred_indent)
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store

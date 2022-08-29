@@ -54,10 +54,14 @@ class repeated_field(field[Repeated[_M]]):
             *,
             separators: tuple[base.RawTokenModel, ...],
             separators_before: Optional[tuple[base.RawTokenModel, ...]] = None,
+            default_indent: Optional[tuple[base.RawTokenModel, ...]] = None,
+            indent_first: bool = True,
     ) -> None:
         super().__init__()
         self._separators = separators
         self._separators_before = separators_before
+        self._indent_first = indent_first
+        self._default_indent = default_indent
 
     @property
     def separators(self) -> tuple[base.RawTokenModel, ...]:
@@ -67,6 +71,18 @@ class repeated_field(field[Repeated[_M]]):
     def separators_before(self) -> Optional[tuple[base.RawTokenModel, ...]]:
         return self._separators_before
 
+    @property
+    def default_indent(self) -> Optional[tuple[base.RawTokenModel, ...]]:
+        return self._default_indent
+
+    @property
+    def indent_first(self) -> bool:
+        return self._indent_first
+
     def create_repeated(self, values: Iterable[_M]) -> Repeated[_M]:
         return Repeated.from_children(
-            values, separators=self.separators, separators_before=self.separators_before)
+            values,
+            separators=self.separators,
+            separators_before=self.separators_before,
+            indent=self.default_indent,
+            indent_first=self.indent_first)

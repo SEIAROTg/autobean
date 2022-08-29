@@ -15,6 +15,8 @@ _IGNORED_ATTRIBUTES = {
     'tokens',
     '_abc_impl',
     '_is_protocol',
+    '_inferred_indent',
+    'inferred_indent',
 }
 
 

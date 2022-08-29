@@ -24,3 +24,5 @@ class field:
     default_value: Any = None
     separators: Optional[tuple[str, ...]] = None
     separators_before: Optional[tuple[str, ...]] = None
+    indent_first: Optional[bool] = None
+    default_indent: Optional[str] = None

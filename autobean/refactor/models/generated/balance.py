@@ -34,7 +34,7 @@ class Balance(base.RawTreeModel):
     _tolerance = internal.optional_left_field[Tolerance](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent=(Whitespace.from_raw_text('    '),))
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)

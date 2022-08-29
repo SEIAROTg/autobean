@@ -30,7 +30,7 @@ class Posting(base.RawTreeModel):
     _cost = internal.optional_left_field[CostSpec](separators=(Whitespace.from_default(),))
     _price = internal.optional_left_field[PriceAnnotation](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('        ')))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent=(Whitespace.from_raw_text('        '),))
 
     raw_flag = internal.optional_node_property(_flag)
     raw_account = internal.required_node_property(_account)

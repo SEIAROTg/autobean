@@ -6,7 +6,8 @@ from typing import Optional, Union
 from .base import MetaModel, Floating, field
 
 _META = field(
-    separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')'),
+    separators=('Newline.from_default()',),
+    default_indent=' ' * 4,
     is_optional=True,
     is_keyword_only=True,
     default_value={})
@@ -88,8 +89,7 @@ class Posting(MetaModel):
     price: Optional[Union['unit_price', 'total_price']] = field(
         floating=Floating.LEFT, type_alias='PriceAnnotation', is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    meta: list['meta_item'] = dataclasses.replace(
-        _META, separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'        \')'))
+    meta: list['meta_item'] = dataclasses.replace(_META, default_indent=' ' * 8)
 
 
 class MetaItem(MetaModel):
@@ -269,7 +269,7 @@ class Transaction(MetaModel):
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
-    postings: list['posting'] = field(separators=('Newline.from_default()', 'Whitespace.from_raw_text(\'    \')'))
+    postings: list['posting'] = field(separators=('Newline.from_default()',), default_indent=' ' * 4)
 
 
 # File

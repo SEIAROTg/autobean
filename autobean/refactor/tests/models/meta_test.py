@@ -49,6 +49,14 @@ _WITH_INDENTED_COMMENT = '''\
     ; indented comment
   baz: 123 +  456   ; baz\
 '''
+_ADAPTIVE_INDENT = '''\
+2000-01-01 close Assets:Foo ; foo
+\tfoo: "foo-value" ; foo
+\t; comment bar
+\tbar: "bar-value" ; bar
+\t; comment baz
+\tbaz: 123 +  456   ; baz\
+'''
 
 
 @pytest.fixture
@@ -58,7 +66,7 @@ def simple_close(parser: parser_lib.Parser) -> models.Close:
 
 class TestMeta(base.BaseTestModel):
 
-    @pytest.mark.parametrize('text', [_SIMPLE, _WITH_INDENTED_COMMENT])
+    @pytest.mark.parametrize('text', [_SIMPLE, _WITH_INDENTED_COMMENT, _ADAPTIVE_INDENT])
     def test_parse_success(self, text: str) -> None:
         close = self.parser.parse(text, models.Close)
 
@@ -210,6 +218,7 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz\
 '''
 
+    @pytest.mark.skip('TODO: unskip after implementing comment block')
     def test_del_first(self, simple_close: models.Close) -> None:
         del simple_close.raw_meta[0]
         assert self.print_model(simple_close) == '''\
@@ -306,6 +315,21 @@ class TestMeta(base.BaseTestModel):
     ; comment baz
   baz: 123 +  456   ; baz
     qux: Assets:Bar\
+'''
+
+    def test_insert_adaptive_indent(self) -> None:
+        close = self.parser.parse(_ADAPTIVE_INDENT, models.Close)
+        close.meta.insert(0, models.MetaItem.from_value('first', 'first-value'))
+        close.meta['last'] = 'last-value'
+        assert self.print_model(close) == '''\
+2000-01-01 close Assets:Foo ; foo
+\tfirst: "first-value"
+\tfoo: "foo-value" ; foo
+\t; comment bar
+\tbar: "bar-value" ; bar
+\t; comment baz
+\tbaz: 123 +  456   ; baz
+\tlast: "last-value"\
 '''
 
     def test_from_children(self) -> None:

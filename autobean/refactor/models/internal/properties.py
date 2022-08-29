@@ -1,4 +1,5 @@
 import copy
+import functools
 import itertools
 from typing import Any, Callable, Collection, Iterable, MutableSequence, Optional, Sequence, Type, TypeVar, overload
 from .base_property import base_property
@@ -75,6 +76,28 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
     def repeated(self) -> Repeated[_M]:
         return self._repeated
 
+    @functools.cached_property
+    def _indent(self) -> tuple[base.RawTokenModel, ...]:
+        if self._field.default_indent is None:
+            return ()
+        elif self._repeated.inferred_indent is not None:
+            return self._repeated.inferred_indent
+        else:
+            return self._field.default_indent
+
+    @functools.cached_property
+    def _separators(self) -> tuple[base.RawTokenModel, ...]:
+        return self._field.separators + self._indent
+
+    @functools.cached_property
+    def _separators_before(self) -> tuple[base.RawTokenModel, ...]:
+        separators = (
+            self._field.separators_before
+            if self._field.separators_before is not None else self._field.separators)
+        if self._field.indent_first:
+            separators += self._indent
+        return separators
+
     def __len__(self) -> int:
         return len(self._repeated.items)
 
@@ -106,19 +129,19 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         if length is None:
             length = len(self._repeated.items)
         for i, value in enumerate(values):
-            if i or index or self._field.separators_before is None:
-                tokens.extend(copy.deepcopy(self._field.separators))
+            if i or index:
+                tokens.extend(copy.deepcopy(self._separators))
                 tokens.extend(value.detach())
             elif length:
                 tokens.extend(value.detach())
-                tokens.extend(copy.deepcopy(self._field.separators))
+                tokens.extend(copy.deepcopy(self._separators))
                 if separators_before_last is None:
                     separators_before_last = self._repeated.token_store.get_prev(
                         self._repeated.items[0].first_token)
                     assert separators_before_last is not None
                 ref = separators_before_last
             else:
-                tokens.extend(copy.deepcopy(self._field.separators_before))
+                tokens.extend(copy.deepcopy(self._separators_before))
                 tokens.extend(value.detach())
         self._repeated.token_store.insert_after(ref, tokens)
 
@@ -130,7 +153,7 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         # Consecutive tokens must be deleted in the same call.
         if stop <= start:
             return
-        if start == 0 and stop < len(self._repeated.items) and self._field.separators_before is not None:
+        if start == 0 and stop < len(self._repeated.items):
             first_token = self._repeated.items[start].first_token
             next_first = self._repeated.items[stop].first_token
             t = self._repeated.token_store.get_prev(next_first)

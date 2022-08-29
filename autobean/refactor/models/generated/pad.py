@@ -28,7 +28,7 @@ class Pad(base.RawTreeModel):
     _account = internal.required_field[Account]()
     _source_account = internal.required_field[Account]()
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent=(Whitespace.from_raw_text('    '),))
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)

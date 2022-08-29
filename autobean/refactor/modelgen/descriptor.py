@@ -133,6 +133,8 @@ class FieldDescriptor:
     default_value: Any
     separators: Optional[tuple[str, ...]]
     separators_before: Optional[tuple[str, ...]]
+    indent_first: Optional[bool] = None
+    default_indent: Optional[str] = None
 
     @functools.cached_property
     def inner_type_original(self) -> str:
@@ -229,10 +231,17 @@ class FieldDescriptor:
             return f'internal.optional_{floating}_field[{self.inner_type}](separators={_fmt_separators(self.separators)})'
         if self.cardinality == FieldCardinality.REPEATED:
             assert self.separators
-            opt_separators_before = (
-                f', separators_before={_fmt_separators(self.separators_before)}'
-                if self.separators_before is not None else '')
-            return f'internal.repeated_field[{self.inner_type}](separators={_fmt_separators(self.separators)}{opt_separators_before})'
+            args = [f'separators={_fmt_separators(self.separators)}']
+            if self.separators_before is not None:
+                args.append(f'separators_before={_fmt_separators(self.separators_before)}')
+            if self.default_indent is not None:
+                if self.default_indent:
+                    args.append(f'default_indent=(Whitespace.from_raw_text({self.default_indent!r}),)')
+                else:
+                    args.append(f'default_indent=()')
+            if self.indent_first is not None:
+                args.append(f'indent_first={self.indent_first!r}')
+            return f'internal.repeated_field[{self.inner_type}]({", ".join(args)})'
         assert False
 
     @functools.cached_property
@@ -461,6 +470,8 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
             default_value=field.default_value,
             separators=separators,
             separators_before=field.separators_before,
+            default_indent=field.default_indent,
+            indent_first=field.indent_first,
         )
         field_descriptors.append(descriptor)
         is_first = False

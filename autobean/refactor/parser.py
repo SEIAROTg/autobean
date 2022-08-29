@@ -2,7 +2,7 @@ import copy
 import enum
 import pathlib
 import re
-from typing import Iterator, Type, TypeVar
+from typing import Iterable, Iterator, Optional, Type, TypeVar
 import lark
 from lark import exceptions
 from lark import lexer
@@ -143,17 +143,29 @@ class ModelBuilder:
         self._cursor = 0
         self._right_floating_placeholders: list[internal.Placeholder] = []
         self._token_store = models.TokenStore.from_tokens([])
+        self._indent: Optional[models.RawTokenModel] = None
+        self._is_line_start = True
+
+    def _add_tokens(self, tokens: Iterable[models.RawTokenModel]) -> None:
+        for token in tokens:
+            self._built_tokens.append(token)
+            if self._indent is None and self._is_line_start and token.RULE == '_WS_INLINE':
+                self._indent = copy.deepcopy(token)
+            if token.RULE == '_NEWLINE':
+                self._is_line_start = True
+            elif token.raw_text:
+                self._is_line_start = False
 
     def _fix_gap(self, cursor: int) -> None:
         for token in self._tokens[self._cursor:cursor]:
             if not token.value:  # skips EOL, _INDENT, _DEDENT, etc. if outside a model.
                 continue
-            self._built_tokens.append(self._token_models[token.type].from_raw_text(token.value))
+            self._add_tokens([self._token_models[token.type].from_raw_text(token.value)])
         self._cursor = cursor
-        self._built_tokens.extend(self._right_floating_placeholders)
+        self._add_tokens(self._right_floating_placeholders)
         self._right_floating_placeholders.clear()
 
-    def _add_placeholder(self, floating: _Floating) -> internal.Placeholder:
+    def _build_placeholder(self, floating: _Floating) -> internal.Placeholder:
         placeholder = internal.Placeholder.from_default()
         if floating == _Floating.RIGHT:
             self._right_floating_placeholders.append(placeholder)
@@ -165,57 +177,64 @@ class ModelBuilder:
             assert False
         return placeholder
 
-    def _add_token(self, token: lark.Token) -> models.RawTokenModel:
+    def _build_token(self, token: lark.Token) -> models.RawTokenModel:
         self._fix_gap(self._token_to_index[id(token)])
         built_token = self._token_models[token.type].from_raw_text(token.value)
-        self._built_tokens.append(built_token)
+        self._add_tokens([built_token])
         self._cursor += 1
         return built_token
 
-    def _add_tree(self, tree: lark.Tree) -> models.RawTreeModel:
+    def _build_tree(self, tree: lark.Tree) -> models.RawTreeModel:
         model_type = self._tree_models[tree.data]
         children = []
         for child in tree.children:
             is_tree = isinstance(child, lark.Tree)
             if is_tree and child.data == 'maybe_left':
-                children.append(self._add_optional_node(child, _Floating.LEFT))
+                children.append(self._build_optional_node(child, _Floating.LEFT))
             elif is_tree and child.data == 'maybe_right':
-                children.append(self._add_optional_node(child, _Floating.RIGHT))
+                children.append(self._build_optional_node(child, _Floating.RIGHT))
             elif is_tree and child.data in ('repeated', 'repeated_sep'):
-                children.append(self._add_repeated_node(child))
+                children.append(self._build_repeated_node(child))
             else:
-                children.append(self._add_required_node(child))
+                children.append(self._build_required_node(child))
         return model_type.from_parsed_children(self._token_store, *children)
 
-    def _add_required_node(self, node: lark.Token | lark.Tree) -> models.RawModel:
+    def _build_required_node(self, node: lark.Token | lark.Tree) -> models.RawModel:
         if isinstance(node, lark.Token):
-            return self._add_token(node)
+            return self._build_token(node)
         if isinstance(node, lark.Tree):
-            return self._add_tree(node)
+            return self._build_tree(node)
         assert False
 
-    def _add_optional_node(self, node: lark.Tree, floating: _Floating) -> models.RawModel:
+    def _build_optional_node(self, node: lark.Tree, floating: _Floating) -> models.RawModel:
         inner_node, = node.children
         if floating == _Floating.LEFT:
-            placeholder = self._add_placeholder(floating)
-            inner = self._add_required_node(inner_node) if inner_node is not None else None
+            placeholder = self._build_placeholder(floating)
+            inner = self._build_required_node(inner_node) if inner_node is not None else None
             return internal.MaybeL(self._token_store, inner, placeholder)
         if floating == _Floating.RIGHT:
-            inner = self._add_required_node(inner_node) if inner_node is not None else None
-            placeholder = self._add_placeholder(floating)
+            inner = self._build_required_node(inner_node) if inner_node is not None else None
+            placeholder = self._build_placeholder(floating)
             return internal.MaybeR(self._token_store, inner, placeholder)
         assert False
 
-    def _add_repeated_node(self, node: lark.Tree) -> models.RawModel:
-        placeholder = self._add_placeholder(_Floating.LEFT)
+    def _build_repeated_node(self, node: lark.Tree) -> models.RawModel:
+        placeholder = self._build_placeholder(_Floating.LEFT)
+        self._indent = None
         items = [
-            self._add_required_node(child) for child in node.children
+            self._build_required_node(child) for child in node.children
             if not (isinstance(child, lark.Tree) and child.data.endswith('_'))
         ]
-        return internal.Repeated(self._token_store, items, placeholder)
+        if not items:
+            indent = None
+        elif not self._indent:
+            indent = ()
+        else:
+            indent = (self._indent,)
+        return internal.Repeated(self._token_store, items, placeholder, indent)
 
     def build(self, tree: lark.Tree, model_type: Type[_U]) -> _U:
-        model = self._add_tree(tree)
+        model = self._build_tree(tree)
         self._fix_gap(len(self._tokens))
         self._token_store.insert_after(None, self._built_tokens)
         assert isinstance(model, model_type)
