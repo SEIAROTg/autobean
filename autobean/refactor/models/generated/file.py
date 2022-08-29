@@ -76,7 +76,7 @@ class File(base.RawTreeModel):
             cls: Type[_Self],
             directives: Iterable[Directive],
     ) -> _Self:
-        repeated_directives = internal.Repeated[Directive].from_children(directives, separators=cls._directives.separators, separators_before=cls._directives.separators_before)
+        repeated_directives = cls._directives.create_repeated(directives)
         tokens = [
             *repeated_directives.detach(),
         ]

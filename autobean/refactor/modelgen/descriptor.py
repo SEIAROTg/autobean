@@ -221,7 +221,12 @@ class FieldDescriptor:
             return f'internal.required_field[{self.inner_type}]()'
         if self.cardinality == FieldCardinality.OPTIONAL:
             assert self.separators
-            return f'internal.optional_field[{self.inner_type}](separators={_fmt_separators(self.separators)})'
+            assert self.floating
+            floating = {
+                base.Floating.LEFT: 'left',
+                base.Floating.RIGHT: 'right',
+            }[self.floating]
+            return f'internal.optional_{floating}_field[{self.inner_type}](separators={_fmt_separators(self.separators)})'
         if self.cardinality == FieldCardinality.REPEATED:
             assert self.separators
             opt_separators_before = (

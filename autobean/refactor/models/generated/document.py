@@ -116,9 +116,9 @@ class Document(base.RawTreeModel):
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = DocumentLabel.from_default()
-        repeated_tags_links = internal.Repeated.from_children(tags_links, separators=cls._tags_links.separators)
+        repeated_tags_links = cls._tags_links.create_repeated(tags_links)
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
             *date.detach(),
             Whitespace.from_default(),

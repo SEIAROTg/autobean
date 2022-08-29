@@ -15,7 +15,7 @@ class MetaItem(base.RawTreeModel):
     RULE = 'meta_item'
 
     _key = internal.required_field[MetaKey]()
-    _value = internal.optional_field[MetaRawValue](separators=(Whitespace.from_default(),))
+    _value = internal.optional_left_field[MetaRawValue](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
     raw_key = internal.required_node_property(_key)
@@ -73,7 +73,7 @@ class MetaItem(base.RawTreeModel):
             key: MetaKey,
             value: Optional[MetaRawValue],
     ) -> _Self:
-        maybe_value = internal.MaybeL[MetaRawValue].from_children(value, separators=cls._value.separators)
+        maybe_value = cls._value.create_maybe(value)
         eol = Eol.from_default()
         tokens = [
             *key.detach(),

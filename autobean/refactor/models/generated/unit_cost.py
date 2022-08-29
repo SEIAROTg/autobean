@@ -80,7 +80,7 @@ class UnitCost(base.RawTreeModel):
             components: Iterable[CostComponent],
     ) -> _Self:
         left_brace = LeftBrace.from_default()
-        repeated_components = internal.Repeated.from_children(components, separators=cls._components.separators, separators_before=cls._components.separators_before)
+        repeated_components = cls._components.create_repeated(components)
         right_brace = RightBrace.from_default()
         tokens = [
             *left_brace.detach(),

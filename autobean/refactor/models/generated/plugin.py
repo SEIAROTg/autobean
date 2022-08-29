@@ -21,7 +21,7 @@ class Plugin(base.RawTreeModel):
 
     _label = internal.required_field[PluginLabel]()
     _name = internal.required_field[EscapedString]()
-    _config = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
+    _config = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
     raw_name = internal.required_node_property(_name)
@@ -85,7 +85,7 @@ class Plugin(base.RawTreeModel):
             config: Optional[EscapedString] = None,
     ) -> _Self:
         label = PluginLabel.from_default()
-        maybe_config = internal.MaybeL.from_children(config, separators=cls._config.separators)
+        maybe_config = cls._config.create_maybe(config)
         eol = Eol.from_default()
         tokens = [
             *label.detach(),

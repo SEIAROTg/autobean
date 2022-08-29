@@ -22,8 +22,8 @@ class UnitPrice(base.RawTreeModel):
     RULE = 'unit_price'
 
     _label = internal.required_field[At]()
-    _number = internal.optional_field[NumberExpr](separators=(Whitespace.from_default(),))
-    _currency = internal.optional_field[Currency](separators=(Whitespace.from_default(),))
+    _number = internal.optional_left_field[NumberExpr](separators=(Whitespace.from_default(),))
+    _currency = internal.optional_left_field[Currency](separators=(Whitespace.from_default(),))
 
     raw_number = internal.optional_node_property(_number)
     raw_currency = internal.optional_node_property(_currency)
@@ -81,8 +81,8 @@ class UnitPrice(base.RawTreeModel):
             currency: Optional[Currency],
     ) -> _Self:
         label = At.from_default()
-        maybe_number = internal.MaybeL.from_children(number, separators=cls._number.separators)
-        maybe_currency = internal.MaybeL.from_children(currency, separators=cls._currency.separators)
+        maybe_number = cls._number.create_maybe(number)
+        maybe_currency = cls._currency.create_maybe(currency)
         tokens = [
             *label.detach(),
             *maybe_number.detach(),

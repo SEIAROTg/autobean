@@ -109,7 +109,7 @@ class Note(base.RawTreeModel):
     ) -> _Self:
         label = NoteLabel.from_default()
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
             *date.detach(),
             Whitespace.from_default(),

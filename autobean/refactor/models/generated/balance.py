@@ -31,7 +31,7 @@ class Balance(base.RawTreeModel):
     _label = internal.required_field[BalanceLabel]()
     _account = internal.required_field[Account]()
     _number = internal.required_field[NumberExpr]()
-    _tolerance = internal.optional_field[Tolerance](separators=(Whitespace.from_default(),))
+    _tolerance = internal.optional_left_field[Tolerance](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
@@ -129,9 +129,9 @@ class Balance(base.RawTreeModel):
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = BalanceLabel.from_default()
-        maybe_tolerance = internal.MaybeL.from_children(tolerance, separators=cls._tolerance.separators)
+        maybe_tolerance = cls._tolerance.create_maybe(tolerance)
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
             *date.detach(),
             Whitespace.from_default(),

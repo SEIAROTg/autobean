@@ -1,6 +1,7 @@
-from typing import Optional, Type, TypeVar
+import abc
+from typing import Iterable, Optional, Type, TypeVar
 from .. import base
-from .maybe import Maybe
+from .maybe import Maybe, MaybeL, MaybeR
 from .repeated import Repeated
 from .base_property import base_property
 
@@ -32,6 +33,20 @@ class optional_field(field[Maybe[_M]]):
     def separators(self) -> tuple[base.RawTokenModel, ...]:
         return self._separators
 
+    @abc.abstractmethod
+    def create_maybe(self, value: Optional[_M]) -> Maybe[_M]:
+        ...
+
+
+class optional_left_field(optional_field[_M]):
+    def create_maybe(self, value: Optional[_M]) -> MaybeL[_M]:
+        return MaybeL.from_children(value, separators=self.separators)
+
+
+class optional_right_field(optional_field[_M]):
+    def create_maybe(self, value: Optional[_M]) -> MaybeR[_M]:
+        return MaybeR.from_children(value, separators=self.separators)
+
 
 class repeated_field(field[Repeated[_M]]):
     def __init__(
@@ -51,3 +66,7 @@ class repeated_field(field[Repeated[_M]]):
     @property
     def separators_before(self) -> Optional[tuple[base.RawTokenModel, ...]]:
         return self._separators_before
+
+    def create_repeated(self, values: Iterable[_M]) -> Repeated[_M]:
+        return Repeated.from_children(
+            values, separators=self.separators, separators_before=self.separators_before)

@@ -29,7 +29,7 @@ class Open(base.RawTreeModel):
     _label = internal.required_field[OpenLabel]()
     _account = internal.required_field[Account]()
     _currencies = internal.repeated_field[Currency](separators=(Comma.from_default(), Whitespace.from_default()), separators_before=(Whitespace.from_default(),))
-    _booking = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
+    _booking = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
 
@@ -118,10 +118,10 @@ class Open(base.RawTreeModel):
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = OpenLabel.from_default()
-        repeated_currencies = internal.Repeated.from_children(currencies, separators=cls._currencies.separators, separators_before=cls._currencies.separators_before)
-        maybe_booking = internal.MaybeL.from_children(booking, separators=cls._booking.separators)
+        repeated_currencies = cls._currencies.create_repeated(currencies)
+        maybe_booking = cls._booking.create_maybe(booking)
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
             *date.detach(),
             Whitespace.from_default(),

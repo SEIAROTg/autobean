@@ -21,9 +21,9 @@ class Hash(internal.SimpleDefaultRawTokenModel):
 class CompoundAmount(base.RawTreeModel):
     RULE = 'compound_amount'
 
-    _number_per = internal.optional_field[NumberExpr](separators=(Whitespace.from_default(),))
+    _number_per = internal.optional_right_field[NumberExpr](separators=(Whitespace.from_default(),))
     _hash = internal.required_field[Hash]()
-    _number_total = internal.optional_field[NumberExpr](separators=(Whitespace.from_default(),))
+    _number_total = internal.optional_left_field[NumberExpr](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
 
     raw_number_per = internal.optional_node_property(_number_per)
@@ -89,9 +89,9 @@ class CompoundAmount(base.RawTreeModel):
             number_total: Optional[NumberExpr],
             currency: Currency,
     ) -> _Self:
-        maybe_number_per = internal.MaybeR.from_children(number_per, separators=cls._number_per.separators)
+        maybe_number_per = cls._number_per.create_maybe(number_per)
         hash = Hash.from_default()
-        maybe_number_total = internal.MaybeL.from_children(number_total, separators=cls._number_total.separators)
+        maybe_number_total = cls._number_total.create_maybe(number_total)
         tokens = [
             *maybe_number_per.detach(),
             *hash.detach(),

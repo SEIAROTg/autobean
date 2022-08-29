@@ -22,7 +22,7 @@ class Pushmeta(base.RawTreeModel):
 
     _label = internal.required_field[PushmetaLabel]()
     _key = internal.required_field[MetaKey]()
-    _value = internal.optional_field[MetaRawValue](separators=(Whitespace.from_default(),))
+    _value = internal.optional_left_field[MetaRawValue](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
     raw_key = internal.required_node_property(_key)
@@ -86,7 +86,7 @@ class Pushmeta(base.RawTreeModel):
             value: Optional[MetaRawValue],
     ) -> _Self:
         label = PushmetaLabel.from_default()
-        maybe_value = internal.MaybeL[MetaRawValue].from_children(value, separators=cls._value.separators)
+        maybe_value = cls._value.create_maybe(value)
         eol = Eol.from_default()
         tokens = [
             *label.detach(),

@@ -23,12 +23,12 @@ _Self = TypeVar('_Self', bound='Posting')
 class Posting(base.RawTreeModel):
     RULE = 'posting'
 
-    _flag = internal.optional_field[PostingFlag](separators=(Whitespace.from_default(),))
+    _flag = internal.optional_right_field[PostingFlag](separators=(Whitespace.from_default(),))
     _account = internal.required_field[Account]()
-    _number = internal.optional_field[NumberExpr](separators=(Whitespace.from_default(),))
-    _currency = internal.optional_field[Currency](separators=(Whitespace.from_default(),))
-    _cost = internal.optional_field[CostSpec](separators=(Whitespace.from_default(),))
-    _price = internal.optional_field[PriceAnnotation](separators=(Whitespace.from_default(),))
+    _number = internal.optional_left_field[NumberExpr](separators=(Whitespace.from_default(),))
+    _currency = internal.optional_left_field[Currency](separators=(Whitespace.from_default(),))
+    _cost = internal.optional_left_field[CostSpec](separators=(Whitespace.from_default(),))
+    _price = internal.optional_left_field[PriceAnnotation](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('        ')))
 
@@ -127,13 +127,13 @@ class Posting(base.RawTreeModel):
             price: Optional[PriceAnnotation] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
-        maybe_flag = internal.MaybeR.from_children(flag, separators=cls._flag.separators)
-        maybe_number = internal.MaybeL.from_children(number, separators=cls._number.separators)
-        maybe_currency = internal.MaybeL.from_children(currency, separators=cls._currency.separators)
-        maybe_cost = internal.MaybeL.from_children(cost, separators=cls._cost.separators)
-        maybe_price = internal.MaybeL[PriceAnnotation].from_children(price, separators=cls._price.separators)
+        maybe_flag = cls._flag.create_maybe(flag)
+        maybe_number = cls._number.create_maybe(number)
+        maybe_currency = cls._currency.create_maybe(currency)
+        maybe_cost = cls._cost.create_maybe(cost)
+        maybe_price = cls._price.create_maybe(price)
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
             *maybe_flag.detach(),
             *account.detach(),

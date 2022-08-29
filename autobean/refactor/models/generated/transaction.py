@@ -21,9 +21,9 @@ class Transaction(base.RawTreeModel):
 
     _date = internal.required_field[Date]()
     _flag = internal.required_field[TransactionFlag]()
-    _string0 = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
-    _string1 = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
-    _string2 = internal.optional_field[EscapedString](separators=(Whitespace.from_default(),))
+    _string0 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
+    _string1 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
+    _string2 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _tags_links = internal.repeated_field[Link | Tag](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(), Whitespace.from_raw_text('    ')))
@@ -131,13 +131,13 @@ class Transaction(base.RawTreeModel):
             meta: Iterable[MetaItem],
             postings: Iterable[Posting],
     ) -> _Self:
-        maybe_string0 = internal.MaybeL.from_children(string0, separators=cls._string0.separators)
-        maybe_string1 = internal.MaybeL.from_children(string1, separators=cls._string1.separators)
-        maybe_string2 = internal.MaybeL.from_children(string2, separators=cls._string2.separators)
-        repeated_tags_links = internal.Repeated.from_children(tags_links, separators=cls._tags_links.separators)
+        maybe_string0 = cls._string0.create_maybe(string0)
+        maybe_string1 = cls._string1.create_maybe(string1)
+        maybe_string2 = cls._string2.create_maybe(string2)
+        repeated_tags_links = cls._tags_links.create_repeated(tags_links)
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
-        repeated_postings = internal.Repeated.from_children(postings, separators=cls._postings.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
+        repeated_postings = cls._postings.create_repeated(postings)
         tokens = [
             *date.detach(),
             Whitespace.from_default(),

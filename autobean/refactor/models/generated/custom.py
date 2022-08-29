@@ -109,9 +109,9 @@ class Custom(base.RawTreeModel):
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = CustomLabel.from_default()
-        repeated_values = internal.Repeated[CustomRawValue].from_children(values, separators=cls._values.separators)
+        repeated_values = cls._values.create_repeated(values)
         eol = Eol.from_default()
-        repeated_meta = internal.Repeated.from_children(meta, separators=cls._meta.separators)
+        repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
             *date.detach(),
             Whitespace.from_default(),

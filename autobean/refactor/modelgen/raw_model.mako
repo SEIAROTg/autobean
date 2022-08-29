@@ -121,19 +121,12 @@ class ${model.name}(base.RawTreeModel):
 % endfor
     ) -> _Self:
 % for field in model.fields:
-<%
-# mypy isn't good at inferring union type
-type_fix = f'[{field.type_alias}]' if field.type_alias is not None else ''
-%>\
 % if not field.is_public:
         ${field.name} = ${field.inner_type}.from_default()
 % elif field.cardinality == FieldCardinality.OPTIONAL:
-        maybe_${field.name} = internal.Maybe${field.floating.name[0]}${type_fix}.from_children(${field.name}, separators=cls._${field.name}.separators)
+        maybe_${field.name} = cls._${field.name}.create_maybe(${field.name})
 % elif field.cardinality == FieldCardinality.REPEATED:
-<%
-opt_separators_before = f', separators_before=cls._{field.name}.separators_before' if field.separators_before is not None else ''
-%>\
-        repeated_${field.name} = internal.Repeated${type_fix}.from_children(${field.name}, separators=cls._${field.name}.separators${opt_separators_before})
+        repeated_${field.name} = cls._${field.name}.create_repeated(${field.name})
 % endif
 % endfor
 <%
