@@ -44,29 +44,24 @@ class PostLex(lark.lark.PostLex):
     always_accept = _IGNORED_TOKENS | {_NEWLINE_INDENT}
 
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
-        is_first = True
         indented = False
         token = None
         for token in stream:
-            if is_first:
-                if token.type == self._WS_INLINE:
-                    yield lark.Token.new_borrow_pos(self._INDENT, '', token)
-                    indented = True
-                is_first = False
-            if token.type == self._NEWLINE_INDENT:
-                newline_text, indent_text = re.split(self._NEWLINE_INDENT_SPLIT_RE, token.value, maxsplit=1)
+            if token.type != self._NEWLINE_INDENT:
+                yield token
+                continue
+            newline_text, indent_text = re.split(self._NEWLINE_INDENT_SPLIT_RE, token.value, maxsplit=1)
+            if newline_text:
                 yield lark.Token.new_borrow_pos(self._EOL, '', token)
                 yield lark.Token.new_borrow_pos(self._NEWLINE, newline_text, token)
-                if indent_text:
-                    if not indented:
-                        indented = True
-                        yield lark.Token.new_borrow_pos(self._INDENT, '', token)
-                    yield lark.Token.new_borrow_pos(self._WS_INLINE, indent_text, token)
-                elif indented:
-                    indented = False
-                    yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
-            else:
-                yield token
+            if indent_text:
+                if not indented:
+                    indented = True
+                    yield lark.Token.new_borrow_pos(self._INDENT, '', token)
+                yield lark.Token.new_borrow_pos(self._WS_INLINE, indent_text, token)
+            elif indented:
+                indented = False
+                yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
         yield lark.Token(self._EOL, '')
         if indented:
             yield lark.Token(self._DEDENT, '')

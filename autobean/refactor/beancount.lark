@@ -70,7 +70,7 @@ _meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT |
 // Punctuations
 _WS_INLINE: /[ \t]+/
 _NEWLINE: /\r*\n/
-_NEWLINE_INDENT: _NEWLINE _WS_INLINE?
+_NEWLINE_INDENT: _NEWLINE _WS_INLINE? | /\A/ _WS_INLINE
 COMMENT: /;[^\r\n]*$/m
 _COMMA: ","
 
