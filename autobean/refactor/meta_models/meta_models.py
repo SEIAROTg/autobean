@@ -89,6 +89,7 @@ class Posting(MetaModel):
     cost: Optional['cost_spec'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     price: Optional[Union['unit_price', 'total_price']] = field(
         floating=Floating.LEFT, type_alias='PriceAnnotation', is_optional=True, is_keyword_only=True)
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = dataclasses.replace(_META, default_indent=' ' * 8)
 
@@ -97,6 +98,7 @@ class MetaItem(MetaModel):
     indent: 'WHITESPACE' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
     key: 'META_KEY' = field(separators=())
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
@@ -106,6 +108,7 @@ class MetaItem(MetaModel):
 class Include(MetaModel):
     _label: 'INCLUDE' = field(define_as='IncludeLabel')
     filename: 'ESCAPED_STRING'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
@@ -113,6 +116,7 @@ class Option(MetaModel):
     _label: 'OPTION' = field(define_as='OptionLabel')
     key: 'ESCAPED_STRING'
     value: 'ESCAPED_STRING'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
@@ -120,18 +124,21 @@ class Plugin(MetaModel):
     _label: 'PLUGIN' = field(define_as='PluginLabel')
     name: 'ESCAPED_STRING'
     config: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
 class Popmeta(MetaModel):
     _label: 'POPMETA' = field(define_as='PopmetaLabel')
     key: 'META_KEY'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
 class Poptag(MetaModel):
     _label: 'POPTAG' = field(define_as='PoptagLabel')
     tag: 'TAG'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
@@ -139,12 +146,14 @@ class Pushmeta(MetaModel):
     _label: 'PUSHMETA' = field(define_as='PushmetaLabel')
     key: 'META_KEY'
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
 class Pushtag(MetaModel):
     _label: 'PUSHTAG' = field(define_as='PushtagLabel')
     tag: 'TAG'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
@@ -158,6 +167,7 @@ class Balance(MetaModel):
     number: 'number_expr'
     tolerance: Optional['tolerance'] = field(floating=Floating.LEFT)
     currency: 'CURRENCY'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -166,6 +176,7 @@ class Close(MetaModel):
     date: 'DATE'
     _label: 'CLOSE' = field(define_as='CloseLabel')
     account: 'ACCOUNT'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -174,6 +185,7 @@ class Commodity(MetaModel):
     date: 'DATE'
     _label: 'COMMODITY' = field(define_as='CommodityLabel')
     currency: 'CURRENCY'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -183,6 +195,7 @@ class Event(MetaModel):
     _label: 'EVENT' = field(define_as='EventLabel')
     type: 'ESCAPED_STRING'
     description: 'ESCAPED_STRING'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -192,6 +205,7 @@ class Pad(MetaModel):
     _label: 'PAD' = field(define_as='PadLabel')
     account: 'ACCOUNT'
     source_account: 'ACCOUNT'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -201,6 +215,7 @@ class Price(MetaModel):
     _label: 'PRICE' = field(define_as='PriceLabel')
     currency: 'CURRENCY'
     amount: 'amount'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -210,6 +225,7 @@ class Query(MetaModel):
     _label: 'QUERY' = field(define_as='QueryLabel')
     name: 'ESCAPED_STRING'
     query_string: 'ESCAPED_STRING'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -219,6 +235,7 @@ class Note(MetaModel):
     _label: 'NOTE' = field(define_as='NoteLabel')
     account: 'ACCOUNT'
     comment: 'ESCAPED_STRING'
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -229,6 +246,7 @@ class Document(MetaModel):
     account: 'ACCOUNT'
     filename: 'ESCAPED_STRING'
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -242,6 +260,7 @@ class Open(MetaModel):
         separators_before=('Whitespace.from_default()',),
         is_optional=True)
     booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -258,6 +277,7 @@ class Custom(MetaModel):
         'number_expr',
         'ACCOUNT',
     ]] = field(type_alias='CustomRawValue')
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
 
@@ -269,6 +289,7 @@ class Transaction(MetaModel):
     string1: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
     string2: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+    inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
     postings: list['posting'] = field(separators=('Newline.from_default()',), default_indent=' ' * 4)

@@ -4,6 +4,7 @@
 from typing import Optional, Type, TypeVar, final
 from .. import base, internal
 from ..escaped_string import EscapedString
+from ..inline_comment import InlineComment
 from ..punctuation import Eol, Whitespace
 
 _Self = TypeVar('_Self', bound='Plugin')
@@ -22,13 +23,16 @@ class Plugin(base.RawTreeModel):
     _label = internal.required_field[PluginLabel]()
     _name = internal.required_field[EscapedString]()
     _config = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
     raw_name = internal.required_node_property(_name)
     raw_config = internal.optional_node_property(_config)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
 
     name = internal.required_string_property(raw_name)
     config = internal.optional_string_property(raw_config, EscapedString)
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
 
     @final
     def __init__(
@@ -37,12 +41,14 @@ class Plugin(base.RawTreeModel):
             label: PluginLabel,
             name: EscapedString,
             config: internal.Maybe[EscapedString],
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
     ):
         super().__init__(token_store)
         self._label = label
         self._name = name
         self._config = config
+        self._inline_comment = inline_comment
         self._eol = eol
 
     @property
@@ -59,6 +65,7 @@ class Plugin(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._name.clone(token_store, token_transformer),
             self._config.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
         )
 
@@ -67,6 +74,7 @@ class Plugin(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._name = self._name.reattach(token_store, token_transformer)
         self._config = self._config.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
@@ -75,6 +83,7 @@ class Plugin(base.RawTreeModel):
             and self._label == other._label
             and self._name == other._name
             and self._config == other._config
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
         )
 
@@ -83,31 +92,38 @@ class Plugin(base.RawTreeModel):
             cls: Type[_Self],
             name: EscapedString,
             config: Optional[EscapedString] = None,
+            inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = PluginLabel.from_default()
         maybe_config = cls._config.create_maybe(config)
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         tokens = [
             *label.detach(),
             Whitespace.from_default(),
             *name.detach(),
             *maybe_config.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
         label.reattach(token_store)
         name.reattach(token_store)
         maybe_config.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
-        return cls(token_store, label, name, maybe_config, eol)
+        return cls(token_store, label, name, maybe_config, maybe_inline_comment, eol)
 
     @classmethod
     def from_value(
             cls: Type[_Self],
             name: str,
             config: Optional[str] = None,
+            *,
+            inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
             EscapedString.from_value(name),
             EscapedString.from_value(config) if config is not None else None,
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

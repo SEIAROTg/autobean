@@ -391,7 +391,7 @@ class TestTransaction(base.BaseTestModel):
         date = models.Date.from_value(datetime.date(2000, 1, 1))
         flag = models.TransactionFlag.from_value('*')
         payee = models.EscapedString.from_value('foo')
-        transaction = models.Transaction.from_children(date, flag, payee, None, (), (), ())
+        transaction = models.Transaction.from_children(date, flag, payee, None, (), None, (), ())
         assert transaction.raw_date is date
         assert transaction.raw_flag is flag
         assert transaction.raw_payee is payee
@@ -403,7 +403,7 @@ class TestTransaction(base.BaseTestModel):
         date = models.Date.from_value(datetime.date(2000, 1, 1))
         flag = models.TransactionFlag.from_value('*')
         narration = models.EscapedString.from_value('foo')
-        transaction = models.Transaction.from_children(date, flag, None, narration, (), (), ())
+        transaction = models.Transaction.from_children(date, flag, None, narration, (), None, (), ())
         assert transaction.raw_date is date
         assert transaction.raw_flag is flag
         assert transaction.raw_narration is narration
@@ -415,7 +415,7 @@ class TestTransaction(base.BaseTestModel):
         flag = models.TransactionFlag.from_value('*')
         payee = models.EscapedString.from_value('foo')
         narration = models.EscapedString.from_value('bar')
-        transaction = models.Transaction.from_children(date, flag, payee, narration, (), (), ())
+        transaction = models.Transaction.from_children(date, flag, payee, narration, (), None, (), ())
         assert transaction.raw_date is date
         assert transaction.raw_flag is flag
         assert transaction.raw_payee is payee
@@ -445,7 +445,7 @@ class TestTransaction(base.BaseTestModel):
     eee1: "eee2" ; eee3''', models.Posting)
         ]
         transaction = models.Transaction.from_children(
-            date, flag, payee, narration, tags_links, meta_items, postings)
+            date, flag, payee, narration, tags_links, None, meta_items, postings)
         assert transaction.raw_date is date
         assert transaction.raw_flag is flag
         assert transaction.raw_payee is payee

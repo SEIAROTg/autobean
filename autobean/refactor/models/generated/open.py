@@ -8,6 +8,7 @@ from ..account import Account
 from ..currency import Currency
 from ..date import Date
 from ..escaped_string import EscapedString
+from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..punctuation import Comma, Eol, Newline, Whitespace
@@ -30,6 +31,7 @@ class Open(base.RawTreeModel):
     _account = internal.required_field[Account]()
     _currencies = internal.repeated_field[Currency](separators=(Comma.from_default(), Whitespace.from_default()), separators_before=(Whitespace.from_default(),))
     _booking = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
 
@@ -37,12 +39,14 @@ class Open(base.RawTreeModel):
     raw_account = internal.required_node_property(_account)
     raw_currencies = internal.repeated_node_property(_currencies)
     raw_booking = internal.optional_node_property(_booking)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
 
     date = internal.required_date_property(raw_date)
     account = internal.required_string_property(raw_account)
     currencies = internal.repeated_string_property(raw_currencies, Currency)
     booking = internal.optional_string_property(raw_booking, EscapedString)
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
 
     @final
@@ -54,6 +58,7 @@ class Open(base.RawTreeModel):
             account: Account,
             currencies: internal.Repeated[Currency],
             booking: internal.Maybe[EscapedString],
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
     ):
@@ -63,6 +68,7 @@ class Open(base.RawTreeModel):
         self._account = account
         self._currencies = currencies
         self._booking = booking
+        self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
 
@@ -82,6 +88,7 @@ class Open(base.RawTreeModel):
             self._account.clone(token_store, token_transformer),
             self._currencies.clone(token_store, token_transformer),
             self._booking.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
         )
@@ -93,6 +100,7 @@ class Open(base.RawTreeModel):
         self._account = self._account.reattach(token_store, token_transformer)
         self._currencies = self._currencies.reattach(token_store, token_transformer)
         self._booking = self._booking.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
 
@@ -104,6 +112,7 @@ class Open(base.RawTreeModel):
             and self._account == other._account
             and self._currencies == other._currencies
             and self._booking == other._booking
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
         )
@@ -115,11 +124,13 @@ class Open(base.RawTreeModel):
             account: Account,
             currencies: Iterable[Currency] = (),
             booking: Optional[EscapedString] = None,
+            inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = OpenLabel.from_default()
         repeated_currencies = cls._currencies.create_repeated(currencies)
         maybe_booking = cls._booking.create_maybe(booking)
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
@@ -130,6 +141,7 @@ class Open(base.RawTreeModel):
             *account.detach(),
             *repeated_currencies.detach(),
             *maybe_booking.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
         ]
@@ -139,9 +151,10 @@ class Open(base.RawTreeModel):
         account.reattach(token_store)
         repeated_currencies.reattach(token_store)
         maybe_booking.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
-        return cls(token_store, date, label, account, repeated_currencies, maybe_booking, eol, repeated_meta)
+        return cls(token_store, date, label, account, repeated_currencies, maybe_booking, maybe_inline_comment, eol, repeated_meta)
 
     @classmethod
     def from_value(
@@ -151,6 +164,7 @@ class Open(base.RawTreeModel):
             currencies: Iterable[str] = (),
             booking: Optional[str] = None,
             *,
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
@@ -158,5 +172,6 @@ class Open(base.RawTreeModel):
             Account.from_value(account),
             map(Currency.from_value, currencies),
             EscapedString.from_value(booking) if booking is not None else None,
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

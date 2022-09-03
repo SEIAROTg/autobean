@@ -6,6 +6,7 @@ from typing import Iterable, Mapping, Optional, Type, TypeVar, final
 from .. import base, internal, meta_item_internal
 from ..account import Account
 from ..date import Date
+from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..punctuation import Eol, Newline, Whitespace
@@ -26,15 +27,18 @@ class Close(base.RawTreeModel):
     _date = internal.required_field[Date]()
     _label = internal.required_field[CloseLabel]()
     _account = internal.required_field[Account]()
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
 
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
 
     date = internal.required_date_property(raw_date)
     account = internal.required_string_property(raw_account)
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
 
     @final
@@ -44,6 +48,7 @@ class Close(base.RawTreeModel):
             date: Date,
             label: CloseLabel,
             account: Account,
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
     ):
@@ -51,6 +56,7 @@ class Close(base.RawTreeModel):
         self._date = date
         self._label = label
         self._account = account
+        self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
 
@@ -68,6 +74,7 @@ class Close(base.RawTreeModel):
             self._date.clone(token_store, token_transformer),
             self._label.clone(token_store, token_transformer),
             self._account.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
         )
@@ -77,6 +84,7 @@ class Close(base.RawTreeModel):
         self._date = self._date.reattach(token_store, token_transformer)
         self._label = self._label.reattach(token_store, token_transformer)
         self._account = self._account.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
 
@@ -86,6 +94,7 @@ class Close(base.RawTreeModel):
             and self._date == other._date
             and self._label == other._label
             and self._account == other._account
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
         )
@@ -95,9 +104,11 @@ class Close(base.RawTreeModel):
             cls: Type[_Self],
             date: Date,
             account: Account,
+            inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = CloseLabel.from_default()
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
@@ -106,6 +117,7 @@ class Close(base.RawTreeModel):
             *label.detach(),
             Whitespace.from_default(),
             *account.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
         ]
@@ -113,9 +125,10 @@ class Close(base.RawTreeModel):
         date.reattach(token_store)
         label.reattach(token_store)
         account.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
-        return cls(token_store, date, label, account, eol, repeated_meta)
+        return cls(token_store, date, label, account, maybe_inline_comment, eol, repeated_meta)
 
     @classmethod
     def from_value(
@@ -123,10 +136,12 @@ class Close(base.RawTreeModel):
             date: datetime.date,
             account: str,
             *,
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
             Date.from_value(date),
             Account.from_value(account),
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

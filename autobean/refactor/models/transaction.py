@@ -4,6 +4,7 @@ from typing import Iterable, Mapping, Optional, Type, TypeVar
 from . import base, internal, meta_item_internal
 from .date import Date
 from .escaped_string import EscapedString
+from .inline_comment import InlineComment
 from .link import Link
 from .meta_value import MetaRawValue, MetaValue
 from .meta_item import MetaItem
@@ -20,12 +21,12 @@ class Transaction(transaction.Transaction):
 
     @classmethod
     def from_parsed_children(cls: Type[_Self], token_store: base.TokenStore, *children: Optional[base.RawModel]) -> _Self:
-        date, flag, string0, string1, string2, tags_links, eol, meta, postings = children
+        date, flag, string0, string1, string2, tags_links, inline_comment, eol, meta, postings = children
         assert isinstance(string1, internal.Maybe)
         assert isinstance(string2, internal.Maybe)
         if string1.inner is not None and string2.inner is None:
             string1, string2 = string0, string1
-        return super().from_parsed_children(token_store, date, flag, string0, string1, string2, tags_links, eol, meta, postings)
+        return super().from_parsed_children(token_store, date, flag, string0, string1, string2, tags_links, inline_comment, eol, meta, postings)
 
     @internal.custom_property
     def raw_payee(self) -> Optional[EscapedString]:
@@ -60,6 +61,7 @@ class Transaction(transaction.Transaction):
             payee: Optional[EscapedString],
             narration: Optional[EscapedString],
             tags_links: Iterable[Link | Tag],
+            inline_comment: Optional[InlineComment],
             meta: Iterable[MetaItem],
             postings: Iterable[Posting],
     ) -> _Self:
@@ -72,6 +74,7 @@ class Transaction(transaction.Transaction):
             payee,
             narration,
             tags_links,
+            inline_comment,
             meta,
             postings,
         )
@@ -87,6 +90,7 @@ class Transaction(transaction.Transaction):
             flag: str = '*',
             tags: Iterable[str] = (),
             links: Iterable[str] = (),
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaRawValue | MetaValue]] = None,
     ) -> _Self:
         return cls.from_children(
@@ -95,6 +99,7 @@ class Transaction(transaction.Transaction):
             payee=EscapedString.from_value(payee) if payee is not None else None,
             narration=EscapedString.from_value(narration) if narration is not None else None,
             tags_links=itertools.chain(map(Tag.from_value, tags), map(Link.from_value, links)),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
             postings=postings,
         )

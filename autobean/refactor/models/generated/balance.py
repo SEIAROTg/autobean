@@ -8,6 +8,7 @@ from .. import base, internal, meta_item_internal
 from ..account import Account
 from ..currency import Currency
 from ..date import Date
+from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..number_expr import NumberExpr
@@ -33,6 +34,7 @@ class Balance(base.RawTreeModel):
     _number = internal.required_field[NumberExpr]()
     _tolerance = internal.optional_left_field[Tolerance](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
 
@@ -41,6 +43,7 @@ class Balance(base.RawTreeModel):
     raw_number = internal.required_node_property(_number)
     raw_tolerance = internal.optional_node_property(_tolerance)
     raw_currency = internal.required_node_property(_currency)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
 
     date = internal.required_date_property(raw_date)
@@ -48,6 +51,7 @@ class Balance(base.RawTreeModel):
     number = internal.required_decimal_property(raw_number)
     tolerance = internal.optional_decimal_property(raw_tolerance, Tolerance)
     currency = internal.required_string_property(raw_currency)
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
 
     @final
@@ -60,6 +64,7 @@ class Balance(base.RawTreeModel):
             number: NumberExpr,
             tolerance: internal.Maybe[Tolerance],
             currency: Currency,
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
     ):
@@ -70,6 +75,7 @@ class Balance(base.RawTreeModel):
         self._number = number
         self._tolerance = tolerance
         self._currency = currency
+        self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
 
@@ -90,6 +96,7 @@ class Balance(base.RawTreeModel):
             self._number.clone(token_store, token_transformer),
             self._tolerance.clone(token_store, token_transformer),
             self._currency.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
         )
@@ -102,6 +109,7 @@ class Balance(base.RawTreeModel):
         self._number = self._number.reattach(token_store, token_transformer)
         self._tolerance = self._tolerance.reattach(token_store, token_transformer)
         self._currency = self._currency.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
 
@@ -114,6 +122,7 @@ class Balance(base.RawTreeModel):
             and self._number == other._number
             and self._tolerance == other._tolerance
             and self._currency == other._currency
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
         )
@@ -126,10 +135,12 @@ class Balance(base.RawTreeModel):
             number: NumberExpr,
             tolerance: Optional[Tolerance],
             currency: Currency,
+            inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = BalanceLabel.from_default()
         maybe_tolerance = cls._tolerance.create_maybe(tolerance)
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
@@ -143,6 +154,7 @@ class Balance(base.RawTreeModel):
             *maybe_tolerance.detach(),
             Whitespace.from_default(),
             *currency.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
         ]
@@ -153,9 +165,10 @@ class Balance(base.RawTreeModel):
         number.reattach(token_store)
         maybe_tolerance.reattach(token_store)
         currency.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
-        return cls(token_store, date, label, account, number, maybe_tolerance, currency, eol, repeated_meta)
+        return cls(token_store, date, label, account, number, maybe_tolerance, currency, maybe_inline_comment, eol, repeated_meta)
 
     @classmethod
     def from_value(
@@ -166,6 +179,7 @@ class Balance(base.RawTreeModel):
             tolerance: Optional[decimal.Decimal],
             currency: str,
             *,
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
@@ -174,5 +188,6 @@ class Balance(base.RawTreeModel):
             NumberExpr.from_value(number),
             Tolerance.from_value(tolerance) if tolerance is not None else None,
             Currency.from_value(currency),
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

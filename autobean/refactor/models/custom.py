@@ -10,6 +10,7 @@ from .date import Date
 from .account import Account
 from .amount import Amount
 from .bool import Bool
+from .inline_comment import InlineComment
 from .number_expr import NumberExpr
 from .number_unary_expr import NumberUnaryExpr
 from .meta_item import MetaItem
@@ -95,9 +96,10 @@ class Custom(custom.Custom):
             date: Date,
             type: EscapedString,
             values: Iterable[CustomRawValue],
+            inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
-        return super().from_children(date, type, _disambiguate_values(values), meta)
+        return super().from_children(date, type, _disambiguate_values(values), inline_comment, meta)
 
     @classmethod
     def from_value(
@@ -106,11 +108,13 @@ class Custom(custom.Custom):
             type: str,
             values: Iterable[CustomValue | CustomRawValue],
             *,
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
             Date.from_value(date),
             EscapedString.from_value(type),
             map(_unsimplify_value, values),
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

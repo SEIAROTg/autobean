@@ -22,6 +22,7 @@ file: repeated{_file_directive}
 // TODO: avoid removing ignored parts when removing a directive.
 file_ignored_: EOL | _INDENT EOL* _DEDENT
 _file_directive: directive | file_ignored_
+_comment_eol: maybe_left{INLINE_COMMENT} EOL
 
 // Labels
 OPTION:       "option"
@@ -44,27 +45,27 @@ OPEN:         "open"
 CUSTOM:       "custom"
 
 // Directives
-option:       OPTION ESCAPED_STRING ESCAPED_STRING EOL
-include:      INCLUDE ESCAPED_STRING EOL
-plugin:       PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING} EOL
-pushtag:      PUSHTAG TAG EOL
-poptag:       POPTAG TAG EOL
-pushmeta:     PUSHMETA META_KEY maybe_left{meta_value} EOL
-popmeta:      POPMETA META_KEY EOL
+option:       OPTION ESCAPED_STRING ESCAPED_STRING _comment_eol
+include:      INCLUDE ESCAPED_STRING _comment_eol
+plugin:       PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING} _comment_eol
+pushtag:      PUSHTAG TAG _comment_eol
+poptag:       POPTAG TAG _comment_eol
+pushmeta:     PUSHMETA META_KEY maybe_left{meta_value} _comment_eol
+popmeta:      POPMETA META_KEY _comment_eol
 
 // Entries
-balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY EOL _meta_items
-close:        DATE CLOSE ACCOUNT EOL _meta_items
-commodity:    DATE COMMODITY CURRENCY EOL _meta_items
-pad:          DATE PAD ACCOUNT ACCOUNT EOL _meta_items
-event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING EOL _meta_items
-query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING EOL _meta_items
-price:        DATE PRICE CURRENCY amount EOL _meta_items
-note:         DATE NOTE ACCOUNT ESCAPED_STRING EOL _meta_items
-document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link} EOL _meta_items
-open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} EOL _meta_items
-custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} EOL _meta_items
-transaction:  DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} EOL _meta_items_or_postings
+balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY _comment_eol _meta_items
+close:        DATE CLOSE ACCOUNT _comment_eol _meta_items
+commodity:    DATE COMMODITY CURRENCY _comment_eol _meta_items
+pad:          DATE PAD ACCOUNT ACCOUNT _comment_eol _meta_items
+event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING _comment_eol _meta_items
+query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING _comment_eol _meta_items
+price:        DATE PRICE CURRENCY amount _comment_eol _meta_items
+note:         DATE NOTE ACCOUNT ESCAPED_STRING _comment_eol _meta_items
+document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link} _comment_eol _meta_items
+open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} _comment_eol _meta_items
+custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} _comment_eol _meta_items
+transaction:  DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} _comment_eol _meta_items_or_postings
 _meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER}
 
 // Punctuations
@@ -156,7 +157,7 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
 
 // MetaItem
-_meta_item: META_KEY maybe_left{meta_value} EOL
+_meta_item: META_KEY maybe_left{meta_value} _comment_eol
 meta_item: _allow_direct_parse{_meta_item}
 comment_line_: BLOCK_COMMENT EOL
 _meta_items_entity: meta_item | comment_line_
@@ -190,12 +191,11 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-_posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL repeated{meta_item}
+_posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} _comment_eol repeated{meta_item}
 posting: _allow_direct_parse{_posting}
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
-maybe_left_always{inner}: inner
 maybe_right{inner}: [inner]
 
 // [internal] Repeated field wrapper

@@ -67,6 +67,8 @@ def _model_name_to_value_type(model_name: str) -> Optional[str]:
         'TransactionFlag': 'str',
         'PostingFlag': 'str',
         'Whitespace': 'str',
+        'InlineComment': 'str',
+        'BlockComment': 'str',
         # date
         'Date': 'datetime.date',
         # decimal

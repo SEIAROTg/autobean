@@ -7,6 +7,7 @@ from .. import base, internal, meta_item_internal
 from ..amount import Amount
 from ..currency import Currency
 from ..date import Date
+from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..punctuation import Eol, Newline, Whitespace
@@ -28,17 +29,20 @@ class Price(base.RawTreeModel):
     _label = internal.required_field[PriceLabel]()
     _currency = internal.required_field[Currency]()
     _amount = internal.required_field[Amount]()
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
 
     raw_date = internal.required_node_property(_date)
     raw_currency = internal.required_node_property(_currency)
     raw_amount = internal.required_node_property(_amount)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
 
     date = internal.required_date_property(raw_date)
     currency = internal.required_string_property(raw_currency)
     amount = raw_amount
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
 
     @final
@@ -49,6 +53,7 @@ class Price(base.RawTreeModel):
             label: PriceLabel,
             currency: Currency,
             amount: Amount,
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
     ):
@@ -57,6 +62,7 @@ class Price(base.RawTreeModel):
         self._label = label
         self._currency = currency
         self._amount = amount
+        self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
 
@@ -75,6 +81,7 @@ class Price(base.RawTreeModel):
             self._label.clone(token_store, token_transformer),
             self._currency.clone(token_store, token_transformer),
             self._amount.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
         )
@@ -85,6 +92,7 @@ class Price(base.RawTreeModel):
         self._label = self._label.reattach(token_store, token_transformer)
         self._currency = self._currency.reattach(token_store, token_transformer)
         self._amount = self._amount.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
 
@@ -95,6 +103,7 @@ class Price(base.RawTreeModel):
             and self._label == other._label
             and self._currency == other._currency
             and self._amount == other._amount
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
         )
@@ -105,9 +114,11 @@ class Price(base.RawTreeModel):
             date: Date,
             currency: Currency,
             amount: Amount,
+            inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         label = PriceLabel.from_default()
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
@@ -118,6 +129,7 @@ class Price(base.RawTreeModel):
             *currency.detach(),
             Whitespace.from_default(),
             *amount.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
         ]
@@ -126,9 +138,10 @@ class Price(base.RawTreeModel):
         label.reattach(token_store)
         currency.reattach(token_store)
         amount.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
-        return cls(token_store, date, label, currency, amount, eol, repeated_meta)
+        return cls(token_store, date, label, currency, amount, maybe_inline_comment, eol, repeated_meta)
 
     @classmethod
     def from_value(
@@ -137,11 +150,13 @@ class Price(base.RawTreeModel):
             currency: str,
             amount: Amount,
             *,
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
             Date.from_value(date),
             Currency.from_value(currency),
             amount,
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

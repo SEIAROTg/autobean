@@ -5,6 +5,7 @@ from typing import Iterable, Optional, Type, TypeVar, final
 from .. import base, internal, meta_item_internal
 from ..date import Date
 from ..escaped_string import EscapedString
+from ..inline_comment import InlineComment
 from ..link import Link
 from ..meta_item import MetaItem
 from ..posting import Posting
@@ -25,6 +26,7 @@ class Transaction(base.RawTreeModel):
     _string1 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _string2 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _tags_links = internal.repeated_field[Link | Tag](separators=(Whitespace.from_default(),))
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
     _postings = internal.repeated_field[Posting](separators=(Newline.from_default(),), default_indent='    ')
@@ -35,6 +37,7 @@ class Transaction(base.RawTreeModel):
     raw_string1 = internal.optional_node_property(_string1)
     raw_string2 = internal.optional_node_property(_string2)
     raw_tags_links = internal.repeated_node_property(_tags_links)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
     raw_postings = internal.repeated_node_property(_postings)
 
@@ -43,6 +46,7 @@ class Transaction(base.RawTreeModel):
     string0 = internal.optional_string_property(raw_string0, EscapedString)
     string1 = internal.optional_string_property(raw_string1, EscapedString)
     string2 = internal.optional_string_property(raw_string2, EscapedString)
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
     postings = raw_postings
 
@@ -56,6 +60,7 @@ class Transaction(base.RawTreeModel):
             string1: internal.Maybe[EscapedString],
             string2: internal.Maybe[EscapedString],
             tags_links: internal.Repeated[Link | Tag],
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
             postings: internal.Repeated[Posting],
@@ -67,6 +72,7 @@ class Transaction(base.RawTreeModel):
         self._string1 = string1
         self._string2 = string2
         self._tags_links = tags_links
+        self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
         self._postings = postings
@@ -88,6 +94,7 @@ class Transaction(base.RawTreeModel):
             self._string1.clone(token_store, token_transformer),
             self._string2.clone(token_store, token_transformer),
             self._tags_links.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
             self._postings.clone(token_store, token_transformer),
@@ -101,6 +108,7 @@ class Transaction(base.RawTreeModel):
         self._string1 = self._string1.reattach(token_store, token_transformer)
         self._string2 = self._string2.reattach(token_store, token_transformer)
         self._tags_links = self._tags_links.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
         self._postings = self._postings.reattach(token_store, token_transformer)
@@ -114,6 +122,7 @@ class Transaction(base.RawTreeModel):
             and self._string1 == other._string1
             and self._string2 == other._string2
             and self._tags_links == other._tags_links
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
             and self._postings == other._postings
@@ -128,6 +137,7 @@ class Transaction(base.RawTreeModel):
             string1: Optional[EscapedString],
             string2: Optional[EscapedString],
             tags_links: Iterable[Link | Tag],
+            inline_comment: Optional[InlineComment],
             meta: Iterable[MetaItem],
             postings: Iterable[Posting],
     ) -> _Self:
@@ -135,6 +145,7 @@ class Transaction(base.RawTreeModel):
         maybe_string1 = cls._string1.create_maybe(string1)
         maybe_string2 = cls._string2.create_maybe(string2)
         repeated_tags_links = cls._tags_links.create_repeated(tags_links)
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         repeated_postings = cls._postings.create_repeated(postings)
@@ -146,6 +157,7 @@ class Transaction(base.RawTreeModel):
             *maybe_string1.detach(),
             *maybe_string2.detach(),
             *repeated_tags_links.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
             *repeated_postings.detach(),
@@ -157,7 +169,8 @@ class Transaction(base.RawTreeModel):
         maybe_string1.reattach(token_store)
         maybe_string2.reattach(token_store)
         repeated_tags_links.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
         repeated_postings.reattach(token_store)
-        return cls(token_store, date, flag, maybe_string0, maybe_string1, maybe_string2, repeated_tags_links, eol, repeated_meta, repeated_postings)
+        return cls(token_store, date, flag, maybe_string0, maybe_string1, maybe_string2, repeated_tags_links, maybe_inline_comment, eol, repeated_meta, repeated_postings)

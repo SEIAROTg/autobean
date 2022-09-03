@@ -7,6 +7,7 @@ from .. import base, internal, meta_item_internal
 from ..account import Account
 from ..cost_spec import CostSpec
 from ..currency import Currency
+from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..number_expr import NumberExpr
@@ -30,6 +31,7 @@ class Posting(base.RawTreeModel):
     _currency = internal.optional_left_field[Currency](separators=(Whitespace.from_default(),))
     _cost = internal.optional_left_field[CostSpec](separators=(Whitespace.from_default(),))
     _price = internal.optional_left_field[PriceAnnotation](separators=(Whitespace.from_default(),))
+    _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='        ')
 
@@ -40,6 +42,7 @@ class Posting(base.RawTreeModel):
     raw_currency = internal.optional_node_property(_currency)
     raw_cost = internal.optional_node_property(_cost)
     raw_price = internal.optional_node_property(_price)
+    raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
 
     indent = internal.required_string_property(raw_indent)
@@ -49,6 +52,7 @@ class Posting(base.RawTreeModel):
     currency = internal.optional_string_property(raw_currency, Currency)
     cost = raw_cost
     price = raw_price
+    inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
 
     @final
@@ -62,6 +66,7 @@ class Posting(base.RawTreeModel):
             currency: internal.Maybe[Currency],
             cost: internal.Maybe[CostSpec],
             price: internal.Maybe[PriceAnnotation],
+            inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
     ):
@@ -73,6 +78,7 @@ class Posting(base.RawTreeModel):
         self._currency = currency
         self._cost = cost
         self._price = price
+        self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
 
@@ -94,6 +100,7 @@ class Posting(base.RawTreeModel):
             self._currency.clone(token_store, token_transformer),
             self._cost.clone(token_store, token_transformer),
             self._price.clone(token_store, token_transformer),
+            self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
         )
@@ -107,6 +114,7 @@ class Posting(base.RawTreeModel):
         self._currency = self._currency.reattach(token_store, token_transformer)
         self._cost = self._cost.reattach(token_store, token_transformer)
         self._price = self._price.reattach(token_store, token_transformer)
+        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
 
@@ -120,6 +128,7 @@ class Posting(base.RawTreeModel):
             and self._currency == other._currency
             and self._cost == other._cost
             and self._price == other._price
+            and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
         )
@@ -134,6 +143,7 @@ class Posting(base.RawTreeModel):
             currency: Optional[Currency],
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
+            inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
         maybe_flag = cls._flag.create_maybe(flag)
@@ -141,6 +151,7 @@ class Posting(base.RawTreeModel):
         maybe_currency = cls._currency.create_maybe(currency)
         maybe_cost = cls._cost.create_maybe(cost)
         maybe_price = cls._price.create_maybe(price)
+        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         tokens = [
@@ -151,6 +162,7 @@ class Posting(base.RawTreeModel):
             *maybe_currency.detach(),
             *maybe_cost.detach(),
             *maybe_price.detach(),
+            *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
         ]
@@ -162,9 +174,10 @@ class Posting(base.RawTreeModel):
         maybe_currency.reattach(token_store)
         maybe_cost.reattach(token_store)
         maybe_price.reattach(token_store)
+        maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
-        return cls(token_store, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, eol, repeated_meta)
+        return cls(token_store, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, maybe_inline_comment, eol, repeated_meta)
 
     @classmethod
     def from_value(
@@ -177,6 +190,7 @@ class Posting(base.RawTreeModel):
             flag: Optional[str] = None,
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
@@ -187,5 +201,6 @@ class Posting(base.RawTreeModel):
             Currency.from_value(currency) if currency is not None else None,
             cost,
             price,
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

@@ -5,6 +5,7 @@ from . import internal, meta_item_internal
 from .date import Date
 from .account import Account
 from .escaped_string import EscapedString
+from .inline_comment import InlineComment
 from .link import Link
 from .tag import Tag
 from .generated import document
@@ -28,6 +29,7 @@ class Document(document.Document):
             *,
             tags: Iterable[str] = (),
             links: Iterable[str] = (),
+            inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
@@ -35,5 +37,6 @@ class Document(document.Document):
             Account.from_value(account),
             EscapedString.from_value(filename),
             itertools.chain(map(Tag.from_value, tags), map(Link.from_value, links)),
+            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta_item_internal.from_mapping(meta) if meta is not None else (),
         )
