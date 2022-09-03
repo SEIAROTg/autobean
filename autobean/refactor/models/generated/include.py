@@ -83,6 +83,7 @@ class Include(base.RawTreeModel):
     def from_children(
             cls: Type[_Self],
             filename: EscapedString,
+            *,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = IncludeLabel.from_default()
@@ -110,6 +111,6 @@ class Include(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            EscapedString.from_value(filename),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            filename=EscapedString.from_value(filename),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

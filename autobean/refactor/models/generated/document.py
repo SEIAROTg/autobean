@@ -121,6 +121,7 @@ class Document(base.RawTreeModel):
             date: Date,
             account: Account,
             filename: EscapedString,
+            *,
             tags_links: Iterable[Link | Tag] = (),
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),

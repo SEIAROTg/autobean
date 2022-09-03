@@ -95,7 +95,7 @@ class TestMetaItem(base.BaseTestModel):
         indent = models.Whitespace.from_value('    ')
         key = models.MetaKey.from_value('foo')
         value = models.Amount.from_value(_D(123), 'USD')
-        meta = models.MetaItem.from_children(indent, key, value)
+        meta = models.MetaItem.from_children(key, value, indent=indent)
         assert meta.raw_indent is indent
         assert meta.raw_key is key
         assert meta.raw_value is value
@@ -104,7 +104,7 @@ class TestMetaItem(base.BaseTestModel):
     def test_from_children_without_value(self) -> None:
         indent = models.Whitespace.from_value('    ')
         key = models.MetaKey.from_value('foo')
-        meta = models.MetaItem.from_children(indent, key, None)
+        meta = models.MetaItem.from_children(key, None, indent=indent)
         assert meta.raw_indent is indent
         assert meta.raw_key is key
         assert meta.raw_value is None

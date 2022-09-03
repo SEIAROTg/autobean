@@ -87,5 +87,5 @@ class Tolerance(base.RawTreeModel):
             number: decimal.Decimal,
     ) -> _Self:
         return cls.from_children(
-            NumberExpr.from_value(number),
+            number=NumberExpr.from_value(number),
         )

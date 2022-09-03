@@ -245,7 +245,7 @@ class Document(MetaModel):
     _label: 'DOCUMENT' = field(define_as='DocumentLabel')
     account: 'ACCOUNT'
     filename: 'ESCAPED_STRING'
-    tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+    tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True, is_keyword_only=True)
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META
@@ -288,7 +288,7 @@ class Transaction(MetaModel):
     string0: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
     string1: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
     string2: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)
-    tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True)
+    tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True, is_keyword_only=True)
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
     meta: list['meta_item'] = _META

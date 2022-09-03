@@ -87,9 +87,10 @@ class MetaItem(base.RawTreeModel):
     @classmethod
     def from_children(
             cls: Type[_Self],
-            indent: Whitespace,
             key: MetaKey,
             value: Optional[MetaRawValue],
+            *,
+            indent: Whitespace,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         maybe_value = cls._value.create_maybe(value)
@@ -120,8 +121,8 @@ class MetaItem(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            Whitespace.from_value(indent),
-            MetaKey.from_value(key),
-            meta_value_internal.from_value(value) if value is not None else None,
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            indent=Whitespace.from_value(indent),
+            key=MetaKey.from_value(key),
+            value=meta_value_internal.from_value(value) if value is not None else None,
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

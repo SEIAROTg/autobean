@@ -85,6 +85,6 @@ class Amount(base.RawTreeModel):
             currency: str,
     ) -> _Self:
         return cls.from_children(
-            NumberExpr.from_value(number),
-            Currency.from_value(currency),
+            number=NumberExpr.from_value(number),
+            currency=Currency.from_value(currency),
         )

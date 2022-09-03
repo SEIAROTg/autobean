@@ -114,6 +114,7 @@ class Note(base.RawTreeModel):
             date: Date,
             account: Account,
             comment: EscapedString,
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
@@ -154,9 +155,9 @@ class Note(base.RawTreeModel):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Date.from_value(date),
-            Account.from_value(account),
-            EscapedString.from_value(comment),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            date=Date.from_value(date),
+            account=Account.from_value(account),
+            comment=EscapedString.from_value(comment),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

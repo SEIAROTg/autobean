@@ -136,10 +136,11 @@ class Transaction(base.RawTreeModel):
             string0: Optional[EscapedString],
             string1: Optional[EscapedString],
             string2: Optional[EscapedString],
-            tags_links: Iterable[Link | Tag],
-            inline_comment: Optional[InlineComment],
-            meta: Iterable[MetaItem],
             postings: Iterable[Posting],
+            *,
+            tags_links: Iterable[Link | Tag] = (),
+            inline_comment: Optional[InlineComment] = None,
+            meta: Iterable[MetaItem] = (),
     ) -> _Self:
         maybe_string0 = cls._string0.create_maybe(string0)
         maybe_string1 = cls._string1.create_maybe(string1)

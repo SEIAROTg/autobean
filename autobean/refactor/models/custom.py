@@ -96,10 +96,11 @@ class Custom(custom.Custom):
             date: Date,
             type: EscapedString,
             values: Iterable[CustomRawValue],
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
-        return super().from_children(date, type, _disambiguate_values(values), inline_comment, meta)
+        return super().from_children(date, type, _disambiguate_values(values), inline_comment=inline_comment, meta=meta)
 
     @classmethod
     def from_value(
@@ -112,9 +113,9 @@ class Custom(custom.Custom):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Date.from_value(date),
-            EscapedString.from_value(type),
-            map(_unsimplify_value, values),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            date=Date.from_value(date),
+            type=EscapedString.from_value(type),
+            values=map(_unsimplify_value, values),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

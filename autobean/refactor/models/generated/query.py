@@ -113,6 +113,7 @@ class Query(base.RawTreeModel):
             date: Date,
             name: EscapedString,
             query_string: EscapedString,
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
@@ -153,9 +154,9 @@ class Query(base.RawTreeModel):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Date.from_value(date),
-            EscapedString.from_value(name),
-            EscapedString.from_value(query_string),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            date=Date.from_value(date),
+            name=EscapedString.from_value(name),
+            query_string=EscapedString.from_value(query_string),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

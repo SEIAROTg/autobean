@@ -135,6 +135,7 @@ class Balance(base.RawTreeModel):
             number: NumberExpr,
             tolerance: Optional[Tolerance],
             currency: Currency,
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
@@ -183,11 +184,11 @@ class Balance(base.RawTreeModel):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Date.from_value(date),
-            Account.from_value(account),
-            NumberExpr.from_value(number),
-            Tolerance.from_value(tolerance) if tolerance is not None else None,
-            Currency.from_value(currency),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            date=Date.from_value(date),
+            account=Account.from_value(account),
+            number=NumberExpr.from_value(number),
+            tolerance=Tolerance.from_value(tolerance) if tolerance is not None else None,
+            currency=Currency.from_value(currency),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

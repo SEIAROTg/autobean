@@ -92,6 +92,7 @@ class Plugin(base.RawTreeModel):
             cls: Type[_Self],
             name: EscapedString,
             config: Optional[EscapedString] = None,
+            *,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = PluginLabel.from_default()
@@ -123,7 +124,7 @@ class Plugin(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            EscapedString.from_value(name),
-            EscapedString.from_value(config) if config is not None else None,
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            name=EscapedString.from_value(name),
+            config=EscapedString.from_value(config) if config is not None else None,
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

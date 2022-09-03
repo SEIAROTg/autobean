@@ -114,6 +114,7 @@ class Price(base.RawTreeModel):
             date: Date,
             currency: Currency,
             amount: Amount,
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
@@ -154,9 +155,9 @@ class Price(base.RawTreeModel):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Date.from_value(date),
-            Currency.from_value(currency),
-            amount,
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            date=Date.from_value(date),
+            currency=Currency.from_value(currency),
+            amount=amount,
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

@@ -202,7 +202,7 @@ class TestPosting(base.BaseTestModel):
         raw_number = models.NumberExpr.from_value(number) if number is not None else None
         raw_currency = models.Currency.from_value(currency) if currency is not None else None
         posting = models.Posting.from_children(
-            raw_indent, raw_flag,raw_account,raw_number,raw_currency,cost,price)
+            raw_account, raw_number, raw_currency, indent=raw_indent, flag=raw_flag, cost=cost, price=price)
         assert posting.raw_indent is raw_indent
         assert posting.indent == ' ' * 4
         assert posting.raw_flag is raw_flag

@@ -92,6 +92,7 @@ class Option(base.RawTreeModel):
             cls: Type[_Self],
             key: EscapedString,
             value: EscapedString,
+            *,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = OptionLabel.from_default()
@@ -123,7 +124,7 @@ class Option(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            EscapedString.from_value(key),
-            EscapedString.from_value(value),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            key=EscapedString.from_value(key),
+            value=EscapedString.from_value(value),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

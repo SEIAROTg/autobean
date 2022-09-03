@@ -90,5 +90,5 @@ class File(base.RawTreeModel):
             directives: Iterable[Directive],
     ) -> _Self:
         return cls.from_children(
-            directives,
+            directives=directives,
         )

@@ -83,6 +83,7 @@ class Pushtag(base.RawTreeModel):
     def from_children(
             cls: Type[_Self],
             tag: Tag,
+            *,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = PushtagLabel.from_default()
@@ -110,6 +111,6 @@ class Pushtag(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            Tag.from_value(tag),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            tag=Tag.from_value(tag),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

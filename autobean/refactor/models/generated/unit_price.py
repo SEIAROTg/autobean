@@ -101,6 +101,6 @@ class UnitPrice(base.RawTreeModel):
             currency: Optional[str],
     ) -> _Self:
         return cls.from_children(
-            NumberExpr.from_value(number) if number is not None else None,
-            Currency.from_value(currency) if currency is not None else None,
+            number=NumberExpr.from_value(number) if number is not None else None,
+            currency=Currency.from_value(currency) if currency is not None else None,
         )

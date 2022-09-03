@@ -136,11 +136,12 @@ class Posting(base.RawTreeModel):
     @classmethod
     def from_children(
             cls: Type[_Self],
-            indent: Whitespace,
-            flag: Optional[PostingFlag],
             account: Account,
             number: Optional[NumberExpr],
             currency: Optional[Currency],
+            *,
+            indent: Whitespace,
+            flag: Optional[PostingFlag] = None,
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
             inline_comment: Optional[InlineComment] = None,
@@ -194,13 +195,13 @@ class Posting(base.RawTreeModel):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Whitespace.from_value(indent),
-            PostingFlag.from_value(flag) if flag is not None else None,
-            Account.from_value(account),
-            NumberExpr.from_value(number) if number is not None else None,
-            Currency.from_value(currency) if currency is not None else None,
-            cost,
-            price,
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            indent=Whitespace.from_value(indent),
+            flag=PostingFlag.from_value(flag) if flag is not None else None,
+            account=Account.from_value(account),
+            number=NumberExpr.from_value(number) if number is not None else None,
+            currency=Currency.from_value(currency) if currency is not None else None,
+            cost=cost,
+            price=price,
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

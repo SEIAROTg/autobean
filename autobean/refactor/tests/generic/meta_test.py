@@ -355,7 +355,7 @@ class TestMeta(base.BaseTestModel):
             models.MetaItem.from_value('foo', decimal.Decimal(123)),
             models.MetaItem.from_value('bar', 'bar-value'),
         ]
-        close = models.Close.from_children(date, account, None, meta)
+        close = models.Close.from_children(date, account, meta=meta)
         assert close.raw_date is date
         assert close.raw_account is account
         for expected, actual in itertools.zip_longest(meta, close.meta):

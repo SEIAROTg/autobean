@@ -113,6 +113,7 @@ class Event(base.RawTreeModel):
             date: Date,
             type: EscapedString,
             description: EscapedString,
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:
@@ -153,9 +154,9 @@ class Event(base.RawTreeModel):
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
     ) -> _Self:
         return cls.from_children(
-            Date.from_value(date),
-            EscapedString.from_value(type),
-            EscapedString.from_value(description),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
-            meta_item_internal.from_mapping(meta) if meta is not None else (),
+            date=Date.from_value(date),
+            type=EscapedString.from_value(type),
+            description=EscapedString.from_value(description),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
         )

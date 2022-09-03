@@ -83,6 +83,7 @@ class Popmeta(base.RawTreeModel):
     def from_children(
             cls: Type[_Self],
             key: MetaKey,
+            *,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = PopmetaLabel.from_default()
@@ -110,6 +111,6 @@ class Popmeta(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            MetaKey.from_value(key),
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            key=MetaKey.from_value(key),
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

@@ -114,7 +114,7 @@ class CompoundAmount(base.RawTreeModel):
             currency: str,
     ) -> _Self:
         return cls.from_children(
-            NumberExpr.from_value(number_per) if number_per is not None else None,
-            NumberExpr.from_value(number_total) if number_total is not None else None,
-            Currency.from_value(currency),
+            number_per=NumberExpr.from_value(number_per) if number_per is not None else None,
+            number_total=NumberExpr.from_value(number_total) if number_total is not None else None,
+            currency=Currency.from_value(currency),
         )

@@ -115,6 +115,7 @@ class Custom(base.RawTreeModel):
             date: Date,
             type: EscapedString,
             values: Iterable[CustomRawValue],
+            *,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
     ) -> _Self:

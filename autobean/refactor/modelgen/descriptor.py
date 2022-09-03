@@ -129,9 +129,8 @@ class FieldDescriptor:
     define_as: Optional[str]
     type_alias: Optional[str]
     has_circular_dep: bool
-    from_children_optional: bool
-    from_value_optional: bool
-    from_value_keyword_only: bool
+    is_optional: bool
+    is_keyword_only: bool
     default_value: Any
     separators: Optional[tuple[str, ...]]
     separators_before: Optional[tuple[str, ...]]
@@ -283,7 +282,7 @@ class FieldDescriptor:
 
     @functools.cached_property
     def from_children_default(self) -> str:
-        if not self.from_children_optional or self.cardinality == FieldCardinality.REQUIRED:
+        if not self.is_optional or self.cardinality == FieldCardinality.REQUIRED:
             return ''
         if self.cardinality == FieldCardinality.OPTIONAL:
             return ' = None'
@@ -293,7 +292,7 @@ class FieldDescriptor:
 
     @functools.cached_property
     def from_value_default(self) -> str:
-        if not self.from_value_optional:
+        if not self.is_optional:
             return ''
         if self.value_type == 'MetaItem' and self.cardinality == FieldCardinality.REPEATED:
             return ' = None'
@@ -389,12 +388,12 @@ class MetaModelDescriptor:
         return (field for field in self.fields if field.is_public)
 
     @functools.cached_property
-    def from_value_positional_fields(self) -> list[FieldDescriptor]:
-        return [field for field in self.public_fields if not field.from_value_keyword_only]
+    def ctor_positional_fields(self) -> list[FieldDescriptor]:
+        return [field for field in self.public_fields if not field.is_keyword_only]
 
     @functools.cached_property
-    def from_value_keyword_fields(self) -> list[FieldDescriptor]:
-        return [field for field in self.public_fields if field.from_value_keyword_only]
+    def ctor_keyword_fields(self) -> list[FieldDescriptor]:
+        return [field for field in self.public_fields if field.is_keyword_only]
 
 
 def is_token(rule: str) -> bool:
@@ -460,9 +459,8 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
             define_as=field.define_as,
             type_alias=field.type_alias,
             has_circular_dep=field.has_circular_dep,
-            from_children_optional=field.is_optional,
-            from_value_optional=field.is_optional,
-            from_value_keyword_only=field.is_keyword_only,
+            is_optional=field.is_optional,
+            is_keyword_only=field.is_keyword_only,
             default_value=field.default_value,
             separators=separators,
             separators_before=field.separators_before,
@@ -470,14 +468,6 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
         )
         field_descriptors.append(descriptor)
         is_first = False
-    required = False
-    for i in reversed(range(len(field_descriptors))):
-        if not field_descriptors[i].from_children_optional and field_descriptors[i].is_public:
-            required = True
-        elif required:
-            field_descriptors[i] = dataclasses.replace(
-                field_descriptors[i], from_children_optional=False)
-        
     return MetaModelDescriptor(
         name=meta_model.__name__,
         rule=stringcase.snakecase(meta_model.__name__),

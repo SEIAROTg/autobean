@@ -60,10 +60,11 @@ class Transaction(transaction.Transaction):
             flag: TransactionFlag,
             payee: Optional[EscapedString],
             narration: Optional[EscapedString],
-            tags_links: Iterable[Link | Tag],
-            inline_comment: Optional[InlineComment],
-            meta: Iterable[MetaItem],
             postings: Iterable[Posting],
+            *,
+            tags_links: Iterable[Link | Tag] = (),
+            inline_comment: Optional[InlineComment] = None,
+            meta: Iterable[MetaItem] = (),
     ) -> _Self:
         if payee is not None and narration is None:
             narration = EscapedString.from_value('')
@@ -73,10 +74,10 @@ class Transaction(transaction.Transaction):
             None,
             payee,
             narration,
-            tags_links,
-            inline_comment,
-            meta,
             postings,
+            tags_links=tags_links,
+            inline_comment=inline_comment,
+            meta=meta,
         )
 
     @classmethod

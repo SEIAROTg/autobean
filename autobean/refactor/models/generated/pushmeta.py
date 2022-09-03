@@ -93,6 +93,7 @@ class Pushmeta(base.RawTreeModel):
             cls: Type[_Self],
             key: MetaKey,
             value: Optional[MetaRawValue],
+            *,
             inline_comment: Optional[InlineComment] = None,
     ) -> _Self:
         label = PushmetaLabel.from_default()
@@ -124,7 +125,7 @@ class Pushmeta(base.RawTreeModel):
             inline_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
-            MetaKey.from_value(key),
-            meta_value_internal.from_value(value) if value is not None else None,
-            InlineComment.from_value(inline_comment) if inline_comment is not None else None,
+            key=MetaKey.from_value(key),
+            value=meta_value_internal.from_value(value) if value is not None else None,
+            inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
         )

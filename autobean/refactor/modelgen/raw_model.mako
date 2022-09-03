@@ -116,9 +116,15 @@ class ${model.name}(base.RawTreeModel):
     @classmethod
     def from_children(
             cls: Type[_Self],
-% for field in model.public_fields:
+% for field in model.ctor_positional_fields:
             ${field.name}: ${field.input_type}${field.from_children_default},
 % endfor
+% if model.ctor_keyword_fields:
+            *,
+% for field in model.ctor_keyword_fields:
+            ${field.name}: ${field.input_type}${field.from_children_default},
+% endfor
+% endif
     ) -> _Self:
 % for field in model.fields:
 % if not field.is_public:
@@ -172,19 +178,19 @@ args.append(f'repeated_{field.name}')
     @classmethod
     def from_value(
             cls: Type[_Self],
-% for field in model.from_value_positional_fields:
+% for field in model.ctor_positional_fields:
             ${field.name}: ${field.value_input_type}${field.from_value_default},
 % endfor
-% if model.from_value_keyword_fields:
+% if model.ctor_keyword_fields:
             *,
-% for field in model.from_value_keyword_fields:
+% for field in model.ctor_keyword_fields:
             ${field.name}: ${field.value_input_type}${field.from_value_default},
 % endfor
 % endif
     ) -> _Self:
         return cls.from_children(
 % for field in model.public_fields:
-            ${field.construction_from_value},
+            ${field.name}=${field.construction_from_value},
 % endfor
         )
 % endif
