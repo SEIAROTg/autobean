@@ -157,7 +157,7 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
 
 // MetaItem
-_meta_item: META_KEY maybe_left{meta_value} _comment_eol
+_meta_item: indent META_KEY maybe_left{meta_value} _comment_eol
 meta_item: _allow_direct_parse{_meta_item}
 comment_line_: BLOCK_COMMENT EOL
 _meta_items_entity: meta_item | comment_line_
@@ -191,7 +191,7 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-_posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} _comment_eol repeated{meta_item}
+_posting: indent maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} _comment_eol repeated{meta_item}
 posting: _allow_direct_parse{_posting}
 
 // [internal] Optional field wrapper
@@ -205,3 +205,4 @@ repeated_sep{inner, sep}: inner? (sep inner)*
 // [internal]
 NEVER: /^_^/
 _allow_direct_parse{inner}: inner | _INDENT inner _DEDENT  // allow parse without parent model
+indent: [NEVER]  // will be replaced by indent whitespace token
