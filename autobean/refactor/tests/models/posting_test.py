@@ -3,7 +3,7 @@ from typing import Optional
 from lark import exceptions
 import pytest
 from autobean.refactor import models
-from . import base
+from .. import base
 
 _D = decimal.Decimal
 

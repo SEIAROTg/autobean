@@ -2,7 +2,7 @@ import itertools
 from lark import exceptions
 import pytest
 from autobean.refactor import models
-from . import base
+from .. import base
 
 # (text, value)
 _ESCAPE_TEST_CASES_COMMON = [

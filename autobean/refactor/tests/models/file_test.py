@@ -3,7 +3,7 @@ import itertools
 from lark import exceptions
 import pytest
 from autobean.refactor import models
-from ..models import base
+from .. import base
 
 
 _FOO_FILE = '''\

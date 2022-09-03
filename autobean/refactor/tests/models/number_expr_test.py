@@ -3,7 +3,7 @@ from typing import Literal
 from lark import exceptions
 import pytest
 from autobean.refactor import models
-from . import base
+from .. import base
 
 
 def _addsub_testcases(op: Literal['+', '-']) -> pytest.MarkDecorator:

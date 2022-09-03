@@ -5,7 +5,7 @@ from typing import Optional
 from lark import exceptions
 import pytest
 from autobean.refactor import models, parser as parser_lib
-from . import base
+from .. import base
 
 _MINIMAL = '2000-01-01 *'
 _TXN_FLAG = '2000-01-01 txn'

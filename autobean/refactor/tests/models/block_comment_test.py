@@ -1,7 +1,7 @@
 import pytest
 from lark import exceptions
 from autobean.refactor import models
-from . import base
+from .. import base
 
 _PARSE_TESTCASES = [
     (';foo', '', 'foo'),

@@ -6,7 +6,7 @@ from lark import exceptions
 import pytest
 from autobean.refactor import models
 from autobean.refactor.models.pushmeta import MetaValue
-from . import base
+from .. import base
 
 
 # (text, key, raw_value, value)

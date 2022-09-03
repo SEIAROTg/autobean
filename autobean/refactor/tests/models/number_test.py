@@ -1,8 +1,9 @@
+
 import decimal
 from lark import exceptions
 import pytest
 from autobean.refactor import models
-from . import base
+from .. import base
 
 
 class TestNumber(base.BaseTestModel):
