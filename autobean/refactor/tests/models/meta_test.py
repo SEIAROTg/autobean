@@ -57,7 +57,12 @@ _ADAPTIVE_INDENT = '''\
 \t; comment baz
 \tbaz: 123 +  456   ; baz\
 '''
-
+_ADAPTIVE_INDENT_NESTED = '''\
+2000-01-01 *
+\tfoo: "foo-value" ; foo
+  Assets:Foo 100.00 USD
+\t\tbar: "foo-value" ; foo\
+'''
 
 @pytest.fixture
 def simple_close(parser: parser_lib.Parser) -> models.Close:
@@ -330,6 +335,21 @@ class TestMeta(base.BaseTestModel):
 \t; comment baz
 \tbaz: 123 +  456   ; baz
 \tlast: "last-value"\
+'''
+
+    def test_insert_adaptive_indent_nested(self) -> None:
+        transaction = self.parser.parse(_ADAPTIVE_INDENT_NESTED, models.Transaction)
+        transaction.meta.insert(0, models.MetaItem.from_value('aaa', 'aaa-value'))
+        transaction.postings[0].meta.insert(0, models.MetaItem.from_value('bbb', 'bbb-value'))
+        transaction.postings.insert(0, models.Posting.from_value('Assets:Baz', decimal.Decimal(-100), 'USD'))
+        assert self.print_model(transaction) == '''\
+2000-01-01 *
+\taaa: "aaa-value"
+\tfoo: "foo-value" ; foo
+  Assets:Baz -100 USD
+  Assets:Foo 100.00 USD
+\t\tbbb: "bbb-value"
+\t\tbar: "foo-value" ; foo\
 '''
 
     def test_from_children(self) -> None:
