@@ -6,7 +6,7 @@ from .value_properties import RWValue
 _V = TypeVar('_V')
 _SelfSimpleRawTokenModel = TypeVar('_SelfSimpleRawTokenModel', bound='SimpleRawTokenModel')
 _SelfSingleValueRawTokenModel = TypeVar('_SelfSingleValueRawTokenModel', bound='SingleValueRawTokenModel')
-_SelfSimpleDefaultRawTokenModel = TypeVar('_SelfSimpleDefaultRawTokenModel', bound='SimpleDefaultRawTokenModel')
+_SelfDefaultRawTokenModel = TypeVar('_SelfDefaultRawTokenModel', bound='DefaultRawTokenModel')
 
 
 class SimpleRawTokenModel(base.RawTokenModel):
@@ -74,7 +74,7 @@ class SimpleSingleValueRawTokenModel(SingleValueRawTokenModel[str]):
         return value
 
 
-class SimpleDefaultRawTokenModel(SimpleRawTokenModel):
+class DefaultRawTokenModel(base.RawTokenModel):
     # not using @classmethod here because it suppresses abstractmethod errors.
     @property
     @abc.abstractmethod
@@ -82,5 +82,9 @@ class SimpleDefaultRawTokenModel(SimpleRawTokenModel):
         ...
 
     @classmethod
-    def from_default(cls: Type[_SelfSimpleDefaultRawTokenModel]) -> _SelfSimpleDefaultRawTokenModel:
+    def from_default(cls: Type[_SelfDefaultRawTokenModel]) -> _SelfDefaultRawTokenModel:
         return cls.from_raw_text(cls.DEFAULT)  # type: ignore[arg-type]
+
+
+class SimpleDefaultRawTokenModel(SimpleRawTokenModel, DefaultRawTokenModel):
+    pass

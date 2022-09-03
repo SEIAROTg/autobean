@@ -143,14 +143,14 @@ class ModelBuilder:
         self._cursor = 0
         self._right_floating_placeholders: list[internal.Placeholder] = []
         self._token_store = models.TokenStore.from_tokens([])
-        self._indent: list[Optional[models.RawTokenModel]] = []
+        self._indents: list[list[models.RawTokenModel]] = [[]]
         self._is_line_start = True
 
     def _add_tokens(self, tokens: Iterable[models.RawTokenModel]) -> None:
         for token in tokens:
             self._built_tokens.append(token)
-            if self._indent and self._indent[-1] is None and self._is_line_start and isinstance(token, models.Whitespace):
-                self._indent[-1] = copy.deepcopy(token)
+            if self._indents and self._is_line_start and isinstance(token, models.Whitespace):
+                self._indents[-1].append(token)
             if isinstance(token, models.Newline):
                 self._is_line_start = True
             elif token.raw_text:
@@ -197,7 +197,12 @@ class ModelBuilder:
                 children.append(self._build_repeated_node(child))
             else:
                 children.append(self._build_required_node(child))
-        return model_type.from_parsed_children(self._token_store, *children)
+        indents: tuple[models.RawTokenModel, ...] = ()
+        if hasattr(model_type, '_indent'):
+            if not self._indents[-1]:
+                raise exceptions.UnexpectedInput('Missing indent.')
+            indents = (self._indents[-1][-1],)
+        return model_type.from_parsed_children(self._token_store, *indents, *children)
 
     def _build_required_node(self, node: lark.Token | lark.Tree) -> models.RawModel:
         if isinstance(node, lark.Token):
@@ -220,20 +225,14 @@ class ModelBuilder:
 
     def _build_repeated_node(self, node: lark.Tree) -> models.RawModel:
         placeholder = self._build_placeholder(_Floating.LEFT)
-        self._indent.append(None)
+        indents: list[models.RawTokenModel] = []
+        self._indents.append(indents)
         items = [
             self._build_required_node(child) for child in node.children
             if not (isinstance(child, lark.Tree) and child.data.endswith('_'))
         ]
-        indent: Optional[tuple[models.RawTokenModel, ...]]
-        if not items:
-            indent = None
-        elif not self._indent[-1]:
-            indent = ()
-        else:
-            indent = (self._indent[-1],)
-        self._indent.pop()
-        return internal.Repeated(self._token_store, items, placeholder, indent)
+        self._indents.pop()
+        return internal.Repeated(self._token_store, items, placeholder, indents[0].raw_text if indents else '')
 
     def build(self, tree: lark.Tree, model_type: Type[_U]) -> _U:
         model = self._build_tree(tree)

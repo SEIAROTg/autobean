@@ -70,7 +70,8 @@ _meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT |
 // Punctuations
 WHITESPACE: /[ \t]+/
 _NEWLINE: /\r*\n/
-_NEWLINE_INDENT_COMMENT: (_NEWLINE | /\A/) (BLOCK_COMMENT | WHITESPACE) | _NEWLINE
+// Takes precedence over INLINE_COMMENT.
+_NEWLINE_INDENT_COMMENT.10: (_NEWLINE | /\A/) (BLOCK_COMMENT | WHITESPACE) | _NEWLINE
 INLINE_COMMENT: /;[^\r\n]*/s
 BLOCK_COMMENT: /^/m INLINE_COMMENT (_NEWLINE INLINE_COMMENT)* | /^/m WHITESPACE INLINE_COMMENT (_NEWLINE WHITESPACE INLINE_COMMENT)*
 _COMMA: ","
@@ -81,7 +82,7 @@ _COMMA: ","
 %ignore WHITESPACE
 %ignore _NEWLINE
 %ignore INLINE_COMMENT
-%ignore BLOCK_COMMENT  // TODO: unignore block comment
+%ignore BLOCK_COMMENT
 
 // String
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -155,7 +156,8 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
 
 // MetaItem
-meta_item: META_KEY maybe_left{meta_value} EOL
+_meta_item: META_KEY maybe_left{meta_value} EOL
+meta_item: _allow_direct_parse{_meta_item}
 comment_line_: BLOCK_COMMENT EOL
 _meta_items_entity: meta_item | comment_line_
 _meta_items: _INDENT repeated{_meta_items_entity} _DEDENT | repeated{NEVER}
@@ -188,8 +190,8 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL _posting_meta
-_posting_meta: repeated{meta_item} | _INDENT repeated{meta_item} _DEDENT  // allow posting to be parsed without transaction
+_posting: maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} EOL repeated{meta_item}
+posting: _allow_direct_parse{_posting}
 
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
@@ -202,3 +204,4 @@ repeated_sep{inner, sep}: inner? (sep inner)*
 
 // [internal]
 NEVER: /^_^/
+_allow_direct_parse{inner}: inner | _INDENT inner _DEDENT  // allow parse without parent model

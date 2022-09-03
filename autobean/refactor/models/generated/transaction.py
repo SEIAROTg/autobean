@@ -26,8 +26,8 @@ class Transaction(base.RawTreeModel):
     _string2 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _tags_links = internal.repeated_field[Link | Tag](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent=(Whitespace.from_raw_text('    '),))
-    _postings = internal.repeated_field[Posting](separators=(Newline.from_default(),), default_indent=(Whitespace.from_raw_text('    '),))
+    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
+    _postings = internal.repeated_field[Posting](separators=(Newline.from_default(),), default_indent='    ')
 
     raw_date = internal.required_node_property(_date)
     raw_flag = internal.required_node_property(_flag)

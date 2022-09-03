@@ -82,14 +82,14 @@ class TestMeta(base.BaseTestModel):
         assert close.meta[1].value == 'bar-value'
         assert close.raw_meta['bar'] is close.raw_meta[1]
         assert close.meta['bar'] == 'bar-value'
-        assert self.print_model(close.meta[1]) == 'bar: "bar-value" ; bar'
+        assert self.print_model(close.meta[1]).lstrip() == 'bar: "bar-value" ; bar'
 
         assert close.raw_meta[2] is close.meta[2]
         assert close.meta[2].key == 'baz'
         assert close.meta[2].value == decimal.Decimal(579)
         assert close.raw_meta['baz'] is close.raw_meta[2]
         assert close.meta['baz'] == decimal.Decimal(579)
-        assert self.print_model(close.meta[2]) == 'baz: 123 +  456   ; baz'
+        assert self.print_model(close.meta[2]).lstrip() == 'baz: 123 +  456   ; baz'
 
         assert self.print_model(close) == text
 
@@ -238,7 +238,7 @@ class TestMeta(base.BaseTestModel):
         got_meta = simple_close.raw_meta[1]
         pop_meta = simple_close.raw_meta.pop(1)
         assert pop_meta is got_meta
-        assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
+        assert self.print_model(pop_meta) == '    bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
     foo: "foo-value" ; foo
@@ -258,7 +258,7 @@ class TestMeta(base.BaseTestModel):
         got_meta = simple_close.meta[1]
         pop_meta = simple_close.meta.pop(1)
         assert pop_meta is got_meta
-        assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
+        assert self.print_model(pop_meta) == '    bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
     foo: "foo-value" ; foo
@@ -278,7 +278,7 @@ class TestMeta(base.BaseTestModel):
         got_meta = simple_close.raw_meta['bar']
         pop_meta = simple_close.raw_meta.pop('bar')
         assert pop_meta is got_meta
-        assert self.print_model(pop_meta) == 'bar: "bar-value" ; bar'
+        assert self.print_model(pop_meta) == '    bar: "bar-value" ; bar'
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
     foo: "foo-value" ; foo
@@ -324,11 +324,9 @@ class TestMeta(base.BaseTestModel):
 
     def test_insert_adaptive_indent(self) -> None:
         close = self.parser.parse(_ADAPTIVE_INDENT, models.Close)
-        close.meta.insert(0, models.MetaItem.from_value('first', 'first-value'))
         close.meta['last'] = 'last-value'
         assert self.print_model(close) == '''\
 2000-01-01 close Assets:Foo ; foo
-\tfirst: "first-value"
 \tfoo: "foo-value" ; foo
 \t; comment bar
 \tbar: "bar-value" ; bar
@@ -339,17 +337,15 @@ class TestMeta(base.BaseTestModel):
 
     def test_insert_adaptive_indent_nested(self) -> None:
         transaction = self.parser.parse(_ADAPTIVE_INDENT_NESTED, models.Transaction)
-        transaction.meta.insert(0, models.MetaItem.from_value('aaa', 'aaa-value'))
-        transaction.postings[0].meta.insert(0, models.MetaItem.from_value('bbb', 'bbb-value'))
-        transaction.postings.insert(0, models.Posting.from_value('Assets:Baz', decimal.Decimal(-100), 'USD'))
+        transaction.meta['aaa'] = 'aaa-value'
+        transaction.postings[0].meta['bbb'] = 'bbb-value'
         assert self.print_model(transaction) == '''\
 2000-01-01 *
-\taaa: "aaa-value"
 \tfoo: "foo-value" ; foo
-  Assets:Baz -100 USD
+\taaa: "aaa-value"
   Assets:Foo 100.00 USD
-\t\tbbb: "bbb-value"
-\t\tbar: "foo-value" ; foo\
+\t\tbar: "foo-value" ; foo
+\t\tbbb: "bbb-value"\
 '''
 
     def test_from_children(self) -> None:

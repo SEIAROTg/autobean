@@ -196,7 +196,7 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
             if item.key == index:
                 item.value = value
                 return
-        self.append(MetaItem.from_value(index, value))
+        self.append(MetaItem.from_value(index, value, indent=self.indent))
 
     @overload
     def pop(self, index: int = -1) -> MetaItem:

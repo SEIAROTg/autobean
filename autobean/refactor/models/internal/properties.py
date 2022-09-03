@@ -77,9 +77,9 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
         return self._repeated
 
     @functools.cached_property
-    def _indent(self) -> tuple[base.RawTokenModel, ...]:
+    def indent(self) -> Optional[str]:
         if self._field.default_indent is None:
-            return ()
+            return None
         elif self._repeated.inferred_indent is not None:
             return self._repeated.inferred_indent
         else:
@@ -87,16 +87,13 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
 
     @functools.cached_property
     def _separators(self) -> tuple[base.RawTokenModel, ...]:
-        return self._field.separators + self._indent
+        return self._field.separators
 
     @functools.cached_property
     def _separators_before(self) -> tuple[base.RawTokenModel, ...]:
-        separators = (
+        return (
             self._field.separators_before
             if self._field.separators_before is not None else self._field.separators)
-        if self._field.indent_first:
-            separators += self._indent
-        return separators
 
     def __len__(self) -> int:
         return len(self._repeated.items)

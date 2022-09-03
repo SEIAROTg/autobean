@@ -102,7 +102,7 @@ class TestTransaction(base.BaseTestModel):
         }
         assert len(transaction.postings) == 2
         assert self.print_model(transaction.postings[0]) == '''\
-Assets:Foo               100.00 USD
+    Assets:Foo               100.00 USD
         ccc1: "ccc2" ; ccc3
         ddd1: "ddd2" ; ddd3\
 '''
@@ -111,7 +111,7 @@ Assets:Foo               100.00 USD
             'ddd1': 'ddd2',
         }
         assert self.print_model(transaction.postings[1]) == '''\
-Assets:Bar              -100.00 USD
+    Assets:Bar              -100.00 USD
     eee1: "eee2" ; eee3\
 '''
         assert dict(transaction.postings[1].meta.items()) == {
@@ -432,16 +432,16 @@ Assets:Bar              -100.00 USD
             models.Link.from_value('qux'),
         ]
         meta_items = [
-            self.parser.parse('aaa1: 123 + 456 ; aaa2', models.MetaItem),
-            self.parser.parse('bbb1: "bbb2" ; bbb3', models.MetaItem),
+            self.parser.parse('    aaa1: 123 + 456 ; aaa2', models.MetaItem),
+            self.parser.parse('    bbb1: "bbb2" ; bbb3', models.MetaItem),
         ]
         postings = [
             self.parser.parse('''\
-Assets:Foo               100.00 USD
+    Assets:Foo               100.00 USD
         ccc1: "ccc2" ; ccc3
         ddd1: "ddd2" ; ddd3''', models.Posting),
             self.parser.parse('''\
-Assets:Bar              -100.00 USD
+    Assets:Bar              -100.00 USD
     eee1: "eee2" ; eee3''', models.Posting)
         ]
         transaction = models.Transaction.from_children(
@@ -505,17 +505,13 @@ Assets:Bar              -100.00 USD
         assert self.print_model(transaction) == '2000-01-01 * "foo" "bar"'
 
     def test_from_value_complex(self) -> None:
-        meta_items = [
-            self.parser.parse('aaa1: 123 + 456 ; aaa2', models.MetaItem),
-            self.parser.parse('bbb1: "bbb2" ; bbb3', models.MetaItem),
-        ]
         postings = [
             self.parser.parse('''\
-Assets:Foo               100.00 USD
+    Assets:Foo               100.00 USD
         ccc1: "ccc2" ; ccc3
         ddd1: "ddd2" ; ddd3''', models.Posting),
             self.parser.parse('''\
-Assets:Bar              -100.00 USD
+    Assets:Bar              -100.00 USD
     eee1: "eee2" ; eee3''', models.Posting)
         ]
         transaction = models.Transaction.from_value(

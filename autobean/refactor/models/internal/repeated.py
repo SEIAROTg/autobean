@@ -6,26 +6,25 @@ from .placeholder import Placeholder
 _M = TypeVar('_M', bound=base.RawModel)
 _Self = TypeVar('_Self', bound='Repeated')
 
-
 class Repeated(base.RawTreeModel, Generic[_M]):
     def __init__(
             self,
             token_store: base.TokenStore,
             items: Iterable[_M],
             placeholder: Placeholder,
-            inferred_indent: Optional[tuple[base.RawTokenModel, ...]] = None,
+            inferred_indent: Optional[str] = None,
     ) -> None:
         super().__init__(token_store)
         self.items = list(items)
         self._placeholder = placeholder
-        self._inferred_indent = copy.deepcopy(inferred_indent)
+        self._inferred_indent = inferred_indent
 
     @property
     def placeholder(self) -> Placeholder:
         return self._placeholder
 
     @property
-    def inferred_indent(self) -> Optional[tuple[base.RawTokenModel, ...]]:
+    def inferred_indent(self) -> Optional[str]:
         return self._inferred_indent
 
     @property
@@ -48,8 +47,7 @@ class Repeated(base.RawTreeModel, Generic[_M]):
             *,
             separators: tuple[base.RawTokenModel, ...],
             separators_before: Optional[tuple[base.RawTokenModel, ...]] = None,
-            indent: Optional[tuple[base.RawTokenModel, ...]] = None,
-            indent_first: bool = True,
+            indent: Optional[str] = None,
     ) -> _Self:
         placeholder = Placeholder.from_default()
         items = list(items)
@@ -59,8 +57,6 @@ class Repeated(base.RawTreeModel, Generic[_M]):
                 tokens.extend(copy.deepcopy(separators_before))
             else:
                 tokens.extend(copy.deepcopy(separators))
-            if indent and (indent_first or i):
-                tokens.extend(copy.deepcopy(indent))
             tokens.extend(item.detach())
         token_store = base.TokenStore.from_tokens(tokens)
         for item in items:
