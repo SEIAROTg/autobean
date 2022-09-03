@@ -32,34 +32,39 @@ class PostLexInline(lark.lark.PostLex):
 
 
 class PostLex(lark.lark.PostLex):
-    _NEWLINE_INDENT_SPLIT_RE = re.compile(r'(?=[ \t]|\Z)')
-    _NEWLINE_INDENT = '_NEWLINE_INDENT'
+    _NEWLINE_INDENT_COMMENT_SPLIT_RE = re.compile(r'([\r\n]*)([ \t]*)(;.*)?', re.S)
+    _NEWLINE_INDENT_COMMENT = '_NEWLINE_INDENT_COMMENT'
     _NEWLINE = '_NEWLINE'
     _EOL = 'EOL'
     _INDENT = '_INDENT'
     _DEDENT = '_DEDENT'
-    _WS_INLINE = '_WS_INLINE'
+    _WHITESPACE = 'WHITESPACE'
+    _BLOCK_COMMENT = 'BLOCK_COMMENT'
 
     # Contextual lexer only sees _EOL and will thus reject _NEWLINE by default.
-    always_accept = _IGNORED_TOKENS | {_NEWLINE_INDENT}
+    always_accept = _IGNORED_TOKENS | {_NEWLINE_INDENT_COMMENT}
 
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
         indented = False
         token = None
         for token in stream:
-            if token.type != self._NEWLINE_INDENT:
+            if token.type != self._NEWLINE_INDENT_COMMENT:
                 yield token
                 continue
-            newline_text, indent_text = re.split(self._NEWLINE_INDENT_SPLIT_RE, token.value, maxsplit=1)
+            match = self._NEWLINE_INDENT_COMMENT_SPLIT_RE.fullmatch(token.value)
+            assert match
+            newline_text, indent_text, comment_text = match.groups()
             if newline_text:
                 yield lark.Token.new_borrow_pos(self._EOL, '', token)
                 yield lark.Token.new_borrow_pos(self._NEWLINE, newline_text, token)
-            if indent_text:
-                if not indented:
-                    indented = True
-                    yield lark.Token.new_borrow_pos(self._INDENT, '', token)
-                yield lark.Token.new_borrow_pos(self._WS_INLINE, indent_text, token)
-            elif indented:
+            if indent_text and not indented:
+                indented = True
+                yield lark.Token.new_borrow_pos(self._INDENT, '', token)
+            if comment_text:
+                yield lark.Token.new_borrow_pos(self._BLOCK_COMMENT, indent_text + comment_text, token)
+            elif indent_text:
+                yield lark.Token.new_borrow_pos(self._WHITESPACE, indent_text, token)
+            if not indent_text and indented:
                 indented = False
                 yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
         yield lark.Token(self._EOL, '')
@@ -144,9 +149,9 @@ class ModelBuilder:
     def _add_tokens(self, tokens: Iterable[models.RawTokenModel]) -> None:
         for token in tokens:
             self._built_tokens.append(token)
-            if self._indent is None and self._is_line_start and token.RULE == '_WS_INLINE':
+            if self._indent is None and self._is_line_start and isinstance(token, models.Whitespace):
                 self._indent = copy.deepcopy(token)
-            if token.RULE == '_NEWLINE':
+            if isinstance(token, models.Newline):
                 self._is_line_start = True
             elif token.raw_text:
                 self._is_line_start = False

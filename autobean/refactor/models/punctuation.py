@@ -15,7 +15,7 @@ class Eol(internal.SimpleDefaultRawTokenModel):
 
 @internal.token_model
 class Whitespace(internal.SimpleDefaultRawTokenModel):
-    RULE = '_WS_INLINE'
+    RULE = 'WHITESPACE'
     DEFAULT = ' '
 
 

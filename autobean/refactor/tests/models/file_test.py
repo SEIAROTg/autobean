@@ -154,3 +154,23 @@ class TestFile(base.BaseTestModel):
         assert file.directives[0] is option
         assert file.directives[1] is open
         assert self.print_model(file) == 'option "foo" "bar"\n2000-01-01 open Assets:Foo'
+
+    def test_comments(self) -> None:
+        text = '''\
+; comment at the beginning
+
+include "foo.bean"
+
+; comment in the middle
+
+include "bar.bean"
+
+; comment at the end
+'''
+        file = self.parser.parse(text, models.File)
+        assert self.print_model(file) == text
+
+    def test_model_end_inline_comment_in_model(self) -> None:
+        text = '2000-01-01 close Assets:Foo  ; comment'
+        close = self.parser.parse(text, models.Close)
+        assert self.print_model(close) == text

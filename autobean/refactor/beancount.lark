@@ -68,18 +68,20 @@ transaction:  DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING
 _meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER}
 
 // Punctuations
-_WS_INLINE: /[ \t]+/
+WHITESPACE: /[ \t]+/
 _NEWLINE: /\r*\n/
-_NEWLINE_INDENT: _NEWLINE _WS_INLINE? | /\A/ _WS_INLINE
-COMMENT: /;[^\r\n]*$/m
+_NEWLINE_INDENT_COMMENT: (_NEWLINE | /\A/) (BLOCK_COMMENT | WHITESPACE) | _NEWLINE
+INLINE_COMMENT: /;[^\r\n]*/s
+BLOCK_COMMENT: /^/m INLINE_COMMENT (_NEWLINE INLINE_COMMENT)* | /^/m WHITESPACE INLINE_COMMENT (_NEWLINE WHITESPACE INLINE_COMMENT)*
 _COMMA: ","
 
 %declare EOL
 %declare _INDENT
 %declare _DEDENT
-%ignore _WS_INLINE
+%ignore WHITESPACE
 %ignore _NEWLINE
-%ignore COMMENT
+%ignore INLINE_COMMENT
+%ignore BLOCK_COMMENT  // TODO: unignore block comment
 
 // String
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -154,7 +156,7 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 
 // MetaItem
 meta_item: META_KEY maybe_left{meta_value} EOL
-comment_line_: COMMENT EOL
+comment_line_: BLOCK_COMMENT EOL
 _meta_items_entity: meta_item | comment_line_
 _meta_items: _INDENT repeated{_meta_items_entity} _DEDENT | repeated{NEVER}
 

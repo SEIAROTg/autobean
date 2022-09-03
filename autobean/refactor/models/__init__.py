@@ -3,9 +3,9 @@ from .base import *
 from .account import *
 from .amount import *
 from .balance import *
+from .block_comment import *
 from .bool import *
 from .close import *
-from .comment import *
 from .commodity import *
 from .compound_amount import *
 from .cost import *
@@ -19,6 +19,7 @@ from .escaped_string import *
 from .event import *
 from .file import *
 from .include import *
+from .inline_comment import *
 from .link import *
 from .meta_item import *
 from .meta_key import *

@@ -2,8 +2,8 @@ from . import internal
 
 
 @internal.token_model
-class Comment(internal.SingleValueRawTokenModel[str]):
-    RULE = 'COMMENT'
+class InlineComment(internal.SingleValueRawTokenModel[str]):
+    RULE = 'INLINE_COMMENT'
 
     @classmethod
     def _parse_value(cls, raw_text: str) -> str:
@@ -11,4 +11,4 @@ class Comment(internal.SingleValueRawTokenModel[str]):
 
     @classmethod
     def _format_value(cls, value: str) -> str:
-        return f'; {value}'
+        return f'; {value}' if value else ';'

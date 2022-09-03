@@ -99,10 +99,10 @@ class BaseTestModel:
             tokens.append(new_token)
             token_map[id(token)] = new_token
         token_store = models.TokenStore.from_tokens([
-            models.Comment.from_raw_text('; before'),
+            models.BlockComment.from_raw_text('; before'),
             models.Newline.from_default(),
             *tokens,
-            models.Comment.from_raw_text('; before'),
+            models.BlockComment.from_raw_text('; before'),
         ])
         c.reattach(token_store, models.MappingTokenTransformer(token_map))
         assert c.token_store is token_store
