@@ -44,8 +44,6 @@ class optional_node_property(base_property[Optional[_M], base.RawTreeModel]):
     def __init__(self, inner_field: optional_field[_M]) -> None:
         super().__init__()
         self._inner_field = inner_field
-        self._fcreator: Optional[Callable[[_U, Maybe[_M], _M], None]] = None
-        self._fremover: Optional[Callable[[_U, Maybe[_M], _M], None]] = None
 
     def _get(self, instance: _U) -> Optional[_M]:
         return self._inner_field.__get__(instance).inner
@@ -53,18 +51,12 @@ class optional_node_property(base_property[Optional[_M], base.RawTreeModel]):
     def __set__(self, instance: _U, inner: Optional[_M]) -> None:
         maybe = self._inner_field.__get__(instance)
         if maybe.inner is None and inner is not None:
-            self._fcreator(instance, maybe, inner) if self._fcreator else maybe.create_inner(inner, separators=self._inner_field.separators)
+            maybe.create_inner(inner, separators=self._inner_field.separators)
         elif maybe.inner is not None and inner is None:
-            self._fremover(instance, maybe, maybe.inner) if self._fremover else maybe.remove_inner(maybe.inner)
+            maybe.remove_inner(maybe.inner)
         elif maybe.inner is not None and inner is not None:
             _replace_node(maybe.inner, inner)
         maybe.inner = inner
-
-    def creator(self, fcreator: Callable[[_U, Maybe[_M], _M], None]) -> None:
-        self._fcreator = fcreator
-
-    def remover(self, fremover: Callable[[_U, Maybe[_M], _M], None]) -> None:
-        self._fremover = fremover
 
 
 class RepeatedNodeWrapper(MutableSequence[_M]):
