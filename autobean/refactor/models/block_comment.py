@@ -17,6 +17,7 @@ class BlockComment(base.RawTokenModel, _value_properties.RWValueWithIndent[str])
         super().__init__(raw_text)
         self._value = value
         self._indent = indent
+        self._claimed = True
 
     @property
     def raw_text(self) -> str:
@@ -44,6 +45,14 @@ class BlockComment(base.RawTokenModel, _value_properties.RWValueWithIndent[str])
     def indent(self, indent: str) -> None:
         self._indent = indent
         self._update_raw_text(self._format_value(indent, self._value))
+
+    @property
+    def claimed(self) -> bool:
+        return self._claimed
+
+    @claimed.setter
+    def claimed(self, claimed: bool) -> None:
+        self._claimed = claimed
 
     @classmethod
     def from_value(cls: Type[_Self], value: str, *, indent: str = '') -> _Self:

@@ -153,7 +153,10 @@ class ModelBuilder:
                 continue
             if token.type == 'INDENT':
                 token.type = 'WHITESPACE'
-            self._add_tokens([self._token_models[token.type].from_raw_text(token.value)])
+            built_token = self._token_models[token.type].from_raw_text(token.value)
+            if isinstance(built_token, models.BlockComment):
+                built_token.claimed = True
+            self._add_tokens([built_token])
         self._cursor = cursor
         self._add_tokens(self._right_floating_placeholders)
         self._right_floating_placeholders.clear()
