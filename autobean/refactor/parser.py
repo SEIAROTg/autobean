@@ -38,7 +38,7 @@ class PostLex(lark.lark.PostLex):
     _EOL = 'EOL'
     _INDENT = '_INDENT'
     _DEDENT = '_DEDENT'
-    _WHITESPACE = 'WHITESPACE'
+    _INDENT_WS = 'INDENT'
     _BLOCK_COMMENT = 'BLOCK_COMMENT'
 
     # Contextual lexer only sees _EOL and will thus reject _NEWLINE by default.
@@ -63,7 +63,7 @@ class PostLex(lark.lark.PostLex):
             if comment_text:
                 yield lark.Token.new_borrow_pos(self._BLOCK_COMMENT, indent_text + comment_text, token)
             elif indent_text:
-                yield lark.Token.new_borrow_pos(self._WHITESPACE, indent_text, token)
+                yield lark.Token.new_borrow_pos(self._INDENT_WS, indent_text, token)
             if not indent_text and indented:
                 indented = False
                 yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
@@ -143,15 +143,9 @@ class ModelBuilder:
         self._cursor = 0
         self._right_floating_placeholders: list[internal.Placeholder] = []
         self._token_store = models.TokenStore.from_tokens([])
-        self._is_line_start = True
 
     def _add_tokens(self, tokens: Iterable[models.RawTokenModel]) -> None:
-        for token in tokens:
-            self._built_tokens.append(token)
-            if isinstance(token, models.Newline):
-                self._is_line_start = True
-            elif token.raw_text:
-                self._is_line_start = False
+        self._built_tokens.extend(tokens)
 
     def _fix_gap(self, cursor: int) -> None:
         for token in self._tokens[self._cursor:cursor]:
@@ -166,7 +160,7 @@ class ModelBuilder:
         while self._cursor < len(self._tokens):
             token = self._tokens[self._cursor]
             if token.value:
-                if self._is_line_start and self._tokens[self._cursor].type == 'WHITESPACE':
+                if self._tokens[self._cursor].type == 'INDENT':
                     return self._build_token(token)
                 if not token.type in _IGNORED_TOKENS:
                     break

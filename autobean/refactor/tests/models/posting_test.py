@@ -196,7 +196,7 @@ class TestPosting(base.BaseTestModel):
             cost: Optional[models.CostSpec],
             price: Optional[models.PriceAnnotation],
     ) -> None:
-        raw_indent = models.Whitespace.from_value(' ' * 4)
+        raw_indent = models.Indent.from_value(' ' * 4)
         raw_flag = models.PostingFlag.from_value(flag) if flag is not None else None
         raw_account = models.Account.from_value(account)
         raw_number = models.NumberExpr.from_value(number) if number is not None else None

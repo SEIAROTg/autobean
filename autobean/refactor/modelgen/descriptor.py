@@ -45,6 +45,7 @@ def _model_name_to_module(model_name: str) -> str:
     return {
         'Comma': 'punctuation',
         'Whitespace': 'punctuation',
+        'Indent': 'punctuation',
         'Newline': 'punctuation',
         'Indent': 'punctuation',
         'Eol': 'punctuation',
@@ -67,6 +68,7 @@ def _model_name_to_value_type(model_name: str) -> Optional[str]:
         'TransactionFlag': 'str',
         'PostingFlag': 'str',
         'Whitespace': 'str',
+        'Indent': 'str',
         'InlineComment': 'str',
         'BlockComment': 'str',
         # date

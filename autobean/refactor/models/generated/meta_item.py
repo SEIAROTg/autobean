@@ -7,7 +7,7 @@ from ..block_comment import BlockComment
 from ..inline_comment import InlineComment
 from ..meta_key import MetaKey
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol, Indent, Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='MetaItem')
 
@@ -17,7 +17,7 @@ class MetaItem(base.RawTreeModel):
     RULE = 'meta_item'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
-    _indent = internal.required_field[Whitespace]()
+    _indent = internal.required_field[Indent]()
     _key = internal.required_field[MetaKey]()
     _value = internal.optional_left_field[MetaRawValue](separators=(Whitespace.from_default(),))
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
@@ -43,7 +43,7 @@ class MetaItem(base.RawTreeModel):
             self,
             token_store: base.TokenStore,
             leading_comment: internal.Maybe[BlockComment],
-            indent: Whitespace,
+            indent: Indent,
             key: MetaKey,
             value: internal.Maybe[MetaRawValue],
             inline_comment: internal.Maybe[InlineComment],
@@ -108,7 +108,7 @@ class MetaItem(base.RawTreeModel):
             value: Optional[MetaRawValue],
             *,
             leading_comment: Optional[BlockComment] = None,
-            indent: Whitespace,
+            indent: Indent,
             inline_comment: Optional[InlineComment] = None,
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
@@ -149,7 +149,7 @@ class MetaItem(base.RawTreeModel):
     ) -> _Self:
         return cls.from_children(
             leading_comment=BlockComment.from_value(leading_comment) if leading_comment is not None else None,
-            indent=Whitespace.from_value(indent),
+            indent=Indent.from_value(indent),
             key=MetaKey.from_value(key),
             value=meta_value_internal.from_value(value) if value is not None else None,
             inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,

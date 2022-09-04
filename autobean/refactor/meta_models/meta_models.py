@@ -81,7 +81,7 @@ class CostSpec(MetaModel):
 
 
 class Posting(MetaModel, BlockCommentable):
-    indent: 'WHITESPACE' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
+    indent: 'INDENT' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
     flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT, is_optional=True, is_keyword_only=True)
     account: 'ACCOUNT' = field(separators=())
     number: Optional['number_expr'] = field(floating=Floating.LEFT)
@@ -95,7 +95,7 @@ class Posting(MetaModel, BlockCommentable):
 
 
 class MetaItem(MetaModel, BlockCommentable):
-    indent: 'WHITESPACE' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
+    indent: 'INDENT' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
     key: 'META_KEY' = field(separators=())
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)

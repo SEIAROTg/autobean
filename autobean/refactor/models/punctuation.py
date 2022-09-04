@@ -14,9 +14,15 @@ class Eol(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.token_model
-class Whitespace(internal.SimpleSingleValueRawTokenModel, internal.DefaultRawTokenModel):
+class Whitespace(internal.SimpleDefaultRawTokenModel):
     RULE = 'WHITESPACE'
     DEFAULT = ' '
+
+
+@internal.token_model
+class Indent(internal.SimpleSingleValueRawTokenModel, internal.DefaultRawTokenModel):
+    RULE = 'INDENT'
+    DEFAULT = ' ' * 4
 
 
 @internal.token_model

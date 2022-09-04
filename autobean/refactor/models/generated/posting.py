@@ -13,7 +13,7 @@ from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..number_expr import NumberExpr
 from ..posting_flag import PostingFlag
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol, Indent, Newline, Whitespace
 from ..total_price import TotalPrice
 from ..unit_price import UnitPrice
 
@@ -26,7 +26,7 @@ class Posting(base.RawTreeModel):
     RULE = 'posting'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
-    _indent = internal.required_field[Whitespace]()
+    _indent = internal.required_field[Indent]()
     _flag = internal.optional_right_field[PostingFlag](separators=(Whitespace.from_default(),))
     _account = internal.required_field[Account]()
     _number = internal.optional_left_field[NumberExpr](separators=(Whitespace.from_default(),))
@@ -67,7 +67,7 @@ class Posting(base.RawTreeModel):
             self,
             token_store: base.TokenStore,
             leading_comment: internal.Maybe[BlockComment],
-            indent: Whitespace,
+            indent: Indent,
             flag: internal.Maybe[PostingFlag],
             account: Account,
             number: internal.Maybe[NumberExpr],
@@ -158,7 +158,7 @@ class Posting(base.RawTreeModel):
             currency: Optional[Currency],
             *,
             leading_comment: Optional[BlockComment] = None,
-            indent: Whitespace,
+            indent: Indent,
             flag: Optional[PostingFlag] = None,
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
@@ -223,7 +223,7 @@ class Posting(base.RawTreeModel):
     ) -> _Self:
         return cls.from_children(
             leading_comment=BlockComment.from_value(leading_comment) if leading_comment is not None else None,
-            indent=Whitespace.from_value(indent),
+            indent=Indent.from_value(indent),
             flag=PostingFlag.from_value(flag) if flag is not None else None,
             account=Account.from_value(account),
             number=NumberExpr.from_value(number) if number is not None else None,

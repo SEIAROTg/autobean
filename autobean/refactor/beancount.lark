@@ -82,7 +82,9 @@ _COMMA: ","
 %declare EOL
 %declare _INDENT
 %declare _DEDENT
+%declare INDENT
 %ignore WHITESPACE
+%ignore INDENT
 %ignore _NEWLINE
 %ignore INLINE_COMMENT
 %ignore BLOCK_COMMENT
