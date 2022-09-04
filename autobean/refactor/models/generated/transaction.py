@@ -3,6 +3,7 @@
 
 from typing import Iterable, Optional, Type, TypeVar, final
 from .. import base, internal, meta_item_internal
+from ..block_comment import BlockComment
 from ..date import Date
 from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
@@ -20,6 +21,7 @@ _Self = TypeVar('_Self', bound='Transaction')
 class Transaction(base.RawTreeModel):
     RULE = 'transaction'
 
+    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _date = internal.required_field[Date]()
     _flag = internal.required_field[TransactionFlag]()
     _string0 = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
@@ -30,7 +32,9 @@ class Transaction(base.RawTreeModel):
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
     _postings = internal.repeated_field[Posting](separators=(Newline.from_default(),), default_indent='    ')
+    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
+    raw_leading_comment = internal.optional_node_property(_leading_comment)
     raw_date = internal.required_node_property(_date)
     raw_flag = internal.required_node_property(_flag)
     raw_string0 = internal.optional_node_property(_string0)
@@ -40,7 +44,9 @@ class Transaction(base.RawTreeModel):
     raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
     raw_postings = internal.repeated_node_property(_postings)
+    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
 
+    leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     date = internal.required_date_property(raw_date)
     flag = internal.required_string_property(raw_flag)
     string0 = internal.optional_string_property(raw_string0, EscapedString)
@@ -49,11 +55,13 @@ class Transaction(base.RawTreeModel):
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
     postings = raw_postings
+    trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
 
     @final
     def __init__(
             self,
             token_store: base.TokenStore,
+            leading_comment: internal.Maybe[BlockComment],
             date: Date,
             flag: TransactionFlag,
             string0: internal.Maybe[EscapedString],
@@ -64,8 +72,10 @@ class Transaction(base.RawTreeModel):
             eol: Eol,
             meta: internal.Repeated[MetaItem],
             postings: internal.Repeated[Posting],
+            trailing_comment: internal.Maybe[BlockComment],
     ):
         super().__init__(token_store)
+        self._leading_comment = leading_comment
         self._date = date
         self._flag = flag
         self._string0 = string0
@@ -76,18 +86,20 @@ class Transaction(base.RawTreeModel):
         self._eol = eol
         self._meta = meta
         self._postings = postings
+        self._trailing_comment = trailing_comment
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._date.first_token
+        return self._leading_comment.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._postings.last_token
+        return self._trailing_comment.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
+            self._leading_comment.clone(token_store, token_transformer),
             self._date.clone(token_store, token_transformer),
             self._flag.clone(token_store, token_transformer),
             self._string0.clone(token_store, token_transformer),
@@ -98,10 +110,12 @@ class Transaction(base.RawTreeModel):
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
             self._postings.clone(token_store, token_transformer),
+            self._trailing_comment.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
+        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
         self._date = self._date.reattach(token_store, token_transformer)
         self._flag = self._flag.reattach(token_store, token_transformer)
         self._string0 = self._string0.reattach(token_store, token_transformer)
@@ -112,10 +126,12 @@ class Transaction(base.RawTreeModel):
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
         self._postings = self._postings.reattach(token_store, token_transformer)
+        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Transaction)
+            and self._leading_comment == other._leading_comment
             and self._date == other._date
             and self._flag == other._flag
             and self._string0 == other._string0
@@ -126,6 +142,7 @@ class Transaction(base.RawTreeModel):
             and self._eol == other._eol
             and self._meta == other._meta
             and self._postings == other._postings
+            and self._trailing_comment == other._trailing_comment
         )
 
     @classmethod
@@ -138,10 +155,13 @@ class Transaction(base.RawTreeModel):
             string2: Optional[EscapedString],
             postings: Iterable[Posting],
             *,
+            leading_comment: Optional[BlockComment] = None,
             tags_links: Iterable[Link | Tag] = (),
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
+            trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
+        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
         maybe_string0 = cls._string0.create_maybe(string0)
         maybe_string1 = cls._string1.create_maybe(string1)
         maybe_string2 = cls._string2.create_maybe(string2)
@@ -150,7 +170,9 @@ class Transaction(base.RawTreeModel):
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
         repeated_postings = cls._postings.create_repeated(postings)
+        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
         tokens = [
+            *maybe_leading_comment.detach(),
             *date.detach(),
             Whitespace.from_default(),
             *flag.detach(),
@@ -162,8 +184,10 @@ class Transaction(base.RawTreeModel):
             *eol.detach(),
             *repeated_meta.detach(),
             *repeated_postings.detach(),
+            *maybe_trailing_comment.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
+        maybe_leading_comment.reattach(token_store)
         date.reattach(token_store)
         flag.reattach(token_store)
         maybe_string0.reattach(token_store)
@@ -174,4 +198,5 @@ class Transaction(base.RawTreeModel):
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
         repeated_postings.reattach(token_store)
-        return cls(token_store, date, flag, maybe_string0, maybe_string1, maybe_string2, repeated_tags_links, maybe_inline_comment, eol, repeated_meta, repeated_postings)
+        maybe_trailing_comment.reattach(token_store)
+        return cls(token_store, maybe_leading_comment, date, flag, maybe_string0, maybe_string1, maybe_string2, repeated_tags_links, maybe_inline_comment, eol, repeated_meta, repeated_postings, maybe_trailing_comment)

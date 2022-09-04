@@ -5,6 +5,7 @@ from typing import Iterable, Iterator, Mapping, NoReturn, Optional, Type, TypeVa
 from . import internal, meta_item_internal
 from .generated import custom
 from .generated.custom import CustomLabel, CustomRawValue
+from .block_comment import BlockComment
 from .escaped_string import EscapedString
 from .date import Date
 from .account import Account
@@ -97,10 +98,19 @@ class Custom(custom.Custom):
             type: EscapedString,
             values: Iterable[CustomRawValue],
             *,
+            leading_comment: Optional[BlockComment] = None,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
+            trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
-        return super().from_children(date, type, _disambiguate_values(values), inline_comment=inline_comment, meta=meta)
+        return super().from_children(
+            date,
+            type,
+            _disambiguate_values(values),
+            leading_comment=leading_comment,
+            inline_comment=inline_comment,
+            meta=meta,
+            trailing_comment=trailing_comment)
 
     @classmethod
     def from_value(

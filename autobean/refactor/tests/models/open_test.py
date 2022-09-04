@@ -28,7 +28,6 @@ class TestOpen(base.BaseTestModel):
             booking: Optional[str],
     ) -> None:
         open = self.parser.parse(text, models.Open)
-        assert open.first_token is open.raw_date
         assert open.raw_date.value == date
         assert open.date == date
         assert open.raw_account.value == account

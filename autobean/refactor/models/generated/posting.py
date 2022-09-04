@@ -5,6 +5,7 @@ import decimal
 from typing import Iterable, Mapping, Optional, Type, TypeVar, final
 from .. import base, internal, meta_item_internal
 from ..account import Account
+from ..block_comment import BlockComment
 from ..cost_spec import CostSpec
 from ..currency import Currency
 from ..inline_comment import InlineComment
@@ -24,6 +25,7 @@ _Self = TypeVar('_Self', bound='Posting')
 class Posting(base.RawTreeModel):
     RULE = 'posting'
 
+    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _indent = internal.required_field[Whitespace]()
     _flag = internal.optional_right_field[PostingFlag](separators=(Whitespace.from_default(),))
     _account = internal.required_field[Account]()
@@ -34,7 +36,9 @@ class Posting(base.RawTreeModel):
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='        ')
+    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
+    raw_leading_comment = internal.optional_node_property(_leading_comment)
     raw_indent = internal.required_node_property(_indent)
     raw_flag = internal.optional_node_property(_flag)
     raw_account = internal.required_node_property(_account)
@@ -44,7 +48,9 @@ class Posting(base.RawTreeModel):
     raw_price = internal.optional_node_property(_price)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
+    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
 
+    leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     indent = internal.required_string_property(raw_indent)
     flag = internal.optional_string_property(raw_flag, PostingFlag)
     account = internal.required_string_property(raw_account)
@@ -54,11 +60,13 @@ class Posting(base.RawTreeModel):
     price = raw_price
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
+    trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
 
     @final
     def __init__(
             self,
             token_store: base.TokenStore,
+            leading_comment: internal.Maybe[BlockComment],
             indent: Whitespace,
             flag: internal.Maybe[PostingFlag],
             account: Account,
@@ -69,8 +77,10 @@ class Posting(base.RawTreeModel):
             inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             meta: internal.Repeated[MetaItem],
+            trailing_comment: internal.Maybe[BlockComment],
     ):
         super().__init__(token_store)
+        self._leading_comment = leading_comment
         self._indent = indent
         self._flag = flag
         self._account = account
@@ -81,18 +91,20 @@ class Posting(base.RawTreeModel):
         self._inline_comment = inline_comment
         self._eol = eol
         self._meta = meta
+        self._trailing_comment = trailing_comment
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._indent.first_token
+        return self._leading_comment.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._meta.last_token
+        return self._trailing_comment.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
+            self._leading_comment.clone(token_store, token_transformer),
             self._indent.clone(token_store, token_transformer),
             self._flag.clone(token_store, token_transformer),
             self._account.clone(token_store, token_transformer),
@@ -103,10 +115,12 @@ class Posting(base.RawTreeModel):
             self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
+            self._trailing_comment.clone(token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
+        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
         self._indent = self._indent.reattach(token_store, token_transformer)
         self._flag = self._flag.reattach(token_store, token_transformer)
         self._account = self._account.reattach(token_store, token_transformer)
@@ -117,10 +131,12 @@ class Posting(base.RawTreeModel):
         self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
+        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, Posting)
+            and self._leading_comment == other._leading_comment
             and self._indent == other._indent
             and self._flag == other._flag
             and self._account == other._account
@@ -131,6 +147,7 @@ class Posting(base.RawTreeModel):
             and self._inline_comment == other._inline_comment
             and self._eol == other._eol
             and self._meta == other._meta
+            and self._trailing_comment == other._trailing_comment
         )
 
     @classmethod
@@ -140,13 +157,16 @@ class Posting(base.RawTreeModel):
             number: Optional[NumberExpr],
             currency: Optional[Currency],
             *,
+            leading_comment: Optional[BlockComment] = None,
             indent: Whitespace,
             flag: Optional[PostingFlag] = None,
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
+            trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
+        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
         maybe_flag = cls._flag.create_maybe(flag)
         maybe_number = cls._number.create_maybe(number)
         maybe_currency = cls._currency.create_maybe(currency)
@@ -155,7 +175,9 @@ class Posting(base.RawTreeModel):
         maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
+        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
         tokens = [
+            *maybe_leading_comment.detach(),
             *indent.detach(),
             *maybe_flag.detach(),
             *account.detach(),
@@ -166,8 +188,10 @@ class Posting(base.RawTreeModel):
             *maybe_inline_comment.detach(),
             *eol.detach(),
             *repeated_meta.detach(),
+            *maybe_trailing_comment.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
+        maybe_leading_comment.reattach(token_store)
         indent.reattach(token_store)
         maybe_flag.reattach(token_store)
         account.reattach(token_store)
@@ -178,7 +202,8 @@ class Posting(base.RawTreeModel):
         maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
         repeated_meta.reattach(token_store)
-        return cls(token_store, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, maybe_inline_comment, eol, repeated_meta)
+        maybe_trailing_comment.reattach(token_store)
+        return cls(token_store, maybe_leading_comment, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, maybe_inline_comment, eol, repeated_meta, maybe_trailing_comment)
 
     @classmethod
     def from_value(
@@ -187,14 +212,17 @@ class Posting(base.RawTreeModel):
             number: Optional[decimal.Decimal],
             currency: Optional[str],
             *,
+            leading_comment: Optional[str] = None,
             indent: str = '    ',
             flag: Optional[str] = None,
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
             inline_comment: Optional[str] = None,
             meta: Optional[Mapping[str, MetaValue | MetaRawValue]] = None,
+            trailing_comment: Optional[str] = None,
     ) -> _Self:
         return cls.from_children(
+            leading_comment=BlockComment.from_value(leading_comment) if leading_comment is not None else None,
             indent=Whitespace.from_value(indent),
             flag=PostingFlag.from_value(flag) if flag is not None else None,
             account=Account.from_value(account),
@@ -204,4 +232,5 @@ class Posting(base.RawTreeModel):
             price=price,
             inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
+            trailing_comment=BlockComment.from_value(trailing_comment) if trailing_comment is not None else None,
         )

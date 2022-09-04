@@ -2,6 +2,7 @@ import datetime
 import itertools
 from typing import Iterable, Mapping, Optional, Type, TypeVar
 from . import base, internal, meta_item_internal
+from .block_comment import BlockComment
 from .date import Date
 from .escaped_string import EscapedString
 from .inline_comment import InlineComment
@@ -21,12 +22,38 @@ class Transaction(transaction.Transaction):
 
     @classmethod
     def from_parsed_children(cls: Type[_Self], token_store: base.TokenStore, *children: Optional[base.RawModel]) -> _Self:
-        date, flag, string0, string1, string2, tags_links, inline_comment, eol, meta, postings = children
+        (
+            leading_comment,
+            date,
+            flag,
+            string0,
+            string1,
+            string2,
+            tags_links,
+            inline_comment,
+            eol,
+            meta,
+            postings,
+            trailing_comment,
+        ) = children
         assert isinstance(string1, internal.Maybe)
         assert isinstance(string2, internal.Maybe)
         if string1.inner is not None and string2.inner is None:
             string1, string2 = string0, string1
-        return super().from_parsed_children(token_store, date, flag, string0, string1, string2, tags_links, inline_comment, eol, meta, postings)
+        return super().from_parsed_children(
+            token_store,
+            leading_comment,
+            date,
+            flag,
+            string0,
+            string1,
+            string2,
+            tags_links,
+            inline_comment,
+            eol,
+            meta,
+            postings,
+            trailing_comment)
 
     @internal.custom_property
     def raw_payee(self) -> Optional[EscapedString]:
@@ -62,9 +89,11 @@ class Transaction(transaction.Transaction):
             narration: Optional[EscapedString],
             postings: Iterable[Posting],
             *,
+            leading_comment: Optional[BlockComment] = None,
             tags_links: Iterable[Link | Tag] = (),
             inline_comment: Optional[InlineComment] = None,
             meta: Iterable[MetaItem] = (),
+            trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
         if payee is not None and narration is None:
             narration = EscapedString.from_value('')
@@ -75,9 +104,11 @@ class Transaction(transaction.Transaction):
             payee,
             narration,
             postings,
+            leading_comment=leading_comment,
             tags_links=tags_links,
             inline_comment=inline_comment,
             meta=meta,
+            trailing_comment=trailing_comment,
         )
 
     @classmethod

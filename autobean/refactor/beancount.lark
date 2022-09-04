@@ -23,6 +23,8 @@ file: repeated{_file_directive}
 file_ignored_: EOL | _INDENT EOL* _DEDENT
 _file_directive: directive | file_ignored_
 _comment_eol: maybe_left{INLINE_COMMENT} EOL
+_leading_comment: maybe_right{NEVER}
+_trailing_comment: maybe_left{NEVER}
 
 // Labels
 OPTION:       "option"
@@ -45,27 +47,27 @@ OPEN:         "open"
 CUSTOM:       "custom"
 
 // Directives
-option:       OPTION ESCAPED_STRING ESCAPED_STRING _comment_eol
-include:      INCLUDE ESCAPED_STRING _comment_eol
-plugin:       PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING} _comment_eol
-pushtag:      PUSHTAG TAG _comment_eol
-poptag:       POPTAG TAG _comment_eol
-pushmeta:     PUSHMETA META_KEY maybe_left{meta_value} _comment_eol
-popmeta:      POPMETA META_KEY _comment_eol
+option:       _leading_comment OPTION ESCAPED_STRING ESCAPED_STRING _comment_eol _trailing_comment
+include:      _leading_comment INCLUDE ESCAPED_STRING _comment_eol _trailing_comment
+plugin:       _leading_comment PLUGIN ESCAPED_STRING maybe_left{ESCAPED_STRING} _comment_eol _trailing_comment
+pushtag:      _leading_comment PUSHTAG TAG _comment_eol _trailing_comment
+poptag:       _leading_comment POPTAG TAG _comment_eol _trailing_comment
+pushmeta:     _leading_comment PUSHMETA META_KEY maybe_left{meta_value} _comment_eol _trailing_comment
+popmeta:      _leading_comment POPMETA META_KEY _comment_eol _trailing_comment
 
 // Entries
-balance:      DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY _comment_eol _meta_items
-close:        DATE CLOSE ACCOUNT _comment_eol _meta_items
-commodity:    DATE COMMODITY CURRENCY _comment_eol _meta_items
-pad:          DATE PAD ACCOUNT ACCOUNT _comment_eol _meta_items
-event:        DATE EVENT ESCAPED_STRING ESCAPED_STRING _comment_eol _meta_items
-query:        DATE QUERY ESCAPED_STRING ESCAPED_STRING _comment_eol _meta_items
-price:        DATE PRICE CURRENCY amount _comment_eol _meta_items
-note:         DATE NOTE ACCOUNT ESCAPED_STRING _comment_eol _meta_items
-document:     DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link} _comment_eol _meta_items
-open:         DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} _comment_eol _meta_items
-custom:       DATE CUSTOM ESCAPED_STRING repeated{_custom_value} _comment_eol _meta_items
-transaction:  DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} _comment_eol _meta_items_or_postings
+balance:      _leading_comment DATE BALANCE ACCOUNT number_expr maybe_left{tolerance} CURRENCY _comment_eol _meta_items _trailing_comment
+close:        _leading_comment DATE CLOSE ACCOUNT _comment_eol _meta_items _trailing_comment
+commodity:    _leading_comment DATE COMMODITY CURRENCY _comment_eol _meta_items _trailing_comment
+pad:          _leading_comment DATE PAD ACCOUNT ACCOUNT _comment_eol _meta_items _trailing_comment
+event:        _leading_comment DATE EVENT ESCAPED_STRING ESCAPED_STRING _comment_eol _meta_items _trailing_comment
+query:        _leading_comment DATE QUERY ESCAPED_STRING ESCAPED_STRING _comment_eol _meta_items _trailing_comment
+price:        _leading_comment DATE PRICE CURRENCY amount _comment_eol _meta_items _trailing_comment
+note:         _leading_comment DATE NOTE ACCOUNT ESCAPED_STRING _comment_eol _meta_items _trailing_comment
+document:     _leading_comment DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_tag_or_link} _comment_eol _meta_items _trailing_comment
+open:         _leading_comment DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} _comment_eol _meta_items _trailing_comment
+custom:       _leading_comment DATE CUSTOM ESCAPED_STRING repeated{_custom_value} _comment_eol _meta_items _trailing_comment
+transaction:  _leading_comment DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} _comment_eol _meta_items_or_postings _trailing_comment
 _meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER}
 
 // Punctuations
@@ -157,7 +159,7 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 ?meta_value: ESCAPED_STRING | ACCOUNT | DATE | CURRENCY | TAG | BOOL | NULL | number_expr | amount
 
 // MetaItem
-_meta_item: indent META_KEY maybe_left{meta_value} _comment_eol
+_meta_item: _leading_comment indent2 META_KEY maybe_left{meta_value} _comment_eol _trailing_comment
 meta_item: _allow_direct_parse{_meta_item}
 comment_line_: BLOCK_COMMENT EOL
 _meta_items_entity: meta_item | comment_line_
@@ -191,7 +193,7 @@ compound_amount: maybe_right{number_expr} HASH maybe_left{number_expr} CURRENCY
 unit_cost: LEFT_BRACE repeated_sep{cost_component, _COMMA} RIGHT_BRACE
 total_cost: DBL_LEFT_BRACE repeated_sep{cost_component, _COMMA} DBL_RIGHT_BRACE
 cost_spec: unit_cost | total_cost
-_posting: indent maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} _comment_eol repeated{meta_item}
+_posting: _leading_comment indent maybe_right{POSTING_FLAG} ACCOUNT _partial_amount maybe_left{cost_spec} maybe_left{price_annotation} _comment_eol repeated{meta_item} _trailing_comment
 posting: _allow_direct_parse{_posting}
 
 // [internal] Optional field wrapper
@@ -204,5 +206,7 @@ repeated_sep{inner, sep}: inner? (sep inner)*
 
 // [internal]
 NEVER: /^_^/
+NEVER2: NEVER
 _allow_direct_parse{inner}: inner | _INDENT inner _DEDENT  // allow parse without parent model
 indent: [NEVER]  // will be replaced by indent whitespace token
+indent2: [NEVER2]  // work around grammar ambiguity detection as lark doesn't know this never matches

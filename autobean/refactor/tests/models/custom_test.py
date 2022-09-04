@@ -31,7 +31,6 @@ class TestCustom(base.BaseTestModel):
             values: tuple[models.CustomValue, ...],
     ) -> None:
         custom = self.parser.parse(text, models.Custom)
-        assert custom.first_token is custom.raw_date
         assert custom.raw_date.value == date
         assert custom.date == date
         assert custom.raw_type.value == type

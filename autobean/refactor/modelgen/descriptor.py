@@ -134,7 +134,7 @@ class FieldDescriptor:
     default_value: Any
     separators: Optional[tuple[str, ...]]
     separators_before: Optional[tuple[str, ...]]
-    default_indent: Optional[str] = None
+    default_indent: Optional[str]
 
     @functools.cached_property
     def inner_type_original(self) -> str:
@@ -329,6 +329,7 @@ class FieldDescriptor:
 class MetaModelDescriptor:
     name: str
     rule: str
+    block_commentable: bool
     fields: list[FieldDescriptor]
 
     @functools.cached_property
@@ -416,6 +417,29 @@ def get_literal_token_pattern(rule: str) -> Optional[str]:
     return None
 
 
+_LEADING_COMMENT_FIELD = FieldDescriptor(
+    name='leading_comment',
+    model_types=frozenset({ModelType('BlockComment', 'BLOCK_COMMENT')}),
+    cardinality=FieldCardinality.OPTIONAL,
+    floating=base.Floating.RIGHT,
+    is_public=True,
+    define_as=None,
+    type_alias=None,
+    has_circular_dep=False,
+    is_optional=True,
+    is_keyword_only=True,
+    default_value=None,
+    separators=('Newline.from_default()',),
+    separators_before=None,
+    default_indent='',
+)
+_TRAILING_COMMENT_FIELD = dataclasses.replace(
+    _LEADING_COMMENT_FIELD,
+    name='trailing_comment',
+    floating=base.Floating.LEFT,
+)
+
+
 def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
     field_descriptors: list[FieldDescriptor] = []
     is_first = True
@@ -468,9 +492,13 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
         )
         field_descriptors.append(descriptor)
         is_first = False
+    block_commentable = issubclass(meta_model, base.BlockCommentable)
+    if block_commentable:
+        field_descriptors = [_LEADING_COMMENT_FIELD] + field_descriptors + [_TRAILING_COMMENT_FIELD]
     return MetaModelDescriptor(
         name=meta_model.__name__,
         rule=stringcase.snakecase(meta_model.__name__),
+        block_commentable=block_commentable,
         fields=field_descriptors,
     )
 

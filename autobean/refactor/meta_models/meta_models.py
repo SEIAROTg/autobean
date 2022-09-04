@@ -3,7 +3,7 @@
 
 import dataclasses
 from typing import Optional, Union
-from .base import MetaModel, Floating, field
+from .base import BlockCommentable, MetaModel, Floating, field
 
 _META = field(
     separators=('Newline.from_default()',),
@@ -80,7 +80,7 @@ class CostSpec(MetaModel):
     cost: Union['unit_cost', 'total_cost']
 
 
-class Posting(MetaModel):
+class Posting(MetaModel, BlockCommentable):
     indent: 'WHITESPACE' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
     flag: Optional['POSTING_FLAG'] = field(floating=Floating.RIGHT, is_optional=True, is_keyword_only=True)
     account: 'ACCOUNT' = field(separators=())
@@ -94,7 +94,7 @@ class Posting(MetaModel):
     meta: list['meta_item'] = dataclasses.replace(_META, default_indent=' ' * 8)
 
 
-class MetaItem(MetaModel):
+class MetaItem(MetaModel, BlockCommentable):
     indent: 'WHITESPACE' = field(is_optional=True, is_keyword_only=True, default_value=' ' * 4)
     key: 'META_KEY' = field(separators=())
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
@@ -105,14 +105,14 @@ class MetaItem(MetaModel):
 # Directives
 
 
-class Include(MetaModel):
+class Include(MetaModel, BlockCommentable):
     _label: 'INCLUDE' = field(define_as='IncludeLabel')
     filename: 'ESCAPED_STRING'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
-class Option(MetaModel):
+class Option(MetaModel, BlockCommentable):
     _label: 'OPTION' = field(define_as='OptionLabel')
     key: 'ESCAPED_STRING'
     value: 'ESCAPED_STRING'
@@ -120,7 +120,7 @@ class Option(MetaModel):
     _eol: 'EOL' = field(separators=())
 
 
-class Plugin(MetaModel):
+class Plugin(MetaModel, BlockCommentable):
     _label: 'PLUGIN' = field(define_as='PluginLabel')
     name: 'ESCAPED_STRING'
     config: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
@@ -128,21 +128,21 @@ class Plugin(MetaModel):
     _eol: 'EOL' = field(separators=())
 
 
-class Popmeta(MetaModel):
+class Popmeta(MetaModel, BlockCommentable):
     _label: 'POPMETA' = field(define_as='PopmetaLabel')
     key: 'META_KEY'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
-class Poptag(MetaModel):
+class Poptag(MetaModel, BlockCommentable):
     _label: 'POPTAG' = field(define_as='PoptagLabel')
     tag: 'TAG'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
 
 
-class Pushmeta(MetaModel):
+class Pushmeta(MetaModel, BlockCommentable):
     _label: 'PUSHMETA' = field(define_as='PushmetaLabel')
     key: 'META_KEY'
     value: Optional['meta_value'] = field(floating=Floating.LEFT, type_alias='MetaRawValue')
@@ -150,7 +150,7 @@ class Pushmeta(MetaModel):
     _eol: 'EOL' = field(separators=())
 
 
-class Pushtag(MetaModel):
+class Pushtag(MetaModel, BlockCommentable):
     _label: 'PUSHTAG' = field(define_as='PushtagLabel')
     tag: 'TAG'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
@@ -160,7 +160,7 @@ class Pushtag(MetaModel):
 # Entries
 
 
-class Balance(MetaModel):
+class Balance(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'BALANCE' = field(define_as='BalanceLabel')
     account: 'ACCOUNT'
@@ -172,7 +172,7 @@ class Balance(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Close(MetaModel):
+class Close(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'CLOSE' = field(define_as='CloseLabel')
     account: 'ACCOUNT'
@@ -181,7 +181,7 @@ class Close(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Commodity(MetaModel):
+class Commodity(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'COMMODITY' = field(define_as='CommodityLabel')
     currency: 'CURRENCY'
@@ -190,7 +190,7 @@ class Commodity(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Event(MetaModel):
+class Event(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'EVENT' = field(define_as='EventLabel')
     type: 'ESCAPED_STRING'
@@ -200,7 +200,7 @@ class Event(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Pad(MetaModel):
+class Pad(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'PAD' = field(define_as='PadLabel')
     account: 'ACCOUNT'
@@ -210,7 +210,7 @@ class Pad(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Price(MetaModel):
+class Price(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'PRICE' = field(define_as='PriceLabel')
     currency: 'CURRENCY'
@@ -220,7 +220,7 @@ class Price(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Query(MetaModel):
+class Query(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'QUERY' = field(define_as='QueryLabel')
     name: 'ESCAPED_STRING'
@@ -230,7 +230,7 @@ class Query(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Note(MetaModel):
+class Note(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'NOTE' = field(define_as='NoteLabel')
     account: 'ACCOUNT'
@@ -240,7 +240,7 @@ class Note(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Document(MetaModel):
+class Document(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'DOCUMENT' = field(define_as='DocumentLabel')
     account: 'ACCOUNT'
@@ -251,7 +251,7 @@ class Document(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Open(MetaModel):
+class Open(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'OPEN' = field(define_as='OpenLabel')
     account: 'ACCOUNT'
@@ -265,7 +265,7 @@ class Open(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Custom(MetaModel):
+class Custom(MetaModel, BlockCommentable):
     date: 'DATE'
     _label: 'CUSTOM' = field(define_as='CustomLabel')
     type: 'ESCAPED_STRING'
@@ -282,7 +282,7 @@ class Custom(MetaModel):
     meta: list['meta_item'] = _META
 
 
-class Transaction(MetaModel):
+class Transaction(MetaModel, BlockCommentable):
     date: 'DATE'
     flag: 'TRANSACTION_FLAG'
     string0: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT)

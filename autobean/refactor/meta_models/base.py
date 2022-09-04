@@ -7,6 +7,10 @@ class MetaModel:
     pass
 
 
+class BlockCommentable:
+    pass
+
+
 class Floating(enum.Enum):
     LEFT = enum.auto()
     RIGHT = enum.auto()
