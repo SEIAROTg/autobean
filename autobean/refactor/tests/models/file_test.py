@@ -62,13 +62,22 @@ popmeta foo:
 ; comment after
 
 '''
-_BAR_FILE = '''\
+_BAR_FILE = f'''\
 ; comment
 
 ; ^ empty line
-    
+{"    "}
 ; ^ line with only spaces
     ; indented comment
+
+{"    "}
+2000-01-01 close Assets:Foo
+
+2000-01-01 close Assets:Foo
+{"    "}
+
+2000-01-01 *
+{"    "}
 
 ; block
 ; comment\
@@ -82,7 +91,7 @@ class TestFile(base.BaseTestModel):
     @pytest.mark.parametrize(
         'text,length', [
             (_FOO_FILE, 19),
-            (_BAR_FILE, 0),
+            (_BAR_FILE, 3),
             (_EMPTY_FILE, 0),
             (_SINGLE_COMMENT_FILE, 0),
             ('; foo', 0),

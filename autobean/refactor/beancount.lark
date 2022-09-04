@@ -25,6 +25,7 @@ _file_directive: directive | file_ignored_
 _comment_eol: maybe_left{INLINE_COMMENT} EOL
 _leading_comment: maybe_right{NEVER}
 _trailing_comment: maybe_left{NEVER}
+eol_: EOL
 
 // Labels
 OPTION:       "option"
@@ -68,7 +69,7 @@ document:     _leading_comment DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_ta
 open:         _leading_comment DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} _comment_eol _meta_items _trailing_comment
 custom:       _leading_comment DATE CUSTOM ESCAPED_STRING repeated{_custom_value} _comment_eol _meta_items _trailing_comment
 transaction:  _leading_comment DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} _comment_eol _meta_items_or_postings _trailing_comment
-_meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER}
+_meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER} | _INDENT eol_+ repeated{NEVER} repeated{NEVER} _DEDENT
 
 // Punctuations
 WHITESPACE: /[ \t]+/
@@ -165,7 +166,7 @@ _meta_item: _leading_comment indent2 META_KEY maybe_left{meta_value} _comment_eo
 meta_item: _allow_direct_parse{_meta_item}
 comment_line_: BLOCK_COMMENT EOL
 _meta_items_entity: meta_item | comment_line_
-_meta_items: _INDENT repeated{_meta_items_entity} _DEDENT | repeated{NEVER}
+_meta_items: _INDENT repeated{_meta_items_entity} _DEDENT | repeated{NEVER} | _INDENT eol_+ repeated{NEVER} _DEDENT
 
 // Tolerance
 TILDE:        "~"

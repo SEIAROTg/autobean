@@ -200,6 +200,8 @@ class ModelBuilder:
                 children.append(self._build_repeated_node(child))
             elif is_tree and child.data in ('indent', 'indent2'):
                 children.append(self._build_indent())
+            elif is_tree and child.data.endswith('_'):
+                continue
             else:
                 children.append(self._build_required_node(child))
         return model_type.from_parsed_children(self._token_store, *children)
