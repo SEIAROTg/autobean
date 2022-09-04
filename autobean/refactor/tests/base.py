@@ -18,6 +18,10 @@ _IGNORED_ATTRIBUTES = {
     '_is_protocol',
     '_inferred_indent',
     'inferred_indent',
+    'raw_spacing_before',
+    'spacing_before',
+    'raw_spacing_after',
+    'spacing_after',
 }
 
 

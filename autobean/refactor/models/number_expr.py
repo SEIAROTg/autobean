@@ -9,7 +9,7 @@ from .number_mul_expr import NumberMulExpr, MulOp
 from .number_atom_expr import NumberAtomExpr
 from .number_unary_expr import NumberUnaryExpr
 from .number_paren_expr import NumberParenExpr
-from .punctuation import Whitespace
+from .spacing import Whitespace
 from .generated.number_paren_expr import LeftParen, RightParen
 from .generated.number_unary_expr import UnaryOp
 from .generated import number_expr

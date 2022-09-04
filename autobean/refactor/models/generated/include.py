@@ -6,7 +6,8 @@ from .. import base, internal
 from ..block_comment import BlockComment
 from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Include')
 
@@ -18,7 +19,7 @@ class IncludeLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Include(base.RawTreeModel):
+class Include(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'include'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

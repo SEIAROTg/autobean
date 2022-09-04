@@ -7,13 +7,14 @@ from ..block_comment import BlockComment
 from ..inline_comment import InlineComment
 from ..meta_key import MetaKey
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Indent, Newline, Whitespace
+from ..punctuation import Eol, Indent
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='MetaItem')
 
 
 @internal.tree_model
-class MetaItem(base.RawTreeModel):
+class MetaItem(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'meta_item'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

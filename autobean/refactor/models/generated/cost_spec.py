@@ -9,7 +9,7 @@ _Self = TypeVar('_Self', bound='CostSpec')
 
 
 @internal.tree_model
-class CostSpec(base.RawTreeModel):
+class CostSpec(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'cost_spec'
 
     _cost = internal.required_field[TotalCost | UnitCost]()

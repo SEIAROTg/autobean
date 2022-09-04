@@ -5,7 +5,8 @@ from typing import Optional, Type, TypeVar, final
 from .. import base, internal
 from ..block_comment import BlockComment
 from ..inline_comment import InlineComment
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 from ..tag import Tag
 
 _Self = TypeVar('_Self', bound='Poptag')
@@ -18,7 +19,7 @@ class PoptagLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Poptag(base.RawTreeModel):
+class Poptag(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'poptag'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

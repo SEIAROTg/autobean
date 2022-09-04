@@ -10,7 +10,8 @@ from ..date import Date
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Pad')
 
@@ -22,7 +23,7 @@ class PadLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Pad(base.RawTreeModel):
+class Pad(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'pad'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

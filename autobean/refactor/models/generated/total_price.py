@@ -6,7 +6,7 @@ from typing import Optional, Type, TypeVar, final
 from .. import base, internal
 from ..currency import Currency
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 
 _Self = TypeVar('_Self', bound='TotalPrice')
 
@@ -18,7 +18,7 @@ class AtAt(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class TotalPrice(base.RawTreeModel):
+class TotalPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'total_price'
 
     _label = internal.required_field[AtAt]()

@@ -10,7 +10,8 @@ from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Query')
 
@@ -22,7 +23,7 @@ class QueryLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Query(base.RawTreeModel):
+class Query(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'query'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

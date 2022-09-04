@@ -6,7 +6,7 @@ from typing import Optional, Type, TypeVar, final
 from .. import base, internal
 from ..currency import Currency
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 
 _Self = TypeVar('_Self', bound='UnitPrice')
 
@@ -18,7 +18,7 @@ class At(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class UnitPrice(base.RawTreeModel):
+class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'unit_price'
 
     _label = internal.required_field[At]()

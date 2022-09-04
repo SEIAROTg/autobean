@@ -2,21 +2,9 @@ from . import internal
 
 
 @internal.token_model
-class Newline(internal.SimpleDefaultRawTokenModel):
-    RULE = '_NEWLINE'
-    DEFAULT = '\n'
-
-
-@internal.token_model
 class Eol(internal.SimpleDefaultRawTokenModel):
     RULE = 'EOL'
     DEFAULT = ''
-
-
-@internal.token_model
-class Whitespace(internal.SimpleDefaultRawTokenModel):
-    RULE = 'WHITESPACE'
-    DEFAULT = ' '
 
 
 @internal.token_model

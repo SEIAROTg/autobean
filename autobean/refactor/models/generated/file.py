@@ -18,10 +18,10 @@ from ..plugin import Plugin
 from ..popmeta import Popmeta
 from ..poptag import Poptag
 from ..price import Price
-from ..punctuation import Newline
 from ..pushmeta import Pushmeta
 from ..pushtag import Pushtag
 from ..query import Query
+from ..spacing import Newline
 from ..transaction import Transaction
 
 Directive = Balance | Close | Commodity | Custom | Document | Event | Include | Note | Open | Option | Pad | Plugin | Popmeta | Poptag | Price | Pushmeta | Pushtag | Query | Transaction
@@ -29,7 +29,7 @@ _Self = TypeVar('_Self', bound='File')
 
 
 @internal.tree_model
-class File(base.RawTreeModel):
+class File(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'file'
 
     _directives = internal.repeated_field[Directive](separators=(Newline.from_default(),), separators_before=())

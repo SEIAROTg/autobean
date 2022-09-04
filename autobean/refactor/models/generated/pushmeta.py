@@ -7,7 +7,8 @@ from ..block_comment import BlockComment
 from ..inline_comment import InlineComment
 from ..meta_key import MetaKey
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Pushmeta')
 
@@ -19,7 +20,7 @@ class PushmetaLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Pushmeta(base.RawTreeModel):
+class Pushmeta(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'pushmeta'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

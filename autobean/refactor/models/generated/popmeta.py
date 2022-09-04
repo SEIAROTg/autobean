@@ -6,7 +6,8 @@ from .. import base, internal
 from ..block_comment import BlockComment
 from ..inline_comment import InlineComment
 from ..meta_key import MetaKey
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Popmeta')
 
@@ -18,7 +19,7 @@ class PopmetaLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Popmeta(base.RawTreeModel):
+class Popmeta(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'popmeta'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

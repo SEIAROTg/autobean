@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING, Type, TypeVar, final
 from .. import base, internal
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 if TYPE_CHECKING:
   from ..number_atom_expr import NumberAtomExpr
 
@@ -16,7 +16,7 @@ class UnaryOp(internal.SimpleRawTokenModel):
 
 
 @internal.tree_model
-class NumberUnaryExpr(base.RawTreeModel):
+class NumberUnaryExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'number_unary_expr'
 
     _unary_op = internal.required_field[UnaryOp]()

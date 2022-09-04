@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING, Type, TypeVar, final
 from .. import base, internal
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 if TYPE_CHECKING:
   from ..number_add_expr import NumberAddExpr
 
@@ -23,7 +23,7 @@ class RightParen(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class NumberParenExpr(base.RawTreeModel):
+class NumberParenExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'number_paren_expr'
 
     _left_paren = internal.required_field[LeftParen]()

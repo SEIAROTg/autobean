@@ -12,7 +12,8 @@ from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Comma, Eol, Newline, Whitespace
+from ..punctuation import Comma, Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Open')
 
@@ -24,7 +25,7 @@ class OpenLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Open(base.RawTreeModel):
+class Open(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'open'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

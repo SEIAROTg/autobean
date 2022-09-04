@@ -12,7 +12,8 @@ from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..number_expr import NumberExpr
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 CustomRawValue = Account | Amount | Bool | Date | EscapedString | NumberExpr
 _Self = TypeVar('_Self', bound='Custom')
@@ -25,7 +26,7 @@ class CustomLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Custom(base.RawTreeModel):
+class Custom(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'custom'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

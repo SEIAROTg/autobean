@@ -10,7 +10,8 @@ from ..inline_comment import InlineComment
 from ..link import Link
 from ..meta_item import MetaItem
 from ..posting import Posting
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 from ..tag import Tag
 from ..transaction_flag import TransactionFlag
 
@@ -18,7 +19,7 @@ _Self = TypeVar('_Self', bound='Transaction')
 
 
 @internal.tree_model
-class Transaction(base.RawTreeModel):
+class Transaction(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'transaction'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

@@ -6,7 +6,7 @@ from typing import Optional, Type, TypeVar, final
 from .. import base, internal
 from ..currency import Currency
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 
 _Self = TypeVar('_Self', bound='CompoundAmount')
 
@@ -18,7 +18,7 @@ class Hash(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class CompoundAmount(base.RawTreeModel):
+class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'compound_amount'
 
     _number_per = internal.optional_right_field[NumberExpr](separators=(Whitespace.from_default(),))

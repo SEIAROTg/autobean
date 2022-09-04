@@ -13,7 +13,8 @@ from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..number_expr import NumberExpr
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 from ..tolerance import Tolerance
 
 _Self = TypeVar('_Self', bound='Balance')
@@ -26,7 +27,7 @@ class BalanceLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Balance(base.RawTreeModel):
+class Balance(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'balance'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

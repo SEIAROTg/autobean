@@ -13,7 +13,8 @@ from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
 from ..number_expr import NumberExpr
 from ..posting_flag import PostingFlag
-from ..punctuation import Eol, Indent, Newline, Whitespace
+from ..punctuation import Eol, Indent
+from ..spacing import Newline, Whitespace
 from ..total_price import TotalPrice
 from ..unit_price import UnitPrice
 
@@ -22,7 +23,7 @@ _Self = TypeVar('_Self', bound='Posting')
 
 
 @internal.tree_model
-class Posting(base.RawTreeModel):
+class Posting(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'posting'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

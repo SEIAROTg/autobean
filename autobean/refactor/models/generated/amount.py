@@ -6,13 +6,13 @@ from typing import Type, TypeVar, final
 from .. import base, internal
 from ..currency import Currency
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 
 _Self = TypeVar('_Self', bound='Amount')
 
 
 @internal.tree_model
-class Amount(base.RawTreeModel):
+class Amount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'amount'
 
     _number = internal.required_field[NumberExpr]()

@@ -5,7 +5,7 @@ import decimal
 from typing import Type, TypeVar, final
 from .. import base, internal
 from ..number_expr import NumberExpr
-from ..punctuation import Whitespace
+from ..spacing import Whitespace
 
 _Self = TypeVar('_Self', bound='Tolerance')
 
@@ -17,7 +17,7 @@ class Tilde(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Tolerance(base.RawTreeModel):
+class Tolerance(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'tolerance'
 
     _tilde = internal.required_field[Tilde]()

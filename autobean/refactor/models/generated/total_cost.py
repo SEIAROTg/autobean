@@ -4,7 +4,8 @@
 from typing import Iterable, Type, TypeVar, final
 from .. import base, internal
 from ..cost_component import CostComponent
-from ..punctuation import Comma, Whitespace
+from ..punctuation import Comma
+from ..spacing import Whitespace
 
 _Self = TypeVar('_Self', bound='TotalCost')
 
@@ -22,7 +23,7 @@ class DblRightBrace(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class TotalCost(base.RawTreeModel):
+class TotalCost(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'total_cost'
 
     _dbl_left_brace = internal.required_field[DblLeftBrace]()

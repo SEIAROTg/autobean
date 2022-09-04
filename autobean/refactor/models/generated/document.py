@@ -10,7 +10,8 @@ from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
 from ..link import Link
 from ..meta_item import MetaItem
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 from ..tag import Tag
 
 _Self = TypeVar('_Self', bound='Document')
@@ -23,7 +24,7 @@ class DocumentLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Document(base.RawTreeModel):
+class Document(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'document'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

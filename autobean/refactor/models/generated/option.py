@@ -6,7 +6,8 @@ from .. import base, internal
 from ..block_comment import BlockComment
 from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Option')
 
@@ -18,7 +19,7 @@ class OptionLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Option(base.RawTreeModel):
+class Option(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'option'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

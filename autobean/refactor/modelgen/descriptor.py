@@ -43,10 +43,10 @@ _GRAMMAR = _load_grammar()
 
 def _model_name_to_module(model_name: str) -> str:
     return {
+        'Whitespace': 'spacing',
+        'Newline': 'spacing',
         'Comma': 'punctuation',
-        'Whitespace': 'punctuation',
         'Indent': 'punctuation',
-        'Newline': 'punctuation',
         'Indent': 'punctuation',
         'Eol': 'punctuation',
         'MetaRawValue': 'meta_value',

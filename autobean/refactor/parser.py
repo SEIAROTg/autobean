@@ -151,6 +151,8 @@ class ModelBuilder:
         for token in self._tokens[self._cursor:cursor]:
             if not token.value:  # skips EOL, _INDENT, _DEDENT, etc. if outside a model.
                 continue
+            if token.type == 'INDENT':
+                token.type = 'WHITESPACE'
             self._add_tokens([self._token_models[token.type].from_raw_text(token.value)])
         self._cursor = cursor
         self._add_tokens(self._right_floating_placeholders)
@@ -160,7 +162,7 @@ class ModelBuilder:
         while self._cursor < len(self._tokens):
             token = self._tokens[self._cursor]
             if token.value:
-                if self._tokens[self._cursor].type == 'INDENT':
+                if token.type == 'INDENT':
                     return self._build_token(token)
                 if not token.type in _IGNORED_TOKENS:
                     break

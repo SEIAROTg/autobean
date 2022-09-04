@@ -11,7 +11,8 @@ from ..date import Date
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Price')
 
@@ -23,7 +24,7 @@ class PriceLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Price(base.RawTreeModel):
+class Price(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'price'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))

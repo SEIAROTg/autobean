@@ -49,7 +49,7 @@ class ${field.define_as}(internal.SimpleRawTokenModel):
 
 
 @internal.tree_model
-class ${model.name}(base.RawTreeModel):
+class ${model.name}(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = '${model.rule}'
 
 % for field in model.fields:

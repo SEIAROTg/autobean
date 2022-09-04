@@ -10,7 +10,8 @@ from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..meta_value import MetaRawValue, MetaValue
-from ..punctuation import Eol, Newline, Whitespace
+from ..punctuation import Eol
+from ..spacing import Newline, Whitespace
 
 _Self = TypeVar('_Self', bound='Event')
 
@@ -22,7 +23,7 @@ class EventLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Event(base.RawTreeModel):
+class Event(base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'event'
 
     _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
