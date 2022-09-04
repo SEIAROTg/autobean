@@ -164,9 +164,7 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 // MetaItem
 _meta_item: _leading_comment indent2 META_KEY maybe_left{meta_value} _comment_eol _trailing_comment
 meta_item: _allow_direct_parse{_meta_item}
-comment_line_: BLOCK_COMMENT EOL
-_meta_items_entity: meta_item | comment_line_
-_meta_items: _INDENT repeated{_meta_items_entity} _DEDENT | repeated{NEVER} | _INDENT eol_+ repeated{NEVER} _DEDENT
+_meta_items: _INDENT repeated{meta_item} _DEDENT | repeated{NEVER} | _INDENT eol_+ repeated{NEVER} _DEDENT
 
 // Tolerance
 TILDE:        "~"

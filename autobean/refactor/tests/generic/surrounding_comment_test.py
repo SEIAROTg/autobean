@@ -36,6 +36,12 @@ _SET_TESTCASES = [
 class TestSurroundingComment(base.BaseTestModel):
 
     @pytest.mark.parametrize(
+        'text', [_CLOSE_LEADING, _CLOSE_TRAILING, _CLOSE_BOTH, _CLOSE_NEITHER],
+    )
+    def test_parse_success(self, text: str) -> None:
+        self.parser.parse(text, models.Close)
+
+    @pytest.mark.parametrize(
         'leading_comment,trailing_comment,expected_text', _SET_TESTCASES,
     )
     def test_set_raw_comment(self, leading_comment: Optional[str], trailing_comment: Optional[str], expected_text: str) -> None:

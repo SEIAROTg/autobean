@@ -47,6 +47,7 @@ class PostLex(lark.lark.PostLex):
     def process(self, stream: Iterator[lark.Token]) -> Iterator[lark.Token]:
         indented = False
         token = None
+        prev_is_block_comment = False
         for token in stream:
             if token.type != self._NEWLINE_INDENT_COMMENT:
                 yield token
@@ -55,19 +56,23 @@ class PostLex(lark.lark.PostLex):
             assert match
             newline_text, indent_text, comment_text = match.groups()
             if newline_text:
-                yield lark.Token.new_borrow_pos(self._EOL, '', token)
+                if not prev_is_block_comment:
+                    yield lark.Token.new_borrow_pos(self._EOL, '', token)
                 yield lark.Token.new_borrow_pos(self._NEWLINE, newline_text, token)
+            prev_is_block_comment = False
             if indent_text and not indented:
                 indented = True
                 yield lark.Token.new_borrow_pos(self._INDENT, '', token)
             if comment_text:
+                prev_is_block_comment = True
                 yield lark.Token.new_borrow_pos(self._BLOCK_COMMENT, indent_text + comment_text, token)
             elif indent_text:
                 yield lark.Token.new_borrow_pos(self._INDENT_WS, indent_text, token)
             if not indent_text and indented:
                 indented = False
                 yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
-        yield lark.Token(self._EOL, '')
+        if not prev_is_block_comment:
+            yield lark.Token(self._EOL, '')
         if indented:
             yield lark.Token(self._DEDENT, '')
 
