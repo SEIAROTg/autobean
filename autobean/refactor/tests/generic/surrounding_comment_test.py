@@ -61,6 +61,18 @@ class TestSurroundingComment(base.BaseTestModel):
         assert self.print_model(close) == expected_text
         self.check_deepcopy_tree(close)
 
+    def test_set_comment_adaptive_indent(self) -> None:
+        posting = self.parser.parse('\t\tAssets:Foo  100.00 USD', models.Posting)
+        posting.leading_comment = 'foo\nbar'
+        posting.trailing_comment = 'baz\nqux'
+        assert self.print_model(posting) == '''\
+\t\t; foo
+\t\t; bar
+\t\tAssets:Foo  100.00 USD
+\t\t; baz
+\t\t; qux\
+'''
+
     @pytest.mark.parametrize(
         'leading_comment,trailing_comment,expected_text', _SET_TESTCASES,
     )

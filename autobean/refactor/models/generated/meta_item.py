@@ -31,12 +31,12 @@ class MetaItem(base.RawTreeModel):
     raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_trailing_comment = internal.optional_node_property(_trailing_comment)
 
-    leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
+    leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
     indent = internal.required_string_property(raw_indent)
     key = internal.required_string_property(raw_key)
     value = meta_value_internal.optional_meta_value_property(raw_value)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
-    trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
+    trailing_comment = internal.optional_indented_string_property(raw_trailing_comment, BlockComment, raw_indent)
 
     @final
     def __init__(

@@ -135,6 +135,7 @@ class FieldDescriptor:
     separators: Optional[tuple[str, ...]]
     separators_before: Optional[tuple[str, ...]]
     default_indent: Optional[str]
+    indent_field_name: Optional[str]
 
     @functools.cached_property
     def inner_type_original(self) -> str:
@@ -269,6 +270,8 @@ class FieldDescriptor:
         elif self.cardinality == FieldCardinality.OPTIONAL:
             if self.value_type == 'decimal.Decimal':
                 return f'internal.optional_decimal_property(raw_{self.name}, {self.inner_type_original})'
+            elif self.inner_type == 'BlockComment' and self.indent_field_name:
+                return f'internal.optional_indented_string_property(raw_{self.name}, {self.inner_type_original}, raw_{self.indent_field_name})'
             elif self.value_type == 'str':
                 return f'internal.optional_string_property(raw_{self.name}, {self.inner_type_original})'
             elif self.value_type == 'MetaValue':
@@ -432,6 +435,7 @@ _LEADING_COMMENT_FIELD = FieldDescriptor(
     separators=('Newline.from_default()',),
     separators_before=None,
     default_indent='',
+    indent_field_name=None,
 )
 _TRAILING_COMMENT_FIELD = dataclasses.replace(
     _LEADING_COMMENT_FIELD,
@@ -443,6 +447,9 @@ _TRAILING_COMMENT_FIELD = dataclasses.replace(
 def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
     field_descriptors: list[FieldDescriptor] = []
     is_first = True
+    indent_field_name = next(
+        (name for name in inspect.get_annotations(meta_model).keys() if name == 'indent'),
+        None)
     for name, type_hint in inspect.get_annotations(meta_model).items():
         field = getattr(meta_model, name, None) or base.field()
         is_public = not name.startswith('_')
@@ -489,12 +496,17 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
             separators=separators,
             separators_before=field.separators_before,
             default_indent=field.default_indent,
+            indent_field_name=indent_field_name,
         )
         field_descriptors.append(descriptor)
         is_first = False
     block_commentable = issubclass(meta_model, base.BlockCommentable)
     if block_commentable:
-        field_descriptors = [_LEADING_COMMENT_FIELD] + field_descriptors + [_TRAILING_COMMENT_FIELD]
+        field_descriptors = [
+            dataclasses.replace(_LEADING_COMMENT_FIELD, indent_field_name=indent_field_name)
+        ] + field_descriptors + [
+            dataclasses.replace(_TRAILING_COMMENT_FIELD, indent_field_name=indent_field_name)
+        ]
     return MetaModelDescriptor(
         name=meta_model.__name__,
         rule=stringcase.snakecase(meta_model.__name__),

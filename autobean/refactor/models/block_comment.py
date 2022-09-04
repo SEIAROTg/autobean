@@ -7,7 +7,7 @@ _Self = TypeVar('_Self', bound='BlockComment')
 
 
 @internal.token_model
-class BlockComment(base.RawTokenModel, internal.RWValue[str]):
+class BlockComment(base.RawTokenModel, internal.RWValueWithIndent[str]):
     RULE = 'BLOCK_COMMENT'
 
     @final

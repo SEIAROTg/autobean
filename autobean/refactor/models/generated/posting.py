@@ -50,7 +50,7 @@ class Posting(base.RawTreeModel):
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
     raw_trailing_comment = internal.optional_node_property(_trailing_comment)
 
-    leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
+    leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
     indent = internal.required_string_property(raw_indent)
     flag = internal.optional_string_property(raw_flag, PostingFlag)
     account = internal.required_string_property(raw_account)
@@ -60,7 +60,7 @@ class Posting(base.RawTreeModel):
     price = raw_price
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
-    trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
+    trailing_comment = internal.optional_indented_string_property(raw_trailing_comment, BlockComment, raw_indent)
 
     @final
     def __init__(

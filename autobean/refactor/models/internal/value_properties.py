@@ -14,9 +14,11 @@ _M = TypeVar('_M', bound=base.RawModel)
 _M2 = TypeVar('_M2', bound=base.RawModel)
 _U = TypeVar('_U', bound=base.RawTreeModel)
 _SV = TypeVar('_SV', bound='RWValue[str]')
+_ISV = TypeVar('_ISV', bound='RWValueWithIndent[str]')
 _DV = TypeVar('_DV', bound='RWValue[decimal.Decimal]')
 _DateV = TypeVar('_DateV', bound='RWValue[datetime.date]')
 _SelfRWValue = TypeVar('_SelfRWValue', bound='RWValue')
+_SelfRWValueWithIndent = TypeVar('_SelfRWValueWithIndent', bound='RWValueWithIndent')
 
 
 class RWValue(base.RawModel, abc.ABC, Generic[_V]):
@@ -34,7 +36,22 @@ class RWValue(base.RawModel, abc.ABC, Generic[_V]):
         raise NotImplementedError()
 
 
-class required_string_property(Generic[_U]):
+class RWValueWithIndent(RWValue[_V]):
+    @property
+    def indent(self) -> str:
+        raise NotImplementedError()
+
+    @indent.setter
+    def indent(self, indent: str) -> None:
+        raise NotImplementedError()
+
+    @classmethod
+    @abc.abstractmethod
+    def from_value(cls: Type[_SelfRWValueWithIndent], value: _V, *, indent: str = '') -> _SelfRWValueWithIndent:
+        raise NotImplementedError()
+
+
+class required_string_property(Generic[_SV, _U]):
     def __init__(self, inner_property: base_property[_SV, _U]):
         self._inner_property = inner_property
 
@@ -60,6 +77,30 @@ class optional_string_property(Generic[_SV]):
             current.value = value
         else:
             s = self._inner_type.from_value(value) if value is not None else None
+            self._inner_property.__set__(instance, s)
+
+
+class optional_indented_string_property(Generic[_ISV]):
+    def __init__(
+            self,
+            inner_property: base_property[Optional[_ISV], _U],
+            inner_type: Type[_ISV],
+            indent_property: base_property[_SV, _U]):
+        self._inner_property = inner_property
+        self._inner_type = inner_type
+        self._indent_property = indent_property
+
+    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[str]:
+        s = self._inner_property.__get__(instance, owner)
+        return s.value if s is not None else None
+    
+    def __set__(self, instance: _U, value: Optional[str]) -> None:
+        current = self._inner_property.__get__(instance)
+        if current is not None and value is not None:
+            current.value = value
+        else:
+            indent = self._indent_property.__get__(instance).value
+            s = self._inner_type.from_value(value, indent=indent) if value is not None else None
             self._inner_property.__set__(instance, s)
 
 
