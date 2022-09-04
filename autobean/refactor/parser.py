@@ -87,18 +87,12 @@ class Parser:
     _token_models: dict[str, Type[models.RawTokenModel]]
     _tree_models: dict[str, Type[models.RawTreeModel]]
 
-    def __init__(
-            self,
-            token_models: dict[str, Type[models.RawTokenModel]],
-            tree_models: dict[str, Type[models.RawTreeModel]],
-    ):
-        start = list(tree_models.keys())
+    def __init__(self) -> None:
+        start = list(models.TREE_MODELS.keys())
         self._lark = lark.Lark(
             _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLex(), start=start)
         self._lark_inline = lark.Lark(
             _GRAMMAR, lexer='contextual', parser='lalr', postlex=PostLexInline(), start=start)
-        self._token_models = token_models
-        self._tree_models = tree_models
 
     def parse_token(self, text: str, target: Type[_T]) -> _T:
         """Parses one token.
@@ -135,14 +129,12 @@ class Parser:
                 parser.feed_token(token)
         tree = parser.feed_eof()
 
-        return ModelBuilder(tokens, self._token_models, self._tree_models).build(tree, target)
+        return ModelBuilder(tokens).build(tree, target)
 
 
 class ModelBuilder:
-    def __init__(self, tokens: list[lark.Token], token_models: dict[str, Type[models.RawTokenModel]], tree_models: dict[str, Type[models.RawTreeModel]]):
+    def __init__(self, tokens: list[lark.Token]):
         self._tokens = tokens
-        self._token_models = token_models 
-        self._tree_models = tree_models
         self._built_tokens: list[models.RawTokenModel] = []
         self._token_to_index = {id(token): i for i, token in enumerate(tokens)}
         self._cursor = 0
@@ -158,7 +150,7 @@ class ModelBuilder:
                 continue
             if token.type == 'INDENT':
                 token.type = 'WHITESPACE'
-            built_token = self._token_models[token.type].from_raw_text(token.value)
+            built_token = models.TOKEN_MODELS[token.type].from_raw_text(token.value)
             if isinstance(built_token, models.BlockComment):
                 built_token.claimed = True
             self._add_tokens([built_token])
@@ -174,7 +166,7 @@ class ModelBuilder:
                     return self._build_token(token)
                 if not token.type in _IGNORED_TOKENS:
                     break
-                self._add_tokens([self._token_models[token.type].from_raw_text(token.value)])
+                self._add_tokens([models.TOKEN_MODELS[token.type].from_raw_text(token.value)])
             self._cursor += 1
         raise exceptions.UnexpectedInput('Missing indent.')
 
@@ -192,13 +184,13 @@ class ModelBuilder:
 
     def _build_token(self, token: lark.Token) -> models.RawTokenModel:
         self._fix_gap(self._token_to_index[id(token)])
-        built_token = self._token_models[token.type].from_raw_text(token.value)
+        built_token = models.TOKEN_MODELS[token.type].from_raw_text(token.value)
         self._add_tokens([built_token])
         self._cursor += 1
         return built_token
 
     def _build_tree(self, tree: lark.Tree) -> models.RawTreeModel:
-        model_type = self._tree_models[tree.data]
+        model_type = models.TREE_MODELS[tree.data]
         children = []
         for child in tree.children:
             is_tree = isinstance(child, lark.Tree)
