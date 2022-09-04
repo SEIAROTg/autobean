@@ -113,8 +113,7 @@ class TestCustom(base.BaseTestModel):
             models.Account.from_value('Assets:Foo'),
         ]
         custom.raw_values.extend(new_values)
-        for actual, expected in itertools.zip_longest(custom.raw_values, new_values):
-            assert actual is expected
+        self.assert_iterable_same(custom.raw_values, new_values)
         assert self.print_model(custom) == (
             '2000-01-01  custom   "foo" "bar" 2012-12-12 FALSE 10 20 USD Assets:Foo')
 
@@ -129,8 +128,7 @@ class TestCustom(base.BaseTestModel):
             models.Account.from_value('Assets:Foo'),
         ]
         custom.values.extend(new_values)
-        for actual, expected in itertools.zip_longest(custom.values, new_values):
-            assert actual == expected
+        self.assert_iterable_same(custom.values, new_values)
         assert self.print_model(custom) == (
             '2000-01-01  custom   "foo" "bar" 2012-12-12 FALSE 10 20 USD Assets:Foo')
 
@@ -146,8 +144,7 @@ class TestCustom(base.BaseTestModel):
             models.Account.from_value('Assets:Bar'),
         ]
         custom.raw_values[:] = new_values
-        for actual, expected in itertools.zip_longest(custom.raw_values, new_values):
-            assert actual is expected
+        self.assert_iterable_same(custom.raw_values, new_values)
         assert self.print_model(custom) == (
             '2000-01-01  custom   "foo" "baz" 2000-01-01 TRUE 12 34 EUR Assets:Bar')
 
@@ -186,15 +183,13 @@ class TestCustom(base.BaseTestModel):
             models.EscapedString.from_value('baz'),
         ]
         custom.raw_values[:] = new_values
-        for actual, expected in itertools.zip_longest(custom.raw_values, new_values):
-            assert actual is expected
+        self.assert_iterable_same(custom.raw_values, new_values)
         assert self.print_model(custom) == (
             '2000-01-01  custom   "foo" 2000-01-01 TRUE 12 34 EUR Assets:Bar "baz"')
 
     def test_replace_values(self) -> None:
         custom = self.parser.parse(
             '2000-01-01  custom   "foo" "bar" 2012-12-12 FALSE 10 20 USD Assets:Foo', models.Custom)
-        original_raw_values = custom.raw_values[:]
         new_values: list[models.CustomValue] = [
             datetime.date(2000, 1, 1),
             True,
@@ -204,8 +199,8 @@ class TestCustom(base.BaseTestModel):
             'baz',
         ]
         custom.values[:] = new_values
-        for actual, original, expected in itertools.zip_longest(
-                custom.raw_values, original_raw_values, new_values):
+        for actual, expected in itertools.zip_longest(
+                custom.raw_values, new_values):
             if isinstance(actual, models.Amount | models.Account):
                 assert actual is expected
             else:
@@ -256,8 +251,7 @@ class TestCustom(base.BaseTestModel):
             models.EscapedString.from_value('foo'),
             values,
         )
-        for actual, expected in itertools.zip_longest(custom.raw_values, values):
-            assert actual is expected
+        self.assert_iterable_same(custom.raw_values, values)
         assert self.print_model(custom) == (
             '2000-01-01 custom "foo" "bar" 2012-12-12 FALSE 10 (+2.00 * 3) USD 10 (-2) Assets:Foo')
 

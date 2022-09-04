@@ -1,6 +1,5 @@
 import datetime
 import decimal
-import itertools
 from typing import Optional
 from lark import exceptions
 import pytest
@@ -450,12 +449,9 @@ class TestTransaction(base.BaseTestModel):
         assert transaction.raw_flag is flag
         assert transaction.raw_payee is payee
         assert transaction.raw_narration is narration
-        for actual, expected in itertools.zip_longest(tags_links, transaction.raw_tags_links):
-            assert actual is expected
-        for actual, expected in itertools.zip_longest(meta_items, transaction.raw_meta):
-            assert actual is expected
-        for actual, expected in itertools.zip_longest(postings, transaction.raw_postings):
-            assert actual is expected
+        self.assert_iterable_same(tags_links, transaction.raw_tags_links)
+        self.assert_iterable_same(meta_items, transaction.raw_meta)
+        self.assert_iterable_same(postings, transaction.raw_postings)
         assert self.print_model(transaction) == '''\
 2000-01-01 * "foo" "bar" #baz ^qux
     aaa1: 123 + 456 ; aaa2

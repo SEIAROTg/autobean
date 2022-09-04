@@ -1,6 +1,7 @@
 import copy
 import inspect
 import io
+import itertools
 from typing import Any, Iterable, Optional
 import pytest
 from autobean.refactor import parser as parser_lib
@@ -118,3 +119,10 @@ class BaseTestModel:
             elif isinstance(prop, models.RawTreeModel) and prop is not tree:
                 assert prop.token_store is tree.token_store
                 self.check_consistency(prop)
+
+    def assert_iterable_same(self, xs: Iterable[Any], ys: Iterable[Any]) -> None:
+        for x, y in itertools.zip_longest(xs, ys):
+            if isinstance(x, models.RawModel) or isinstance(y, models.RawModel):
+                assert x is y
+            else:
+                assert x == y

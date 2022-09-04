@@ -1,5 +1,4 @@
 import datetime
-import itertools
 from typing import Optional
 from lark import exceptions
 import pytest
@@ -197,8 +196,7 @@ class TestOpen(base.BaseTestModel):
         open = models.Open.from_children(date, account, currencies, booking)
         assert open.raw_date is date
         assert open.raw_account is account
-        for actual, expected in itertools.zip_longest(open.raw_currencies, currencies):
-            assert actual is expected
+        self.assert_iterable_same(open.raw_currencies, currencies)
         assert open.raw_booking is booking
         assert self.print_model(open) == text
 

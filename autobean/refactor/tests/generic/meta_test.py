@@ -358,8 +358,7 @@ class TestMeta(base.BaseTestModel):
         close = models.Close.from_children(date, account, meta=meta)
         assert close.raw_date is date
         assert close.raw_account is account
-        for expected, actual in itertools.zip_longest(meta, close.meta):
-            assert expected is actual
+        self.assert_iterable_same(meta, close.meta)
         assert self.print_model(close) == '''\
 2012-12-12 close Assets:Foo
     foo: 123
@@ -385,8 +384,7 @@ class TestMeta(base.BaseTestModel):
         keys = simple_close.raw_meta.keys() 
         assert list(keys) == ['foo', 'bar', 'baz']
         values = simple_close.raw_meta.values()
-        for actual, expected in itertools.zip_longest(values, simple_close.meta):
-            assert actual is expected
+        self.assert_iterable_same(values, simple_close.meta)
         items = simple_close.raw_meta.items()
         for actual, expected in itertools.zip_longest(items, simple_close.meta):
             assert actual[0] == expected.key
@@ -398,8 +396,7 @@ class TestMeta(base.BaseTestModel):
         keys = simple_close.raw_meta.keys() 
         assert list(reversed(keys)) == ['baz', 'bar', 'foo']
         values = simple_close.raw_meta.values()
-        for actual, expected in itertools.zip_longest(reversed(values), reversed(simple_close.meta)):
-            assert actual is expected
+        self.assert_iterable_same(reversed(values), reversed(simple_close.meta))
         items = simple_close.raw_meta.items()
         for actual, expected in itertools.zip_longest(reversed(items), reversed(simple_close.meta)):
             assert actual[0] == expected.key
