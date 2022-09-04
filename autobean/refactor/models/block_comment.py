@@ -44,7 +44,7 @@ class BlockComment(base.RawTokenModel):
         self._update_raw_text(self._format_value(indent, self._value))
 
     @classmethod
-    def from_value(cls: Type[_Self], indent: str, value: str) -> _Self:
+    def from_value(cls: Type[_Self], value: str, *, indent: str = '') -> _Self:
         return cls(cls._format_value(indent, value), indent, value)
 
     @classmethod

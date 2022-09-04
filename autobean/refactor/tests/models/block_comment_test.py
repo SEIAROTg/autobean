@@ -61,7 +61,7 @@ class TestBlockComment(base.BaseTestModel):
         'text,indent,value', _FORMAT_TESTCASES,
     )
     def test_from_value(self, text: str, indent: str, value: str) -> None:
-        comment = models.BlockComment.from_value(indent, value)
+        comment = models.BlockComment.from_value(value, indent=indent)
         assert comment.raw_text == text
         assert comment.indent == indent
         assert comment.value == value
