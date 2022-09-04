@@ -20,22 +20,20 @@ class PushmetaLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Pushmeta(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class Pushmeta(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'pushmeta'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _label = internal.required_field[PushmetaLabel]()
     _key = internal.required_field[MetaKey]()
     _value = internal.optional_left_field[MetaRawValue](separators=(Whitespace.from_default(),))
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_key = internal.required_node_property(_key)
     raw_value = internal.optional_node_property(_value)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     key = internal.required_string_property(raw_key)

@@ -23,10 +23,9 @@ _Self = TypeVar('_Self', bound='Posting')
 
 
 @internal.tree_model
-class Posting(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'posting'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _indent = internal.required_field[Indent]()
     _flag = internal.optional_right_field[PostingFlag](separators=(Whitespace.from_default(),))
     _account = internal.required_field[Account]()
@@ -37,9 +36,8 @@ class Posting(base.RawTreeModel, internal.SpacingAccessorsMixin):
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='        ')
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_indent = internal.required_node_property(_indent)
     raw_flag = internal.optional_node_property(_flag)
     raw_account = internal.required_node_property(_account)
@@ -49,7 +47,7 @@ class Posting(base.RawTreeModel, internal.SpacingAccessorsMixin):
     raw_price = internal.optional_node_property(_price)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
     indent = internal.required_string_property(raw_indent)

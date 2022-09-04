@@ -1,13 +1,15 @@
 import re
 from typing import Type, TypeVar, final
-from . import base, internal
+from . import base
+from .internal import registry as _registry
+from .internal import value_properties as _value_properties
 
 _INDENT_SPLIT_RE = re.compile(';\s*')
 _Self = TypeVar('_Self', bound='BlockComment')
 
 
-@internal.token_model
-class BlockComment(base.RawTokenModel, internal.RWValueWithIndent[str]):
+@_registry.token_model
+class BlockComment(base.RawTokenModel, _value_properties.RWValueWithIndent[str]):
     RULE = 'BLOCK_COMMENT'
 
     @final

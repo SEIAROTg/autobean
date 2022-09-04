@@ -19,22 +19,20 @@ class PluginLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Plugin(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'plugin'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _label = internal.required_field[PluginLabel]()
     _name = internal.required_field[EscapedString]()
     _config = internal.optional_left_field[EscapedString](separators=(Whitespace.from_default(),))
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_name = internal.required_node_property(_name)
     raw_config = internal.optional_node_property(_config)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     name = internal.required_string_property(raw_name)

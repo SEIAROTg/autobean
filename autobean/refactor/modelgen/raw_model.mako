@@ -46,14 +46,21 @@ class ${field.define_as}(internal.SimpleRawTokenModel):
 % endif
 % endif
 % endfor
+<%
+base_classes = ['base.RawTreeModel', 'internal.SpacingAccessorsMixin']
+if model.block_commentable:
+    base_classes.insert(0, 'internal.SurroundingCommentsMixin')
+%>\
 
 
 @internal.tree_model
-class ${model.name}(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class ${model.name}(${', '.join(base_classes)}):
     RULE = '${model.rule}'
 
 % for field in model.fields:
+% if not field.skip_field_definition:
     _${field.name} = ${field.field_def}
+% endif
 % endfor
 
 % for field in model.public_fields:

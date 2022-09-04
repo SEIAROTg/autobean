@@ -14,23 +14,21 @@ _Self = TypeVar('_Self', bound='MetaItem')
 
 
 @internal.tree_model
-class MetaItem(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class MetaItem(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'meta_item'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _indent = internal.required_field[Indent]()
     _key = internal.required_field[MetaKey]()
     _value = internal.optional_left_field[MetaRawValue](separators=(Whitespace.from_default(),))
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_indent = internal.required_node_property(_indent)
     raw_key = internal.required_node_property(_key)
     raw_value = internal.optional_node_property(_value)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
     indent = internal.required_string_property(raw_indent)

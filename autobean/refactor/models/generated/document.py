@@ -24,10 +24,9 @@ class DocumentLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Document(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class Document(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'document'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _date = internal.required_field[Date]()
     _label = internal.required_field[DocumentLabel]()
     _account = internal.required_field[Account]()
@@ -36,16 +35,15 @@ class Document(base.RawTreeModel, internal.SpacingAccessorsMixin):
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_date = internal.required_node_property(_date)
     raw_account = internal.required_node_property(_account)
     raw_filename = internal.required_node_property(_filename)
     raw_tags_links = internal.repeated_node_property(_tags_links)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     date = internal.required_date_property(raw_date)

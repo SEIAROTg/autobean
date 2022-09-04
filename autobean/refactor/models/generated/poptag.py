@@ -19,20 +19,18 @@ class PoptagLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Poptag(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class Poptag(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'poptag'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _label = internal.required_field[PoptagLabel]()
     _tag = internal.required_field[Tag]()
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_tag = internal.required_node_property(_tag)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     tag = internal.required_string_property(raw_tag)

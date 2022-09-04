@@ -19,22 +19,20 @@ class OptionLabel(internal.SimpleDefaultRawTokenModel):
 
 
 @internal.tree_model
-class Option(base.RawTreeModel, internal.SpacingAccessorsMixin):
+class Option(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.SpacingAccessorsMixin):
     RULE = 'option'
 
-    _leading_comment = internal.optional_right_field[BlockComment](separators=(Newline.from_default(),))
     _label = internal.required_field[OptionLabel]()
     _key = internal.required_field[EscapedString]()
     _value = internal.required_field[EscapedString]()
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _trailing_comment = internal.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
-    raw_leading_comment = internal.optional_node_property(_leading_comment)
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_key = internal.required_node_property(_key)
     raw_value = internal.required_node_property(_value)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(_trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     key = internal.required_string_property(raw_key)

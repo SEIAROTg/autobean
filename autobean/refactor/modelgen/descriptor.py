@@ -138,6 +138,7 @@ class FieldDescriptor:
     separators_before: Optional[tuple[str, ...]]
     default_indent: Optional[str]
     indent_field_name: Optional[str]
+    skip_field_definition: bool
 
     @functools.cached_property
     def inner_type_original(self) -> str:
@@ -247,7 +248,10 @@ class FieldDescriptor:
         if self.cardinality == FieldCardinality.REQUIRED:
             return f'internal.required_node_property(_{self.name})'
         if self.cardinality == FieldCardinality.OPTIONAL:
-            return f'internal.optional_node_property(_{self.name})'
+            if self.inner_type == 'BlockComment':
+                return f'internal.optional_node_property(internal.SurroundingCommentsMixin._{self.name})'
+            else:
+                return f'internal.optional_node_property(_{self.name})'
         if self.cardinality == FieldCardinality.REPEATED:
             if self.inner_type == 'MetaItem':
                 return f'meta_item_internal.repeated_raw_meta_item_property(_{self.name})'
@@ -438,6 +442,7 @@ _LEADING_COMMENT_FIELD = FieldDescriptor(
     separators_before=None,
     default_indent='',
     indent_field_name=None,
+    skip_field_definition=True,
 )
 _TRAILING_COMMENT_FIELD = dataclasses.replace(
     _LEADING_COMMENT_FIELD,
@@ -499,6 +504,7 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
             separators_before=field.separators_before,
             default_indent=field.default_indent,
             indent_field_name=indent_field_name,
+            skip_field_definition=False,
         )
         field_descriptors.append(descriptor)
         is_first = False
