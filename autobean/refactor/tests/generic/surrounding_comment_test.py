@@ -22,6 +22,22 @@ _CLOSE_BOTH = '''\
 ; qux
 ; quux\
 '''
+_CLOSE_MULTIPLE = '''\
+; aaa
+2000-01-01 close Assets:Foo ; baz
+; bbb
+2000-01-01 close Assets:Bar ; baz
+; ccc
+'''
+_CLOSE_BOTH_SEPARATED = '''\
+; foo
+; bar
+
+2000-01-01 close Assets:Foo ; baz
+
+; qux
+; quux\
+'''
 _CLOSE_NEITHER = '''\
 2000-01-01 close Assets:Foo ; baz\
 '''
@@ -115,86 +131,59 @@ class TestSurroundingComment(base.BaseTestModel):
         self.check_deepcopy_tree(close)
 
     def test_claim_leading(self) -> None:
-        close = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close.leading_comment = 'foo\nbar'
-        comment = close.raw_leading_comment
-        assert comment is not None
-        assert comment.claimed
-        close.unclaim_leading_comment()
-        assert not comment.claimed
-        assert self.print_model(close) == _CLOSE_NEITHER
-        close.claim_leading_comment(comment)
-        assert comment.claimed
-        close.claim_leading_comment(comment)  # reclaim should be ok
-        assert comment.claimed
+        close = self.parser.parse(_CLOSE_BOTH, models.Close)
+        assert close.raw_leading_comment is None
+        claimed_comment = close.claim_leading_comment()
+        assert claimed_comment is not None
+        assert claimed_comment.claimed
         assert self.print_model(close) == _CLOSE_LEADING
+        assert close.claim_leading_comment() is claimed_comment  # reclaim should be ok
+        assert claimed_comment.claimed
+
+        unclaimed_comment = close.unclaim_leading_comment()
+        assert unclaimed_comment is claimed_comment
+        assert not unclaimed_comment.claimed
+        assert self.print_model(close) == _CLOSE_NEITHER
 
     def test_claim_leading_already_claimed(self) -> None:
-        close = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close.trailing_comment = 'qux\nquux'
-        comment = close.raw_trailing_comment
-        assert comment is not None
-        assert comment.claimed
+        file = self.parser.parse(_CLOSE_MULTIPLE, models.File)
+        close_foo, close_bar = file.directives
+        close_foo.claim_trailing_comment()
         with pytest.raises(ValueError, match='already claimed'):
-            close.claim_leading_comment(comment)
-
-    def test_claim_leading_already_exists(self) -> None:
-        close = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close.leading_comment = 'foo\nbar'
-        comment = models.BlockComment.from_value('aaa')
-        comment.claimed = False
-        close.token_store.insert_before(close.first_token, [comment, models.Newline.from_default()])
-        with pytest.raises(ValueError, match='already exists'):
-            close.claim_leading_comment(comment)
-
-    def test_claim_leading_token_store_mismatch(self) -> None:
-        close_foo = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close_foo.leading_comment = 'foo\nbar'
-        comment = close_foo.raw_leading_comment
-        assert comment is not None
-        close_foo.unclaim_leading_comment()
-        close_bar = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        with pytest.raises(ValueError, match='same context'):
-            close_bar.claim_leading_comment(comment)
+            close_bar.claim_leading_comment()
+        close_foo.unclaim_trailing_comment()
+        assert close_bar.claim_leading_comment() is not None
 
     def test_claim_trailing(self) -> None:
-        close = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close.trailing_comment = 'qux\nquux'
-        comment = close.raw_trailing_comment
-        assert comment is not None
-        assert comment.claimed
-        close.unclaim_trailing_comment()
-        assert not comment.claimed
-        assert self.print_model(close) == _CLOSE_NEITHER
-        close.claim_trailing_comment(comment)
-        assert comment.claimed
-        close.claim_trailing_comment(comment)  # reclaim should be ok
-        assert comment.claimed
+        close = self.parser.parse(_CLOSE_BOTH, models.Close)
+        assert close.raw_trailing_comment is None
+        claimed_comment = close.claim_trailing_comment()
+        assert claimed_comment is not None
+        assert claimed_comment.claimed
         assert self.print_model(close) == _CLOSE_TRAILING
+        assert close.claim_trailing_comment() is claimed_comment  # reclaim should be ok
+
+        unclaimed_comment = close.unclaim_trailing_comment()
+        assert unclaimed_comment is claimed_comment
+        assert not unclaimed_comment.claimed
+        assert self.print_model(close) == _CLOSE_NEITHER
 
     def test_claim_trailing_already_claimed(self) -> None:
-        close = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close.leading_comment = 'foo\nbar'
-        comment = close.raw_leading_comment
-        assert comment is not None
+        file = self.parser.parse(_CLOSE_MULTIPLE, models.File)
+        close_foo, close_bar = file.directives
+        close_bar.claim_leading_comment()
         with pytest.raises(ValueError, match='already claimed'):
-            close.claim_trailing_comment(comment)
+            close_foo.claim_trailing_comment()
+        close_bar.unclaim_leading_comment()
+        assert close_foo.claim_trailing_comment() is not None
 
-    def test_claim_trailing_already_exists(self) -> None:
+    def test_claim_missing(self) -> None:
         close = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close.trailing_comment = 'qux\nquux'
-        comment = models.BlockComment.from_value('aaa')
-        comment.claimed = False
-        close.token_store.insert_after(close.last_token, [models.Newline.from_default(), comment])
-        with pytest.raises(ValueError, match='already exists'):
-            close.claim_trailing_comment(comment)
+        assert close.claim_leading_comment() is None
+        assert close.claim_trailing_comment() is None
 
-    def test_claim_trailing_token_store_mismatch(self) -> None:
-        close_foo = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        close_foo.trailing_comment = 'qux\nquux'
-        comment = close_foo.raw_trailing_comment
-        assert comment is not None
-        close_foo.unclaim_trailing_comment()
-        close_bar = self.parser.parse(_CLOSE_NEITHER, models.Close)
-        with pytest.raises(ValueError, match='same context'):
-            close_bar.claim_trailing_comment(comment)
+    def test_claim_separated(self) -> None:
+        file = self.parser.parse(_CLOSE_BOTH_SEPARATED, models.File)
+        close, = file.directives
+        assert close.claim_leading_comment() is None
+        assert close.claim_trailing_comment() is None

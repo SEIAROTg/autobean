@@ -13,11 +13,11 @@ class BlockComment(base.RawTokenModel, _value_properties.RWValueWithIndent[str])
     RULE = 'BLOCK_COMMENT'
 
     @final
-    def __init__(self, raw_text: str, indent: str, value: str) -> None:
+    def __init__(self, raw_text: str, indent: str, value: str, *, claimed: bool = True) -> None:
         super().__init__(raw_text)
         self._value = value
         self._indent = indent
-        self._claimed = True
+        self._claimed = claimed
 
     @property
     def raw_text(self) -> str:
@@ -79,4 +79,4 @@ class BlockComment(base.RawTokenModel, _value_properties.RWValueWithIndent[str])
         )
 
     def _clone(self: 'BlockComment') -> 'BlockComment':
-        return type(self)(self.raw_text, self.indent, self.value)
+        return type(self)(self.raw_text, self.indent, self.value, claimed=self.claimed)
