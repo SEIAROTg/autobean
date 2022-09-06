@@ -32,7 +32,7 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
 
     number_per = internal.optional_decimal_property(raw_number_per, NumberExpr)
     number_total = internal.optional_decimal_property(raw_number_total, NumberExpr)
-    currency = internal.required_string_property(raw_currency)
+    currency = internal.required_value_property(raw_currency)
 
     @final
     def __init__(

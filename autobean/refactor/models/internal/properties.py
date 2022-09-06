@@ -1,10 +1,9 @@
 import copy
 import functools
 import itertools
-from typing import Any, Callable, Collection, Iterable, MutableSequence, Optional, Sequence, Type, TypeVar, overload
-from .base_property import base_property
+from typing import Any, Callable, Collection, Iterable, MutableSequence, Optional, Type, TypeVar, overload
+from .base_property import base_rw_property
 from .fields import required_field, optional_field, repeated_field
-from .maybe import Maybe
 from .repeated import Repeated
 from . import indexes
 from .. import base
@@ -25,7 +24,7 @@ def _replace_node(node: _M, repl: _M) -> None:
         repl.reattach(token_store)
 
 
-class required_node_property(base_property[_M, base.RawTreeModel]):
+class required_node_property(base_rw_property[_M, base.RawTreeModel]):
     def __init__(self, inner_field: required_field[_M]) -> None:
         super().__init__()
         self._inner_field = inner_field
@@ -40,7 +39,7 @@ class required_node_property(base_property[_M, base.RawTreeModel]):
         self._inner_field.__set__(instance, value)
 
 
-class optional_node_property(base_property[Optional[_M], base.RawTreeModel]):
+class optional_node_property(base_rw_property[Optional[_M], base.RawTreeModel]):
     def __init__(self, inner_field: optional_field[_M]) -> None:
         super().__init__()
         self._inner_field = inner_field
@@ -239,7 +238,7 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
             all(a == b for a, b in itertools.zip_longest(self, other)))
 
 
-class repeated_node_property(base_property[RepeatedNodeWrapper[_M], base.RawTreeModel]):
+class repeated_node_property(base_rw_property[RepeatedNodeWrapper[_M], base.RawTreeModel]):
     def __init__(self, inner_field: repeated_field[_M]) -> None:
         super().__init__()
         self._inner_field = inner_field
@@ -266,7 +265,7 @@ def _default_fset(instance: _U, value: _V) -> None:
     raise NotImplementedError()
 
 
-class custom_property(base_property[_V, _U]):
+class custom_property(base_rw_property[_V, _U]):
     def __init__(self, fget: Callable[[_U], _V]) -> None:
         super().__init__()
         self._fget = fget
@@ -299,10 +298,10 @@ class cached_custom_property(custom_property[_V, _U]):
         instance.__dict__[self._attr] = value
 
 
-class unordered_node_property(base_property[Optional[_V], _U]):
+class unordered_node_property(base_rw_property[Optional[_V], _U]):
     def __init__(
             self,
-            inner_property: base_property[MutableSequence[_V | _M], _U],
+            inner_property: base_rw_property[MutableSequence[_V | _M], _U],
             inner_type: Type[_V],
             *,
             prepend: bool = False,

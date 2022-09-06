@@ -50,9 +50,9 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
-    indent = internal.required_string_property(raw_indent)
+    indent = internal.required_value_property(raw_indent)
     flag = internal.optional_string_property(raw_flag, PostingFlag)
-    account = internal.required_string_property(raw_account)
+    account = internal.required_value_property(raw_account)
     number = internal.optional_decimal_property(raw_number, NumberExpr)
     currency = internal.optional_string_property(raw_currency, Currency)
     cost = raw_cost

@@ -47,8 +47,8 @@ class Open(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spacin
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
-    date = internal.required_date_property(raw_date)
-    account = internal.required_string_property(raw_account)
+    date = internal.required_value_property(raw_date)
+    account = internal.required_value_property(raw_account)
     currencies = internal.repeated_string_property(raw_currencies, Currency)
     booking = internal.optional_string_property(raw_booking, EscapedString)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)

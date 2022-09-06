@@ -3,13 +3,13 @@ from typing import Iterable, Optional, Type, TypeVar
 from .. import base
 from .maybe import Maybe, MaybeL, MaybeR
 from .repeated import Repeated
-from .base_property import base_property
+from .base_property import base_rw_property
 
 _V = TypeVar('_V')
 _M = TypeVar('_M', bound=base.RawModel)
 
 
-class field(base_property[_V, base.RawTreeModel]):
+class field(base_rw_property[_V, base.RawTreeModel]):
     def __set_name__(self, owner: Type[base.RawTreeModel], name: str) -> None:
         self._attr = name
 

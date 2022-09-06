@@ -46,8 +46,8 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
-    date = internal.required_date_property(raw_date)
-    flag = internal.required_string_property(raw_flag)
+    date = internal.required_value_property(raw_date)
+    flag = internal.required_value_property(raw_flag)
     string0 = internal.optional_string_property(raw_string0, EscapedString)
     string1 = internal.optional_string_property(raw_string1, EscapedString)
     string2 = internal.optional_string_property(raw_string2, EscapedString)

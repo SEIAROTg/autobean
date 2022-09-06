@@ -25,7 +25,7 @@ class Tolerance(base.RawTreeModel, internal.SpacingAccessorsMixin):
 
     raw_number = internal.required_node_property(_number)
 
-    number = internal.required_decimal_property(raw_number)
+    number = internal.required_value_property(raw_number)
 
     @final
     def __init__(

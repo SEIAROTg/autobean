@@ -267,12 +267,7 @@ class FieldDescriptor:
         if self.value_type == self.inner_type and self.value_type != 'MetaItem':
             return f'raw_{self.name}'
         if self.cardinality == FieldCardinality.REQUIRED:
-            if self.value_type == 'decimal.Decimal':
-                return f'internal.required_decimal_property(raw_{self.name})'
-            elif self.value_type == 'datetime.date':
-                return f'internal.required_date_property(raw_{self.name})'
-            elif self.value_type == 'str':
-                return f'internal.required_string_property(raw_{self.name})'
+            return f'internal.required_value_property(raw_{self.name})'
         elif self.cardinality == FieldCardinality.OPTIONAL:
             if self.value_type == 'decimal.Decimal':
                 return f'internal.optional_decimal_property(raw_{self.name}, {self.inner_type_original})'

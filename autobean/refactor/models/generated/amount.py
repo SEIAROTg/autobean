@@ -21,8 +21,8 @@ class Amount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     raw_number = internal.required_node_property(_number)
     raw_currency = internal.required_node_property(_currency)
 
-    number = internal.required_decimal_property(raw_number)
-    currency = internal.required_string_property(raw_currency)
+    number = internal.required_value_property(raw_number)
+    currency = internal.required_value_property(raw_currency)
 
     @final
     def __init__(

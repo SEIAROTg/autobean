@@ -33,7 +33,7 @@ class Include(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
-    filename = internal.required_string_property(raw_filename)
+    filename = internal.required_value_property(raw_filename)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
 

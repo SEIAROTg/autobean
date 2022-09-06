@@ -14,7 +14,7 @@ _U = TypeVar('_U', bound=RawTreeModel)
 
 # Not inside internal.value_properties to avoid circular dependencies.
 class optional_meta_value_property(Generic[_U]):
-    def __init__(self, inner_property: internal.base_property[Optional[MetaRawValue], _U]):
+    def __init__(self, inner_property: internal.base_rw_property[Optional[MetaRawValue], _U]):
         self.inner_property = inner_property
 
     def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> Optional[MetaValue]:

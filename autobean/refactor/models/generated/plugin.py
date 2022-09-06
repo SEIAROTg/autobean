@@ -35,7 +35,7 @@ class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
-    name = internal.required_string_property(raw_name)
+    name = internal.required_value_property(raw_name)
     config = internal.optional_string_property(raw_config, EscapedString)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)

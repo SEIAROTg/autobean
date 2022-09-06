@@ -46,8 +46,8 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
-    date = internal.required_date_property(raw_date)
-    type = internal.required_string_property(raw_type)
+    date = internal.required_value_property(raw_date)
+    type = internal.required_value_property(raw_type)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     meta = meta_item_internal.repeated_meta_item_property(_meta)
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)

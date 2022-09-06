@@ -33,7 +33,7 @@ class Poptag(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
-    tag = internal.required_string_property(raw_tag)
+    tag = internal.required_value_property(raw_tag)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
 
