@@ -209,11 +209,16 @@ class FieldDescriptor:
             assert False
 
     @functools.cached_property
-    def attribute_name(self) -> str:
-        if self.is_public:
-            return f'raw_{self.name}'
-        else:
-            return f'_{self.name}'
+    def field_name(self) -> str:
+        return f'_{self.name}'
+
+    @functools.cached_property
+    def raw_property_name(self) -> str:
+        return f'raw_{self.name}'
+
+    @functools.cached_property
+    def value_property_name(self) -> str:
+        return self.name
 
     @functools.cached_property
     def define_default(self) -> Optional[str]:
@@ -246,16 +251,16 @@ class FieldDescriptor:
     @functools.cached_property
     def raw_property_def(self) -> str:
         if self.cardinality == FieldCardinality.REQUIRED:
-            return f'internal.required_node_property(_{self.name})'
+            return f'internal.required_node_property({self.field_name})'
         if self.cardinality == FieldCardinality.OPTIONAL:
             if self.inner_type == 'BlockComment':
-                return f'internal.optional_node_property(internal.SurroundingCommentsMixin._{self.name})'
+                return f'internal.optional_node_property(internal.SurroundingCommentsMixin.{self.field_name})'
             else:
-                return f'internal.optional_node_property(_{self.name})'
+                return f'internal.optional_node_property({self.field_name})'
         if self.cardinality == FieldCardinality.REPEATED:
             if self.inner_type == 'MetaItem':
-                return f'meta_item_internal.repeated_raw_meta_item_property(_{self.name})'
-            return f'internal.repeated_node_property(_{self.name})'
+                return f'meta_item_internal.repeated_raw_meta_item_property({self.field_name})'
+            return f'internal.repeated_node_property({self.field_name})'
         assert False
 
     @functools.cached_property
@@ -265,23 +270,23 @@ class FieldDescriptor:
         if self.value_types is None or len(self.value_types) != 1:
             return None
         if self.value_type == self.inner_type and self.value_type != 'MetaItem':
-            return f'raw_{self.name}'
+            return self.raw_property_name
         if self.cardinality == FieldCardinality.REQUIRED:
-            return f'internal.required_value_property(raw_{self.name})'
+            return f'internal.required_value_property({self.raw_property_name})'
         elif self.cardinality == FieldCardinality.OPTIONAL:
             if self.value_type == 'decimal.Decimal':
-                return f'internal.optional_decimal_property(raw_{self.name}, {self.inner_type_original})'
+                return f'internal.optional_decimal_property({self.raw_property_name}, {self.inner_type_original})'
             elif self.inner_type == 'BlockComment' and self.indent_field_name:
-                return f'internal.optional_indented_string_property(raw_{self.name}, {self.inner_type_original}, raw_{self.indent_field_name})'
+                return f'internal.optional_indented_string_property({self.raw_property_name}, {self.inner_type_original}, raw_{self.indent_field_name})'
             elif self.value_type == 'str':
-                return f'internal.optional_string_property(raw_{self.name}, {self.inner_type_original})'
+                return f'internal.optional_string_property({self.raw_property_name}, {self.inner_type_original})'
             elif self.value_type == 'MetaValue':
-                return f'meta_value_internal.optional_meta_value_property(raw_{self.name})'
+                return f'meta_value_internal.optional_meta_value_property({self.raw_property_name})'
         elif self.cardinality == FieldCardinality.REPEATED:
             if self.value_type == 'str':
-                return f'internal.repeated_string_property(raw_{self.name}, {self.inner_type_original})'
+                return f'internal.repeated_string_property({self.raw_property_name}, {self.inner_type_original})'
             elif self.value_type == 'MetaItem':
-                return f'meta_item_internal.repeated_meta_item_property(_{self.name})'
+                return f'meta_item_internal.repeated_meta_item_property({self.field_name})'
         return None
 
     @functools.cached_property

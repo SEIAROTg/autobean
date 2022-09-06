@@ -59,18 +59,18 @@ class ${model.name}(${', '.join(base_classes)}):
 
 % for field in model.fields:
 % if not field.skip_field_definition:
-    _${field.name} = ${field.field_def}
+    ${field.field_name} = ${field.field_def}
 % endif
 % endfor
 
 % for field in model.public_fields:
-    raw_${field.name} = ${field.raw_property_def}
+    ${field.raw_property_name} = ${field.raw_property_def}
 % endfor
 
 <% any_value_property = False %>\
 % for field in model.fields:
 % if field.value_property_def is not None:
-    ${field.name} = ${field.value_property_def}
+    ${field.value_property_name} = ${field.value_property_def}
 <% any_value_property = True %>\
 % endif
 % endfor
@@ -87,7 +87,7 @@ class ${model.name}(${', '.join(base_classes)}):
     ):
         super().__init__(token_store)
 % for field in model.fields:
-        self._${field.name} = ${field.name}
+        self.${field.field_name} = ${field.name}
 % endfor
 
     @property
@@ -102,21 +102,21 @@ class ${model.name}(${', '.join(base_classes)}):
         return type(self)(
             token_store,
 % for field in model.fields:
-            self._${field.name}.clone(token_store, token_transformer),
+            self.${field.field_name}.clone(token_store, token_transformer),
 % endfor
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
 % for field in model.fields:
-        self._${field.name} = self._${field.name}.reattach(token_store, token_transformer)
+        self.${field.field_name} = self.${field.field_name}.reattach(token_store, token_transformer)
 % endfor
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
             isinstance(other, ${model.name})
 % for field in model.fields:
-            and self._${field.name} == other._${field.name}
+            and self.${field.field_name} == other.${field.field_name}
 % endfor
         )
 
@@ -137,9 +137,9 @@ class ${model.name}(${', '.join(base_classes)}):
 % if not field.is_public:
         ${field.name} = ${field.inner_type}.from_default()
 % elif field.cardinality == FieldCardinality.OPTIONAL:
-        maybe_${field.name} = cls._${field.name}.create_maybe(${field.name})
+        maybe_${field.name} = cls.${field.field_name}.create_maybe(${field.name})
 % elif field.cardinality == FieldCardinality.REPEATED:
-        repeated_${field.name} = cls._${field.name}.create_repeated(${field.name})
+        repeated_${field.name} = cls.${field.field_name}.create_repeated(${field.name})
 % endif
 % endfor
 <%
