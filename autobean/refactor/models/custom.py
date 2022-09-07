@@ -1,6 +1,6 @@
 import datetime
 import decimal
-from typing import Iterable, Iterator, Mapping, NoReturn, Optional, Type, TypeVar, Union, cast
+from typing import Iterable, Iterator, Mapping, NoReturn, Optional, Type, TypeVar, Union, cast, get_args
 
 from . import internal, meta_item_internal
 from .generated import custom
@@ -81,11 +81,9 @@ class Custom(custom.Custom):
 
     @internal.cached_custom_property
     def values(self) -> internal.RepeatedValueWrapper[CustomRawValue, CustomValue]:
-        return internal.RepeatedValueWrapper[CustomRawValue, CustomValue, NoReturn](
+        return internal.RepeatedValueWrapper[CustomRawValue, CustomValue](
             raw_wrapper=self.raw_values,
-            # cast as mypy isn't good at handling unions
-            raw_type=cast(Type[CustomRawValue], CustomRawValue),
-            type=cast(Type[CustomValue], CustomValue),
+            raw_type=get_args(CustomRawValue),
             from_raw_type=_simplify_value,
             to_raw_type=_unsimplify_value,
             update_raw=_update_raw,

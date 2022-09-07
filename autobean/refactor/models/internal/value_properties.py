@@ -2,7 +2,7 @@ import datetime
 import decimal
 import abc
 import itertools
-from typing import Callable, Collection, Generic, Iterable, Iterator, MutableSequence, Optional, Type, TypeVar, overload
+from typing import Any, Callable, Collection, Generic, Iterable, Iterator, MutableSequence, Optional, Type, TypeGuard, TypeVar, cast, overload
 from .. import base
 from . import indexes, base_property, properties
 
@@ -141,26 +141,27 @@ class optional_date_property(Generic[_U]):
 class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
     def __init__(
             self,
-            raw_wrapper: properties.RepeatedNodeWrapper[_M | _M2],
-            raw_type: Type[_M],
-            type: Type[_V],
+            raw_wrapper: properties.RepeatedNodeWrapper[_M | Any],
+            raw_type: Type[_M] | tuple[Type[_M], ...],
             from_raw_type: Callable[[_M], _V],
             to_raw_type: Callable[[_V], _M],
             update_raw: Callable[[_M, _V], bool],
     ):
         self._raw_wrapper = raw_wrapper
         self._raw_type = raw_type
-        self._type = type
         self._from_raw_type = from_raw_type
         self._to_raw_type = to_raw_type
         self._update_raw = update_raw
+
+    def _check_type(self, v: Any) -> TypeGuard[_M]:
+        return isinstance(v, self._raw_type)
 
     def __len__(self) -> int:
         return sum(1 for _ in self)
 
     def __iter__(self) -> Iterator[_V]:
         return (
-            self._from_raw_type(item) for item in self._raw_wrapper if isinstance(item, self._raw_type))
+            self._from_raw_type(item) for item in self._raw_wrapper if self._check_type(item))
 
     def _filtered_items(self) -> list[tuple[int, _M]]:
         return [(i, item) for i, item in enumerate(self._raw_wrapper) if isinstance(item, self._raw_type)]
@@ -191,8 +192,7 @@ class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
     def __setitem__(self, index: int | slice, value: _V | Iterable[_V]) -> None:
         items = self._filtered_items()
         if isinstance(index, int):
-            assert isinstance(value, self._type)
-            values = [value]
+            values = [cast(_V, value)]
         else:
             assert isinstance(value, Iterable)
             values = list(value)
@@ -253,30 +253,20 @@ class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
             all(a == b for a, b in itertools.zip_longest(self, other)))
 
 
-class repeated_string_property(Generic[_SV]):
+def _update_raw(raw_value: _SV, value: str) -> bool:
+    raw_value.value = value
+    return True
+
+
+class repeated_string_property(properties.cached_custom_property[RepeatedValueWrapper[_SV, str], base.RawTreeModel]):
     def __init__(
             self,
             inner_property: base_property.base_ro_property[properties.RepeatedNodeWrapper[_SV | _M], base.RawTreeModel],
             inner_type: Type[_SV]):
-        self._inner_property = inner_property
-        self._inner_type = inner_type
-
-    def __set_name__(self, owner: base.RawTreeModel, name: str) -> None:
-        self._name = name
-
-    def __get__(self, instance: _U, owner: Optional[Type[_U]] = None) -> RepeatedValueWrapper[_SV, str]:
-        inner_wrapper = self._inner_property.__get__(instance, owner)
-        def update_raw(raw_value: _SV, value: str) -> bool:
-            raw_value.value = value
-            return True
-
-        wrapper = RepeatedValueWrapper(
-            raw_wrapper=inner_wrapper,
-            raw_type=self._inner_type,
-            type=str,
+        super().__init__(lambda instance: RepeatedValueWrapper[_SV, str](
+            raw_wrapper=inner_property.__get__(instance),
+            raw_type=inner_type,
             from_raw_type=lambda x: x.value,
-            to_raw_type=self._inner_type.from_value,
-            update_raw=update_raw,
-        )
-        setattr(instance, self._name, wrapper)
-        return wrapper
+            to_raw_type=inner_type.from_value,
+            update_raw=_update_raw,
+        ))
