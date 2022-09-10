@@ -14,8 +14,9 @@ _FILE_FOO = f'''\
  \t
 2000-01-01 close Assets:Bar  ; bar
 2000-01-01 close Assets:Baz;baz
+  ; inside-baz
 
-  ; qux
+; qux
 
 2000-01-01 close Assets:Qux
 
@@ -94,8 +95,9 @@ class TestSpacingAccessors(base.BaseTestModel):
  \t
 2000-01-01 close Assets:Bar  ; bar
 2000-01-01 close Assets:Baz;baz
+  ; inside-baz
 
-  ; qux\r
+; qux\r
 {" " * 4}
 2000-01-01 close Assets:Qux'''
 
@@ -110,8 +112,9 @@ class TestSpacingAccessors(base.BaseTestModel):
 2000-01-01  close   Assets:Foo
 2000-01-01 close Assets:Bar  ; bar
 2000-01-01 close Assets:Baz;baz
+  ; inside-baz
 
-  ; qux
+; qux
 
 2000-01-01 close Assets:Qux
 
@@ -124,8 +127,9 @@ class TestSpacingAccessors(base.BaseTestModel):
 \t\r
 2000-01-01 close Assets:Bar  ; bar
 2000-01-01 close Assets:Baz;baz
+  ; inside-baz
 
-  ; qux
+; qux
 
 2000-01-01 close Assets:Qux
 
@@ -152,8 +156,9 @@ class TestSpacingAccessors(base.BaseTestModel):
  \t
 2000-01-01 close Assets:Bar; bar
 2000-01-01 close Assets:Baz\t\t;baz
+  ; inside-baz
 
-  ; qux
+; qux
 
 2000-01-01 close Assets:Qux
 
@@ -176,8 +181,9 @@ class TestSpacingAccessors(base.BaseTestModel):
 
 2000-01-01 close Assets:Bar  ; bar
 2000-01-01 close Assets:Baz;baz
+  ; inside-baz
 
-  ; qux
+; qux
 
 2000-01-01 close Assets:Qux
 

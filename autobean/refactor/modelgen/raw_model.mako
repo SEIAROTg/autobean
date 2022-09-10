@@ -134,8 +134,10 @@ class ${model.name}(${', '.join(base_classes)}):
 % endif
     ) -> _Self:
 % for field in model.fields:
-% if not field.is_public:
+% if not field.is_public and field.cardinality == FieldCardinality.REQUIRED:
         ${field.name} = ${field.inner_type}.from_default()
+% elif not field.is_public and field.cardinality == FieldCardinality.OPTIONAL:
+        maybe_${field.name} = cls.${field.field_name}.create_maybe(None)
 % elif field.cardinality == FieldCardinality.OPTIONAL:
         maybe_${field.name} = cls.${field.field_name}.create_maybe(${field.name})
 % elif field.cardinality == FieldCardinality.REPEATED:

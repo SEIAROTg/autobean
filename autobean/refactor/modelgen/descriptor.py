@@ -46,7 +46,8 @@ def _model_name_to_module(model_name: str) -> str:
         'Whitespace': 'spacing',
         'Newline': 'spacing',
         'Comma': 'punctuation',
-        'Indent': 'punctuation',
+        'IndentMark': 'punctuation',
+        'DedentMark': 'punctuation',
         'Indent': 'punctuation',
         'Eol': 'punctuation',
         'MetaRawValue': 'meta_value',
@@ -231,8 +232,8 @@ class FieldDescriptor:
         if self.cardinality == FieldCardinality.REQUIRED:
             return f'internal.required_field[{self.inner_type}]()'
         if self.cardinality == FieldCardinality.OPTIONAL:
-            assert self.separators
-            assert self.floating
+            assert self.separators is not None
+            assert self.floating is not None
             floating = {
                 base.Floating.LEFT: 'left',
                 base.Floating.RIGHT: 'right',
@@ -472,8 +473,6 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
         single_token = len(model_types) == 1 and is_token(next(iter(model_types)).rule)
         if field.define_as and not single_token:
             raise ValueError('Fields with define_as must be a single token.')
-        if not is_public and (not default_constructable(model_types) or cardinality != FieldCardinality.REQUIRED):
-            raise ValueError('Private fields must be required and default constructable.')
         if field.default_value is not None and not field.is_optional:
             raise ValueError('Fields with default_value must set is_optional.')
         if field.is_optional and (cardinality == FieldCardinality.REQUIRED and field.default_value is None):

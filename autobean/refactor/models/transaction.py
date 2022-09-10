@@ -29,12 +29,7 @@ class Transaction(transaction.Transaction):
             string0,
             string1,
             string2,
-            tags_links,
-            inline_comment,
-            eol,
-            meta,
-            postings,
-            trailing_comment,
+            *args,
         ) = children
         assert isinstance(string1, internal.Maybe)
         assert isinstance(string2, internal.Maybe)
@@ -48,12 +43,7 @@ class Transaction(transaction.Transaction):
             string0,
             string1,
             string2,
-            tags_links,
-            inline_comment,
-            eol,
-            meta,
-            postings,
-            trailing_comment)
+            *args)
 
     @internal.custom_property
     def raw_payee(self) -> Optional[EscapedString]:

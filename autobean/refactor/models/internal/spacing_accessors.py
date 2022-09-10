@@ -1,5 +1,5 @@
 import re
-from typing import Iterable, Sequence
+from typing import Callable, Iterable, Optional, Sequence
 from .. import base
 from ..spacing import Newline, Whitespace
 
@@ -18,19 +18,27 @@ def _text_to_tokens(text: str) -> Iterable[base.RawTokenModel]:
             yield Newline.from_raw_text(newline)
 
 
+def _find_spacing(
+        token: Optional[base.RawTokenModel],
+        succ: Callable[[base.RawTokenModel], Optional[base.RawTokenModel]],
+) -> list[base.RawTokenModel]:
+    tokens = []
+    while isinstance(token, Newline | Whitespace) or (token is not None and not token.raw_text):
+        if token.raw_text:
+            tokens.append(token)
+        token = succ(token)
+    return tokens
+
+
 class SpacingAccessorsMixin(base.RawModel):
 
     @property
     def raw_spacing_before(self) -> tuple[base.RawTokenModel, ...]:
         if self.token_store is None:
             return ()
-        tokens = []
-        token = self.token_store.get_prev(self.first_token)
-        while isinstance(token, Newline | Whitespace) or (token is not None and not token.raw_text):
-            if token.raw_text:
-                tokens.append(token)
-            token = self.token_store.get_prev(token)
-        return tuple(reversed(tokens))
+        return tuple(reversed(_find_spacing(
+                self.token_store.get_prev(self.first_token),
+                self.token_store.get_prev)))
 
     @raw_spacing_before.setter
     def raw_spacing_before(self, tokens: tuple[base.RawTokenModel, ...]) -> None:
@@ -54,13 +62,9 @@ class SpacingAccessorsMixin(base.RawModel):
     def raw_spacing_after(self) -> Sequence[base.RawTokenModel]:
         if self.token_store is None:
             return ()
-        tokens = []
-        token = self.token_store.get_next(self.last_token)
-        while isinstance(token, Newline | Whitespace) or (token is not None and not token.raw_text):
-            if token.raw_text:
-                tokens.append(token)
-            token = self.token_store.get_next(token)
-        return tuple(tokens)
+        return tuple(_find_spacing(
+                self.token_store.get_next(self.last_token),
+                self.token_store.get_next))
 
     @raw_spacing_after.setter
     def raw_spacing_after(self, tokens: Sequence[base.RawTokenModel]) -> None:

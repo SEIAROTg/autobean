@@ -2,7 +2,7 @@ import copy
 import enum
 import pathlib
 import re
-from typing import Iterable, Iterator, Optional, Type, TypeVar
+from typing import Iterable, Iterator, Type, TypeVar
 import lark
 from lark import exceptions
 from lark import lexer
@@ -36,9 +36,9 @@ class PostLex(lark.lark.PostLex):
     _NEWLINE_INDENT_COMMENT = '_NEWLINE_INDENT_COMMENT'
     _NEWLINE = '_NEWLINE'
     _EOL = 'EOL'
-    _INDENT = '_INDENT'
-    _DEDENT = '_DEDENT'
-    _INDENT_WS = 'INDENT'
+    _INDENT_MARK = 'INDENT_MARK'
+    _DEDENT_MARK = 'DEDENT_MARK'
+    _INDENT = 'INDENT'
     _BLOCK_COMMENT = 'BLOCK_COMMENT'
 
     # Contextual lexer only sees _EOL and will thus reject _NEWLINE by default.
@@ -55,26 +55,26 @@ class PostLex(lark.lark.PostLex):
             match = self._NEWLINE_INDENT_COMMENT_SPLIT_RE.fullmatch(token.value)
             assert match
             newline_text, indent_text, comment_text = match.groups()
+            if newline_text and not prev_is_block_comment:
+                yield lark.Token.new_borrow_pos(self._EOL, '', token)
+            if not indent_text and indented:
+                indented = False
+                yield lark.Token.new_borrow_pos(self._DEDENT_MARK, '', token)
             if newline_text:
-                if not prev_is_block_comment:
-                    yield lark.Token.new_borrow_pos(self._EOL, '', token)
                 yield lark.Token.new_borrow_pos(self._NEWLINE, newline_text, token)
             prev_is_block_comment = False
             if indent_text and not indented:
                 indented = True
-                yield lark.Token.new_borrow_pos(self._INDENT, '', token)
+                yield lark.Token.new_borrow_pos(self._INDENT_MARK, '', token)
             if comment_text:
                 prev_is_block_comment = True
                 yield lark.Token.new_borrow_pos(self._BLOCK_COMMENT, indent_text + comment_text, token)
             elif indent_text:
-                yield lark.Token.new_borrow_pos(self._INDENT_WS, indent_text, token)
-            if not indent_text and indented:
-                indented = False
-                yield lark.Token.new_borrow_pos(self._DEDENT, '', token)
+                yield lark.Token.new_borrow_pos(self._INDENT, indent_text, token)
         if not prev_is_block_comment:
             yield lark.Token(self._EOL, '')
         if indented:
-            yield lark.Token(self._DEDENT, '')
+            yield lark.Token(self._DEDENT_MARK, '')
 
 
 class _Floating(enum.Enum):
@@ -123,8 +123,7 @@ class Parser:
         parser = lark_instance.parse_interactive(text=text, start=target.RULE)
         tokens = []
         for token in parser.lexer_thread.lex(parser.parser_state):
-            if token.type not in ('_INDENT', '_DEDENT'):
-                tokens.append(token)
+            tokens.append(token)
             if token.type not in _IGNORED_TOKENS or token.type in parser.choices():
                 parser.feed_token(token)
         tree = parser.feed_eof()
@@ -146,10 +145,8 @@ class ModelBuilder:
 
     def _fix_gap(self, cursor: int) -> None:
         for token in self._tokens[self._cursor:cursor]:
-            if not token.value:  # skips EOL, _INDENT, _DEDENT, etc. if outside a model.
+            if not token.value:  # skips EOL, INDENT_MARK, DEDENT_MARK, etc. if outside a model.
                 continue
-            if token.type == 'INDENT':
-                token.type = 'WHITESPACE'
             built_token = models.TOKEN_MODELS[token.type].from_raw_text(token.value)
             if isinstance(built_token, models.BlockComment):
                 built_token.claimed = False
@@ -194,7 +191,7 @@ class ModelBuilder:
         children = []
         for child in tree.children:
             is_tree = isinstance(child, lark.Tree)
-            if is_tree and child.data == 'maybe_left':
+            if is_tree and child.data in ('maybe_left', 'maybe_required'):
                 children.append(self._build_optional_node(child, _Floating.LEFT))
             elif is_tree and child.data == 'maybe_right':
                 children.append(self._build_optional_node(child, _Floating.RIGHT))

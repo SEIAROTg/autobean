@@ -20,12 +20,11 @@ file: repeated{_file_directive}
           | custom
           | transaction
 // TODO: avoid removing ignored parts when removing a directive.
-file_ignored_: EOL | _INDENT EOL* _DEDENT
+file_ignored_: EOL | indent_mark_ EOL* dedent_mark_
 _file_directive: directive | file_ignored_
 _comment_eol: maybe_left{INLINE_COMMENT} EOL
 _leading_comment: maybe_right{NEVER}
 _trailing_comment: maybe_left{NEVER}
-eol_: EOL
 
 // Labels
 OPTION:       "option"
@@ -69,26 +68,32 @@ document:     _leading_comment DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_ta
 open:         _leading_comment DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} _comment_eol _meta_items _trailing_comment
 custom:       _leading_comment DATE CUSTOM ESCAPED_STRING repeated{_custom_value} _comment_eol _meta_items _trailing_comment
 transaction:  _leading_comment DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} _comment_eol _meta_items_or_postings _trailing_comment
-_meta_items_or_postings: _INDENT repeated{meta_item} repeated{posting} _DEDENT | repeated{NEVER} repeated{NEVER} | _INDENT eol_+ repeated{NEVER} repeated{NEVER} _DEDENT
+_meta_items_or_postings: maybe_required{INDENT_MARK} repeated{meta_item} repeated{posting} maybe_required{DEDENT_MARK}
+                       | maybe_left{NEVER2} repeated{NEVER} repeated{NEVER} maybe_left{NEVER2}
+                       | maybe_required{INDENT_MARK} eol_+ repeated{NEVER} repeated{NEVER} maybe_required{DEDENT_MARK}
 
 // Punctuations
 WHITESPACE: /[ \t]+/
 _NEWLINE: /\r*\n/
 // Takes precedence over INLINE_COMMENT.
-_NEWLINE_INDENT_COMMENT.10: (_NEWLINE | /\A/) (BLOCK_COMMENT | WHITESPACE) | _NEWLINE
+_NEWLINE_INDENT_COMMENT.10: (_NEWLINE | /\A/) (BLOCK_COMMENT | INDENT) | _NEWLINE
 INLINE_COMMENT: /;[^\r\n]*/s
 BLOCK_COMMENT: /^/m INLINE_COMMENT (_NEWLINE INLINE_COMMENT)* | /^/m WHITESPACE INLINE_COMMENT (_NEWLINE WHITESPACE INLINE_COMMENT)*
 _COMMA: ","
+INDENT: /^/m WHITESPACE /(?=[^ \t\r\n])/s
 
 %declare EOL
-%declare _INDENT
-%declare _DEDENT
-%declare INDENT
+%declare INDENT_MARK
+%declare DEDENT_MARK
 %ignore WHITESPACE
 %ignore INDENT
 %ignore _NEWLINE
 %ignore INLINE_COMMENT
 %ignore BLOCK_COMMENT
+
+eol_: EOL
+indent_mark_: INDENT_MARK
+dedent_mark_: DEDENT_MARK
 
 // String
 ESCAPED_STRING : /".*?(?<!\\)(\\\\)*?"/s
@@ -164,7 +169,9 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 // MetaItem
 _meta_item: _leading_comment indent2 META_KEY maybe_left{meta_value} _comment_eol _trailing_comment
 meta_item: _allow_direct_parse{_meta_item}
-_meta_items: _INDENT repeated{meta_item} _DEDENT | repeated{NEVER} | _INDENT eol_+ repeated{NEVER} _DEDENT
+_meta_items: maybe_required{INDENT_MARK} repeated{meta_item} maybe_required{DEDENT_MARK}
+           | maybe_left{NEVER2} repeated{NEVER} maybe_left{NEVER2}
+           | maybe_required{INDENT_MARK} eol_+ repeated{NEVER} maybe_required{DEDENT_MARK}
 
 // Tolerance
 TILDE:        "~"
@@ -200,6 +207,7 @@ posting: _allow_direct_parse{_posting}
 // [internal] Optional field wrapper
 maybe_left{inner}: [inner]
 maybe_right{inner}: [inner]
+maybe_required{inner}: inner  // required, but parse into a Maybe
 
 // [internal] Repeated field wrapper
 repeated{inner}: (inner)*
@@ -208,6 +216,6 @@ repeated_sep{inner, sep}: inner? (sep inner)*
 // [internal]
 NEVER: /^_^/
 NEVER2: NEVER
-_allow_direct_parse{inner}: inner | _INDENT inner _DEDENT  // allow parse without parent model
+_allow_direct_parse{inner}: inner | indent_mark_ inner dedent_mark_  // allow parse without parent model
 indent: [NEVER]  // will be replaced by indent whitespace token
 indent2: [NEVER2]  // work around grammar ambiguity detection as lark doesn't know this never matches
