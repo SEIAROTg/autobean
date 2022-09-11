@@ -154,6 +154,12 @@ class TestSurroundingComment(base.BaseTestModel):
         close_foo.unclaim_trailing_comment()
         assert close_bar.claim_leading_comment() is not None
 
+    def test_claim_leading_already_claimed_suppressed(self) -> None:
+        file = self.parser.parse(_CLOSE_MULTIPLE, models.File)
+        close_foo, close_bar = file.directives
+        close_foo.claim_trailing_comment()
+        assert close_bar.claim_leading_comment(ignore_if_already_claimed=True) is None
+
     def test_claim_trailing(self) -> None:
         close = self.parser.parse(_CLOSE_BOTH, models.Close)
         assert close.raw_trailing_comment is None
@@ -176,6 +182,12 @@ class TestSurroundingComment(base.BaseTestModel):
             close_foo.claim_trailing_comment()
         close_bar.unclaim_leading_comment()
         assert close_foo.claim_trailing_comment() is not None
+
+    def test_claim_trailing_already_claimed_suppressed(self) -> None:
+        file = self.parser.parse(_CLOSE_MULTIPLE, models.File)
+        close_foo, close_bar = file.directives
+        close_bar.claim_leading_comment()
+        assert close_foo.claim_trailing_comment(ignore_if_already_claimed=True) is None
 
     def test_claim_missing(self) -> None:
         close = self.parser.parse(_CLOSE_NEITHER, models.Close)
