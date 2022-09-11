@@ -33,7 +33,7 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _indent_mark = internal.optional_left_field[IndentMark](separators=())
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
+    _meta = internal.repeated_field[MetaItem | BlockComment](separators=(Newline.from_default(),), default_indent='    ')
     _dedent_mark = internal.optional_left_field[DedentMark](separators=())
 
     raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
@@ -41,7 +41,8 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
     raw_type = internal.required_node_property(_type)
     raw_description = internal.required_node_property(_description)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
+    raw_meta_with_comments = internal.repeated_node_with_interleaving_comments_property(_meta)
+    raw_meta = meta_item_internal.repeated_raw_meta_item_property(raw_meta_with_comments)
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
@@ -49,7 +50,7 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
     type = internal.required_value_property(raw_type)
     description = internal.required_value_property(raw_description)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
-    meta = meta_item_internal.repeated_meta_item_property(_meta)
+    meta = meta_item_internal.repeated_meta_item_property(raw_meta_with_comments)
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
 
     @final
@@ -64,7 +65,7 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
             inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             indent_mark: internal.Maybe[IndentMark],
-            meta: internal.Repeated[MetaItem],
+            meta: internal.Repeated[MetaItem | BlockComment],
             dedent_mark: internal.Maybe[DedentMark],
             trailing_comment: internal.Maybe[BlockComment],
     ):
@@ -144,7 +145,7 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
             *,
             leading_comment: Optional[BlockComment] = None,
             inline_comment: Optional[InlineComment] = None,
-            meta: Iterable[MetaItem] = (),
+            meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
         maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)

@@ -156,15 +156,16 @@ class ModelBuilder:
         self._right_floating_placeholders.clear()
 
     def _build_indent(self) -> models.RawTokenModel:
-        while self._cursor < len(self._tokens):
-            token = self._tokens[self._cursor]
+        cursor = self._cursor
+        while cursor < len(self._tokens):
+            token = self._tokens[cursor]
             if token.value:
                 if token.type == 'INDENT':
+                    self._fix_gap(cursor)
                     return self._build_token(token)
                 if not token.type in _IGNORED_TOKENS:
                     break
-                self._add_tokens([models.TOKEN_MODELS[token.type].from_raw_text(token.value)])
-            self._cursor += 1
+            cursor += 1
         raise exceptions.UnexpectedInput('Missing indent.')
 
     def _build_placeholder(self, floating: _Floating) -> internal.Placeholder:

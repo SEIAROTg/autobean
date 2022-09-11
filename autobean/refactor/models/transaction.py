@@ -82,7 +82,7 @@ class Transaction(transaction.Transaction):
             leading_comment: Optional[BlockComment] = None,
             tags_links: Iterable[Link | Tag] = (),
             inline_comment: Optional[InlineComment] = None,
-            meta: Iterable[MetaItem] = (),
+            meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
         if payee is not None and narration is None:

@@ -35,7 +35,7 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     _price = internal.optional_left_field[PriceAnnotation](separators=(Whitespace.from_default(),))
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='        ')
+    _meta = internal.repeated_field[MetaItem | BlockComment](separators=(Newline.from_default(),), default_indent='        ')
 
     raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
     raw_indent = internal.required_node_property(_indent)
@@ -44,9 +44,10 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     raw_number = internal.optional_node_property(_number)
     raw_currency = internal.optional_node_property(_currency)
     raw_cost = internal.optional_node_property(_cost)
-    raw_price = internal.optional_node_property(_price)
+    raw_price = internal.optional_node_property[PriceAnnotation](_price)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
+    raw_meta_with_comments = internal.repeated_node_with_interleaving_comments_property(_meta)
+    raw_meta = meta_item_internal.repeated_raw_meta_item_property(raw_meta_with_comments)
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
@@ -58,7 +59,7 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     cost = raw_cost
     price = raw_price
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
-    meta = meta_item_internal.repeated_meta_item_property(_meta)
+    meta = meta_item_internal.repeated_meta_item_property(raw_meta_with_comments)
     trailing_comment = internal.optional_indented_string_property(raw_trailing_comment, BlockComment, raw_indent)
 
     @final
@@ -75,7 +76,7 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
             price: internal.Maybe[PriceAnnotation],
             inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
-            meta: internal.Repeated[MetaItem],
+            meta: internal.Repeated[MetaItem | BlockComment],
             trailing_comment: internal.Maybe[BlockComment],
     ):
         super().__init__(token_store)
@@ -162,7 +163,7 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
             cost: Optional[CostSpec] = None,
             price: Optional[PriceAnnotation] = None,
             inline_comment: Optional[InlineComment] = None,
-            meta: Iterable[MetaItem] = (),
+            meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
         maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)

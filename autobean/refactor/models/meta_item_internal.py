@@ -4,7 +4,6 @@ from .meta_value import MetaRawValue, MetaValue
 from . import base, internal
 
 _V = TypeVar('_V')
-_W = TypeVar('_W', bound='internal.RepeatedNodeWrapper[MetaItem]')
 
 
 class _Empty:
@@ -14,15 +13,15 @@ class _Empty:
 _EMPTY = _Empty()
 
 
-class _DictView(Generic[_W]):
-    def __init__(self, wrapper: internal.RepeatedNodeWrapper[MetaItem]):
+class _DictView:
+    def __init__(self, wrapper: internal.RepeatedValueWrapper[MetaItem, MetaItem]):
         self._wrapper = wrapper
 
     def __len__(self) -> int:
         return len(self._wrapper)
 
 
-class RepeatedRawMetaKeysView(_DictView['RepeatedRawMetaItemWrapper'], KeysView[str]):
+class RepeatedRawMetaKeysView(_DictView, KeysView[str]):
     def __iter__(self) -> Iterator[str]:
         for item in self._wrapper:
             yield item.key
@@ -32,7 +31,7 @@ class RepeatedRawMetaKeysView(_DictView['RepeatedRawMetaItemWrapper'], KeysView[
             yield item.key
 
 
-class RepeatedRawMetaValuesView(_DictView['RepeatedRawMetaItemWrapper'], ValuesView[MetaItem]):
+class RepeatedRawMetaValuesView(_DictView, ValuesView[MetaItem]):
     def __iter__(self) -> Iterator[MetaItem]:
         return iter(self._wrapper)
 
@@ -40,7 +39,7 @@ class RepeatedRawMetaValuesView(_DictView['RepeatedRawMetaItemWrapper'], ValuesV
         return reversed(self._wrapper)
 
 
-class RepeatedRawMetaItemsView(_DictView['RepeatedRawMetaItemWrapper'], ItemsView[str, MetaItem]):
+class RepeatedRawMetaItemsView(_DictView, ItemsView[str, MetaItem]):
     def __iter__(self) -> Iterator[tuple[str, MetaItem]]:
         for item in self._wrapper:
             yield item.key, item
@@ -50,7 +49,16 @@ class RepeatedRawMetaItemsView(_DictView['RepeatedRawMetaItemWrapper'], ItemsVie
             yield item.key, item
 
 
-class RepeatedRawMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMapping[str, MetaItem]):
+class RepeatedRawMetaItemWrapper(
+        internal.RepeatedFilteredNodeWrapper[MetaItem],
+        MutableMapping[str, MetaItem]):
+
+    def __init__(
+            self,
+            raw_wrapper: internal.RepeatedNodeWithInterleavingCommentsWrapper[MetaItem],
+    ) -> None:
+        super().__init__(raw_wrapper, MetaItem)
+
     @overload
     def __getitem__(self, index: int) -> MetaItem:
         ...
@@ -63,7 +71,7 @@ class RepeatedRawMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], Mutable
     def __getitem__(self, index: int | slice | str) -> MetaItem | list[MetaItem] | MetaItem:
         if not isinstance(index, str):
             return super().__getitem__(index)
-        for item in self._repeated.items:
+        for item in self:
             if item.key == index:
                 return item
         raise KeyError(index)
@@ -71,7 +79,7 @@ class RepeatedRawMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], Mutable
     def __delitem__(self, index: int | slice | str) -> None:
         if not isinstance(index, str):
             return super().__delitem__(index)
-        for i, item in enumerate(self._repeated.items):
+        for i, item in enumerate(self):
             if item.key == index:
                 return super().__delitem__(i)
         raise KeyError(index)
@@ -89,7 +97,7 @@ class RepeatedRawMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], Mutable
     def __setitem__(self, index: int | slice | str, value: MetaItem | Iterable[MetaItem]) -> None:
         if not isinstance(index, str):
             return super().__setitem__(index, value)
-        for i, item in enumerate(self._repeated.items):
+        for i, item in enumerate(self):
             if item.key == index:
                 return super().__setitem__(i, value)
         self.append(value)
@@ -106,7 +114,7 @@ class RepeatedRawMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], Mutable
     def pop(self, index: int | str = -1, default: _V | _Empty = _EMPTY) -> MetaItem | _V:
         if not isinstance(index, str):
             return super().pop(index)
-        for i, item in enumerate(self._repeated.items):
+        for i, item in enumerate(self):
             if item.key == index:
                 return super().pop(i)
         if not isinstance(default, _Empty):
@@ -123,7 +131,7 @@ class RepeatedRawMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], Mutable
         return RepeatedRawMetaItemsView(self)
 
 
-class RepeatedMetaKeysView(_DictView['RepeatedMetaItemWrapper'], KeysView[str]):
+class RepeatedMetaKeysView(_DictView, KeysView[str]):
     def __iter__(self) -> Iterator[str]:
         for item in self._wrapper:
             yield item.key
@@ -133,7 +141,7 @@ class RepeatedMetaKeysView(_DictView['RepeatedMetaItemWrapper'], KeysView[str]):
             yield item.key
 
 
-class RepeatedMetaValuesView(_DictView['RepeatedMetaItemWrapper'], ValuesView[Optional[MetaValue]]):
+class RepeatedMetaValuesView(_DictView, ValuesView[Optional[MetaValue]]):
     def __iter__(self) -> Iterator[Optional[MetaValue]]:
         for item in self._wrapper:
             yield item.value
@@ -143,7 +151,7 @@ class RepeatedMetaValuesView(_DictView['RepeatedMetaItemWrapper'], ValuesView[Op
             yield item.value
 
 
-class RepeatedMetaItemsView(_DictView['RepeatedMetaItemWrapper'], ItemsView[str, Optional[MetaValue]]):
+class RepeatedMetaItemsView(_DictView, ItemsView[str, Optional[MetaValue]]):
     def __iter__(self) -> Iterator[tuple[str, Optional[MetaValue]]]:
         for item in self._wrapper:
             yield item.key, item.value
@@ -153,7 +161,16 @@ class RepeatedMetaItemsView(_DictView['RepeatedMetaItemWrapper'], ItemsView[str,
             yield item.key, item.value
 
 
-class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMapping[str, Optional[MetaValue | MetaRawValue]]):
+class RepeatedMetaItemWrapper(
+        internal.RepeatedFilteredNodeWrapper[MetaItem],
+        MutableMapping[str, Optional[MetaValue | MetaRawValue]]):
+
+    def __init__(
+            self,
+            raw_wrapper: internal.RepeatedNodeWithInterleavingCommentsWrapper[MetaItem],
+    ) -> None:
+        super().__init__(raw_wrapper, MetaItem)
+
     @overload
     def __getitem__(self, index: int) -> MetaItem:
         ...
@@ -166,7 +183,7 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
     def __getitem__(self, index: int | slice | str) -> MetaItem | list[MetaItem] | Optional[MetaValue]:
         if not isinstance(index, str):
             return super().__getitem__(index)
-        for item in self._repeated.items:
+        for item in self:
             if item.key == index:
                 return item.value
         raise KeyError(index)
@@ -174,7 +191,7 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
     def __delitem__(self, index: int | slice | str) -> None:
         if not isinstance(index, str):
             return super().__delitem__(index)
-        for i, item in enumerate(self._repeated.items):
+        for i, item in enumerate(self):
             if item.key == index:
                 return super().__delitem__(i)
         raise KeyError(index)
@@ -192,7 +209,7 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
     def __setitem__(self, index: int | slice | str, value: MetaItem | Iterable[MetaItem] | Optional[MetaValue | MetaRawValue]) -> None:
         if not isinstance(index, str):
             return super().__setitem__(index, value)
-        for _, item in enumerate(self._repeated.items):
+        for _, item in enumerate(self):
             if item.key == index:
                 item.value = value
                 return
@@ -210,7 +227,7 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
     def pop(self, index: int | str = -1, default: _V | _Empty = _EMPTY) -> MetaItem | Optional[MetaValue] | _V:
         if not isinstance(index, str):
             return super().pop(index)
-        for i, item in enumerate(self._repeated.items):
+        for i, item in enumerate(self):
             if item.key != index:
                 continue
             item = super().pop(i)
@@ -236,15 +253,15 @@ class RepeatedMetaItemWrapper(internal.RepeatedNodeWrapper[MetaItem], MutableMap
 
 
 class repeated_raw_meta_item_property(internal.cached_custom_property[RepeatedRawMetaItemWrapper, base.RawTreeModel]):
-    def __init__(self, inner_field: internal.repeated_field[MetaItem]):
+    def __init__(self, inner_property: internal.repeated_node_with_interleaving_comments_property[MetaItem]):
         super().__init__(
-            lambda instance: RepeatedRawMetaItemWrapper(inner_field.__get__(instance), inner_field))
+            lambda instance: RepeatedRawMetaItemWrapper(inner_property.__get__(instance)))
 
 
 class repeated_meta_item_property(internal.cached_custom_property[RepeatedMetaItemWrapper, base.RawTreeModel]):
-    def __init__(self, inner_field: internal.repeated_field[MetaItem]):
+    def __init__(self, inner_property: internal.repeated_node_with_interleaving_comments_property[MetaItem]):
         super().__init__(
-            lambda instance: RepeatedMetaItemWrapper(inner_field.__get__(instance), inner_field))
+            lambda instance: RepeatedMetaItemWrapper(inner_property.__get__(instance)))
 
 
 def from_mapping(mapping: Mapping[str, MetaValue | MetaRawValue]) -> Iterator[MetaItem]:

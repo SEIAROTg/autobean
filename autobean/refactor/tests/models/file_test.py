@@ -153,7 +153,7 @@ class TestFile(base.BaseTestModel):
         assert len(file.directives) == 2
         assert file.directives[0] is option
         assert file.directives[1] is open
-        assert self.print_model(file) == 'option "foo" "bar"\n2000-01-01 open Assets:Foo'
+        assert self.print_model(file) == 'option "foo" "bar"\n\n2000-01-01 open Assets:Foo'
 
     def test_from_value(self) -> None:
         option = models.Option.from_value('foo', 'bar')
@@ -162,7 +162,7 @@ class TestFile(base.BaseTestModel):
         assert len(file.directives) == 2
         assert file.directives[0] is option
         assert file.directives[1] is open
-        assert self.print_model(file) == 'option "foo" "bar"\n2000-01-01 open Assets:Foo'
+        assert self.print_model(file) == 'option "foo" "bar"\n\n2000-01-01 open Assets:Foo'
 
     def test_comments(self) -> None:
         text = '''\

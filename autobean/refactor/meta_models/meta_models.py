@@ -10,7 +10,8 @@ _META = field(
     default_indent=' ' * 4,
     is_optional=True,
     is_keyword_only=True,
-    default_value={})
+    default_value={},
+    has_interleaving_comments=True)
 
 
 # Auxiliary
@@ -315,7 +316,10 @@ class Transaction(MetaModel, BlockCommentable):
     _eol: 'EOL' = field(separators=())
     _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
-    postings: list['posting'] = field(separators=('Newline.from_default()',), default_indent=' ' * 4)
+    postings: list['posting'] = field(
+        separators=('Newline.from_default()',),
+        default_indent=' ' * 4,
+        has_interleaving_comments=True)
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
 
@@ -345,6 +349,7 @@ class File(MetaModel):
         'transaction',
     ]] = field(
         type_alias='Directive',
-        separators=('Newline.from_default()',),
+        separators=('Newline.from_default()', 'Newline.from_default()'),
         separators_before=(),
+        has_interleaving_comments=True,
     )

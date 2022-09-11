@@ -13,7 +13,7 @@ _U = TypeVar('_U', bound=base.RawTreeModel)
 _V = TypeVar('_V')
 
 
-def _replace_node(node: _M, repl: _M) -> None:
+def replace_node(node: _M, repl: _M) -> None:
     token_store = node.token_store  # backup because the RawTokenModel.token_store may disappear
     if not token_store:
         raise ValueError('Cannot replace a free token.')
@@ -35,7 +35,7 @@ class required_node_property(base_rw_property[_M, base.RawTreeModel]):
     def __set__(self, instance: base.RawTreeModel, value: _M) -> None:
         assert value is not None
         current = self._inner_field.__get__(instance)
-        _replace_node(current, value)
+        replace_node(current, value)
         self._inner_field.__set__(instance, value)
 
 
@@ -54,7 +54,7 @@ class optional_node_property(base_rw_property[Optional[_M], base.RawTreeModel]):
         elif maybe.inner is not None and inner is None:
             maybe.remove_inner(maybe.inner)
         elif maybe.inner is not None and inner is not None:
-            _replace_node(maybe.inner, inner)
+            replace_node(maybe.inner, inner)
         maybe.inner = inner
 
 
@@ -256,7 +256,7 @@ class repeated_node_property(base_rw_property[RepeatedNodeWrapper[_M], base.RawT
 
     def __set__(self, instance: _U, value: RepeatedNodeWrapper[_M]) -> None:
         repeated = self._inner_field.__get__(instance)
-        _replace_node(repeated, value.repeated)
+        replace_node(repeated, value.repeated)
         self._inner_field.__set__(instance, value.repeated)
         instance.__dict__[self._attr] = value
 

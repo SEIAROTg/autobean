@@ -140,6 +140,7 @@ class FieldDescriptor:
     default_indent: Optional[str]
     indent_field_name: Optional[str]
     skip_field_definition: bool
+    has_interleaving_comments: bool
 
     @functools.cached_property
     def inner_type_original(self) -> str:
@@ -151,6 +152,12 @@ class FieldDescriptor:
         if self.type_alias is not None:
             return self.type_alias
         return self.inner_type_original
+
+    @functools.cached_property
+    def inner_type_with_comments(self) -> str:
+        if self.has_interleaving_comments:
+            return f'{self.inner_type} | BlockComment'
+        return self.inner_type
 
     @functools.cached_property
     def value_types(self) -> Optional[list[str]]:
@@ -172,11 +179,11 @@ class FieldDescriptor:
     @functools.cached_property
     def input_type(self) -> str:
         if self.cardinality == FieldCardinality.REQUIRED:
-            return self.inner_type
+            return self.inner_type_with_comments
         elif self.cardinality == FieldCardinality.OPTIONAL:
-            return f'Optional[{self.inner_type}]'
+            return f'Optional[{self.inner_type_with_comments}]'
         elif self.cardinality == FieldCardinality.REPEATED:
-            return f'Iterable[{self.inner_type}]'
+            return f'Iterable[{self.inner_type_with_comments}]'
         else:
             assert False
 
@@ -201,11 +208,11 @@ class FieldDescriptor:
     @functools.cached_property
     def internal_type(self) -> str:
         if self.cardinality == FieldCardinality.REQUIRED:
-            return self.inner_type
+            return self.inner_type_with_comments
         elif self.cardinality == FieldCardinality.OPTIONAL:
-            return f'internal.Maybe[{self.inner_type}]'
+            return f'internal.Maybe[{self.inner_type_with_comments}]'
         elif self.cardinality == FieldCardinality.REPEATED:
-            return f'internal.Repeated[{self.inner_type}]'
+            return f'internal.Repeated[{self.inner_type_with_comments}]'
         else:
             assert False
 
@@ -215,7 +222,15 @@ class FieldDescriptor:
 
     @functools.cached_property
     def raw_property_name(self) -> str:
+        if self.has_interleaving_comments:
+            return f'raw_{self.name}_with_comments'
         return f'raw_{self.name}'
+
+    @functools.cached_property
+    def additional_raw_property_name(self) -> Optional[str]:
+        if self.has_interleaving_comments:
+            return f'raw_{self.name}'
+        return None
 
     @functools.cached_property
     def value_property_name(self) -> str:
@@ -230,7 +245,7 @@ class FieldDescriptor:
     @functools.cached_property
     def field_def(self) -> str:
         if self.cardinality == FieldCardinality.REQUIRED:
-            return f'internal.required_field[{self.inner_type}]()'
+            return f'internal.required_field[{self.inner_type_with_comments}]()'
         if self.cardinality == FieldCardinality.OPTIONAL:
             assert self.separators is not None
             assert self.floating is not None
@@ -238,7 +253,7 @@ class FieldDescriptor:
                 base.Floating.LEFT: 'left',
                 base.Floating.RIGHT: 'right',
             }[self.floating]
-            return f'internal.optional_{floating}_field[{self.inner_type}](separators={_fmt_separators(self.separators)})'
+            return f'internal.optional_{floating}_field[{self.inner_type_with_comments}](separators={_fmt_separators(self.separators)})'
         if self.cardinality == FieldCardinality.REPEATED:
             assert self.separators
             args = [f'separators={_fmt_separators(self.separators)}']
@@ -246,23 +261,37 @@ class FieldDescriptor:
                 args.append(f'separators_before={_fmt_separators(self.separators_before)}')
             if self.default_indent is not None:
                 args.append(f'default_indent={self.default_indent!r}')
-            return f'internal.repeated_field[{self.inner_type}]({", ".join(args)})'
+            return f'internal.repeated_field[{self.inner_type_with_comments}]({", ".join(args)})'
         assert False
 
     @functools.cached_property
     def raw_property_def(self) -> str:
+        typefix = f'[{self.inner_type_with_comments}]' if len(self.model_types) > 1 else ''
         if self.cardinality == FieldCardinality.REQUIRED:
-            return f'internal.required_node_property({self.field_name})'
+            return f'internal.required_node_property{typefix}({self.field_name})'
         if self.cardinality == FieldCardinality.OPTIONAL:
             if self.inner_type == 'BlockComment':
-                return f'internal.optional_node_property(internal.SurroundingCommentsMixin.{self.field_name})'
+                return f'internal.optional_node_property{typefix}(internal.SurroundingCommentsMixin.{self.field_name})'
             else:
-                return f'internal.optional_node_property({self.field_name})'
+                return f'internal.optional_node_property{typefix}({self.field_name})'
+        if self.cardinality == FieldCardinality.REPEATED:
+            if self.has_interleaving_comments:
+                return f'internal.repeated_node_with_interleaving_comments_property{typefix}({self.field_name})'
+            return f'internal.repeated_node_property{typefix}({self.field_name})'
+        assert False
+
+    @functools.cached_property
+    def additional_raw_property_def(self) -> Optional[str]:
+        typefix = f'[{self.inner_type}]' if len(self.model_types) > 1 else ''
+        type_arg = f'get_args({self.inner_type})' if len(self.model_types) > 1 else self.inner_type
+        if not self.has_interleaving_comments:
+            return None
         if self.cardinality == FieldCardinality.REPEATED:
             if self.inner_type == 'MetaItem':
-                return f'meta_item_internal.repeated_raw_meta_item_property({self.field_name})'
-            return f'internal.repeated_node_property({self.field_name})'
-        assert False
+                return f'meta_item_internal.repeated_raw_meta_item_property{typefix}({self.raw_property_name})'
+            else:
+                return f'internal.repeated_filtered_node_property{typefix}({self.raw_property_name}, {type_arg})'
+        return None
 
     @functools.cached_property
     def value_property_def(self) -> Optional[str]:
@@ -271,7 +300,7 @@ class FieldDescriptor:
         if self.value_types is None or len(self.value_types) != 1:
             return None
         if self.value_type == self.inner_type and self.value_type != 'MetaItem':
-            return self.raw_property_name
+            return f'raw_{self.name}'
         if self.cardinality == FieldCardinality.REQUIRED:
             return f'internal.required_value_property({self.raw_property_name})'
         elif self.cardinality == FieldCardinality.OPTIONAL:
@@ -287,7 +316,7 @@ class FieldDescriptor:
             if self.value_type == 'str':
                 return f'internal.repeated_string_property({self.raw_property_name}, {self.inner_type_original})'
             elif self.value_type == 'MetaItem':
-                return f'meta_item_internal.repeated_meta_item_property({self.field_name})'
+                return f'meta_item_internal.repeated_meta_item_property({self.raw_property_name})'
         return None
 
     @functools.cached_property
@@ -316,7 +345,7 @@ class FieldDescriptor:
 
     @functools.cached_property
     def construction_from_value(self) -> Optional[str]:
-        if self.inner_type == 'MetaItem' and self.cardinality == FieldCardinality.REPEATED:
+        if self.value_type == 'MetaItem' and self.cardinality == FieldCardinality.REPEATED:
             return f'meta_item_internal.from_mapping({self.name}) if {self.name} is not None else ()'
         if self.value_type == self.inner_type:
             return self.name
@@ -378,6 +407,10 @@ class MetaModelDescriptor:
                         ret['typing'].update(('Optional', 'Mapping'))
                 if model_type.value_type == 'MetaItem':
                     ret['..'].add('meta_item_internal')
+            if field.has_interleaving_comments:
+                ret['..block_comment'].add('BlockComment')
+                if field.type_alias is not None:
+                    ret['typing'].add('get_args')
             if not field.define_as and not field.has_circular_dep:
                 for model_type in field.model_types:
                     module = _model_name_to_module(model_type.name)
@@ -444,6 +477,7 @@ _LEADING_COMMENT_FIELD = FieldDescriptor(
     default_indent='',
     indent_field_name=None,
     skip_field_definition=True,
+    has_interleaving_comments=False,
 )
 _TRAILING_COMMENT_FIELD = dataclasses.replace(
     _LEADING_COMMENT_FIELD,
@@ -504,6 +538,7 @@ def build_descriptor(meta_model: Type[base.MetaModel]) -> MetaModelDescriptor:
             default_indent=field.default_indent,
             indent_field_name=indent_field_name,
             skip_field_definition=False,
+            has_interleaving_comments=field.has_interleaving_comments,
         )
         field_descriptors.append(descriptor)
         is_first = False

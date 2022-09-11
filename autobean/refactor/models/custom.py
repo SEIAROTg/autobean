@@ -98,7 +98,7 @@ class Custom(custom.Custom):
             *,
             leading_comment: Optional[BlockComment] = None,
             inline_comment: Optional[InlineComment] = None,
-            meta: Iterable[MetaItem] = (),
+            meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
         return super().from_children(

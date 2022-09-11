@@ -31,8 +31,8 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
     _indent_mark = internal.optional_left_field[IndentMark](separators=())
-    _meta = internal.repeated_field[MetaItem](separators=(Newline.from_default(),), default_indent='    ')
-    _postings = internal.repeated_field[Posting](separators=(Newline.from_default(),), default_indent='    ')
+    _meta = internal.repeated_field[MetaItem | BlockComment](separators=(Newline.from_default(),), default_indent='    ')
+    _postings = internal.repeated_field[Posting | BlockComment](separators=(Newline.from_default(),), default_indent='    ')
     _dedent_mark = internal.optional_left_field[DedentMark](separators=())
 
     raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
@@ -41,10 +41,12 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
     raw_string0 = internal.optional_node_property(_string0)
     raw_string1 = internal.optional_node_property(_string1)
     raw_string2 = internal.optional_node_property(_string2)
-    raw_tags_links = internal.repeated_node_property(_tags_links)
+    raw_tags_links = internal.repeated_node_property[Link | Tag](_tags_links)
     raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_meta = meta_item_internal.repeated_raw_meta_item_property(_meta)
-    raw_postings = internal.repeated_node_property(_postings)
+    raw_meta_with_comments = internal.repeated_node_with_interleaving_comments_property(_meta)
+    raw_meta = meta_item_internal.repeated_raw_meta_item_property(raw_meta_with_comments)
+    raw_postings_with_comments = internal.repeated_node_with_interleaving_comments_property(_postings)
+    raw_postings = internal.repeated_filtered_node_property(raw_postings_with_comments, Posting)
     raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
@@ -54,7 +56,7 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
     string1 = internal.optional_string_property(raw_string1, EscapedString)
     string2 = internal.optional_string_property(raw_string2, EscapedString)
     inline_comment = internal.optional_string_property(raw_inline_comment, InlineComment)
-    meta = meta_item_internal.repeated_meta_item_property(_meta)
+    meta = meta_item_internal.repeated_meta_item_property(raw_meta_with_comments)
     postings = raw_postings
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
 
@@ -72,8 +74,8 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
             inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
             indent_mark: internal.Maybe[IndentMark],
-            meta: internal.Repeated[MetaItem],
-            postings: internal.Repeated[Posting],
+            meta: internal.Repeated[MetaItem | BlockComment],
+            postings: internal.Repeated[Posting | BlockComment],
             dedent_mark: internal.Maybe[DedentMark],
             trailing_comment: internal.Maybe[BlockComment],
     ):
@@ -164,12 +166,12 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
             string0: Optional[EscapedString],
             string1: Optional[EscapedString],
             string2: Optional[EscapedString],
-            postings: Iterable[Posting],
+            postings: Iterable[Posting | BlockComment],
             *,
             leading_comment: Optional[BlockComment] = None,
             tags_links: Iterable[Link | Tag] = (),
             inline_comment: Optional[InlineComment] = None,
-            meta: Iterable[MetaItem] = (),
+            meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
         maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)

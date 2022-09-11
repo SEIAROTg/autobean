@@ -153,6 +153,10 @@ class RepeatedValueWrapper(MutableSequence[_V], Generic[_M, _V]):
         self._to_raw_type = to_raw_type
         self._update_raw = update_raw
 
+    @property
+    def indent(self) -> Optional[str]:
+        return self._raw_wrapper.indent
+
     def _check_type(self, v: Any) -> TypeGuard[_M]:
         return isinstance(v, self._raw_type)
 
@@ -270,3 +274,27 @@ class repeated_string_property(properties.cached_custom_property[RepeatedValueWr
             to_raw_type=inner_type.from_value,
             update_raw=_update_raw,
         ))
+
+
+class RepeatedFilteredNodeWrapper(RepeatedValueWrapper[_M, _M]):
+    def __init__(
+            self,
+            raw_wrapper: properties.RepeatedNodeWrapper[_M | _M2],
+            type: Type[_M] | tuple[Type[_M], ...]):
+        super().__init__(
+            raw_wrapper=raw_wrapper,
+            raw_type=type,
+            from_raw_type=lambda x: x,
+            to_raw_type=lambda x: x,
+            update_raw=lambda _, __: False,
+        )
+
+
+class repeated_filtered_node_property(
+        properties.cached_custom_property[RepeatedFilteredNodeWrapper[_M], base.RawTreeModel]):
+    def __init__(
+            self,
+            inner_property: base_property.base_ro_property[properties.RepeatedNodeWrapper[_M | Any], base.RawTreeModel],
+            type: Type[_M] | tuple[Type[_M], ...]):
+        super().__init__(
+            lambda instance: RepeatedFilteredNodeWrapper(inner_property.__get__(instance), type))

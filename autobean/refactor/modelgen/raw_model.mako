@@ -65,6 +65,9 @@ class ${model.name}(${', '.join(base_classes)}):
 
 % for field in model.public_fields:
     ${field.raw_property_name} = ${field.raw_property_def}
+% if field.additional_raw_property_def is not None:
+    ${field.additional_raw_property_name} = ${field.additional_raw_property_def}
+% endif
 % endfor
 
 <% any_value_property = False %>\

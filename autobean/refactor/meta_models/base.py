@@ -29,3 +29,4 @@ class field:
     separators: Optional[tuple[str, ...]] = None
     separators_before: Optional[tuple[str, ...]] = None
     default_indent: Optional[str] = None
+    has_interleaving_comments: bool = False

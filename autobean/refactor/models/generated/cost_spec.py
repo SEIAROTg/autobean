@@ -14,7 +14,7 @@ class CostSpec(base.RawTreeModel, internal.SpacingAccessorsMixin):
 
     _cost = internal.required_field[TotalCost | UnitCost]()
 
-    raw_cost = internal.required_node_property(_cost)
+    raw_cost = internal.required_node_property[TotalCost | UnitCost](_cost)
 
     @final
     def __init__(
