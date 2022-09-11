@@ -22,8 +22,11 @@ def _find_spacing(
         token: Optional[base.RawTokenModel],
         succ: Callable[[base.RawTokenModel], Optional[base.RawTokenModel]],
 ) -> list[base.RawTokenModel]:
-    tokens = []
-    while isinstance(token, Newline | Whitespace) or (token is not None and not token.raw_text):
+    tokens: list[base.RawTokenModel] = []
+    while token is not None and not token.raw_text:
+        token = succ(token)
+    # must not interleave with special tokens to avoid removing them in spacing update.
+    while isinstance(token, Newline | Whitespace):
         if token.raw_text:
             tokens.append(token)
         token = succ(token)
