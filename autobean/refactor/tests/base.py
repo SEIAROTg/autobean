@@ -124,6 +124,11 @@ class BaseTestModel:
                 assert prop.token_store is tree.token_store
                 self.check_consistency(prop)
 
+    def check_disjoint(self, a: models.RawModel, b: models.RawModel) -> None:
+        xs = {id(x) for x in a.tokens}
+        ys = {id(y) for y in b.tokens}
+        assert not xs & ys
+
     def assert_iterable_same(self, xs: Iterable[Any], ys: Iterable[Any]) -> None:
         for x, y in itertools.zip_longest(xs, ys):
             if isinstance(x, models.RawModel) or isinstance(y, models.RawModel):

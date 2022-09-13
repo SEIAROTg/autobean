@@ -1,4 +1,5 @@
 import datetime
+import decimal
 from typing import Optional
 import pytest
 from autobean.refactor import models
@@ -40,6 +41,12 @@ _CLOSE_BOTH_SEPARATED = '''\
 '''
 _CLOSE_NEITHER = '''\
 2000-01-01 close Assets:Foo ; baz\
+'''
+_CLOSE_BOTH_INDENTED = '''\
+2000-01-01 *
+    ; aaa
+    foo: 1
+    ; bbb\
 '''
 _SET_TESTCASES = [
     (None, None, _CLOSE_NEITHER),
@@ -199,3 +206,44 @@ class TestSurroundingComment(base.BaseTestModel):
         close, = file.directives
         assert close.claim_leading_comment() is None
         assert close.claim_trailing_comment() is None
+
+    def test_claim_move_placeholder(self) -> None:
+        file = self.parser.parse(_CLOSE_BOTH_INDENTED, models.File)
+        txn, = file.directives
+        assert isinstance(txn, models.Transaction)
+        meta, = txn.raw_meta
+        assert meta.claim_leading_comment() is not None
+        assert meta.leading_comment == 'aaa'
+        assert meta.claim_trailing_comment() is not None
+        assert meta.trailing_comment == 'bbb'
+        self.check_disjoint(txn._meta, txn._postings)
+        txn.trailing_comment = 'foo'
+        assert self.print_model(file) == '''\
+2000-01-01 *
+    ; aaa
+    foo: 1
+    ; bbb
+; foo\
+'''
+
+    def test_claim_move_placeholder_again(self) -> None:
+        file = self.parser.parse(_CLOSE_BOTH_INDENTED, models.File)
+        txn, = file.directives
+        assert isinstance(txn, models.Transaction)
+        meta, = txn.raw_meta
+        meta_trailing = meta.claim_trailing_comment()
+        assert meta_trailing is not None
+        posting = models.Posting.from_value(
+            'Assets:Foo', decimal.Decimal(100), 'USD')
+        txn.postings.append(posting)
+        meta.unclaim_trailing_comment()
+        posting_leading = posting.claim_leading_comment()
+        self.check_disjoint(txn._meta, txn._postings)
+        assert posting_leading is meta_trailing
+        assert self.print_model(file) == '''\
+2000-01-01 *
+    ; aaa
+    foo: 1
+    ; bbb
+    Assets:Foo 100 USD\
+'''
