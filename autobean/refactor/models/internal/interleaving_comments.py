@@ -1,24 +1,143 @@
 import itertools
-from typing import Callable, Iterable, Iterator, Optional, TypeVar
+from typing import Callable, Generic, Iterable, Iterator, MutableSet, Optional, TypeVar
 from .. import base
 from ..spacing import Newline, Whitespace
 from ..block_comment import BlockComment
 from . import base_property, fields, properties, repeated
+from .placeholder import Placeholder
 
 _M = TypeVar('_M', bound=base.RawModel)
 _U = TypeVar('_U', bound=base.RawTreeModel)
 
 
-def _get_boundary(
-    start: base.RawTokenModel,
-    succ: Callable[[base.RawTokenModel], Optional[base.RawTokenModel]],
-    limit: base.RawTokenModel,
-) -> base.RawTokenModel:
-    prev, token = start, succ(start)
-    while prev is not limit and token is not None and (
-            isinstance(token, Newline | Whitespace | BlockComment) or not token.raw_text):
-        prev, token = token, succ(token)
-    return prev
+class _Universe(MutableSet[int]):
+    def __contains__(self, item: object) -> bool:
+        return True
+
+    def __iter__(self) -> Iterator[int]:
+        raise NotImplementedError()
+
+    def __len__(self) -> int:
+        return 0
+
+    def add(self, item: int) -> None:
+        pass
+
+    def discard(self, item: int) -> None:
+        pass
+
+
+def _shift_ignored(
+        token_store: base.TokenStore,
+        first: base.RawTokenModel,
+        last: base.RawTokenModel,
+        *,
+        backwards: bool,
+) -> None:
+    ignored: list[base.RawTokenModel] = []
+    others: list[base.RawTokenModel] = []
+    for token in token_store.iter(first, last):
+        if isinstance(token, Placeholder):
+            ignored.append(token)
+        else:
+            others.append(token)
+    if not ignored:
+        return None
+    if backwards:
+        token_store.splice(ignored + others ,first, last)
+    else:
+        token_store.splice(others + ignored, first, last)
+
+
+class _CommentClaimer(Generic[_M]):
+    def __init__(
+            self,
+            repeated: repeated.Repeated[_M | BlockComment],
+            model: base.RawTreeModel,
+            comments: Optional[Iterable[BlockComment]]):
+        self._repeated = repeated
+        self._model = model
+        self._comments_to_claim = (
+            {id(comment) for comment in comments} if comments is not None else _Universe())
+
+    def _find_inner(self) -> Iterator[_M | BlockComment]:
+        token_store = self._repeated.token_store
+        # inclusive
+        starts = itertools.chain(
+            [self._repeated.first_token],
+            map(lambda x: token_store.get_next(x.last_token), self._repeated.items))
+        # exclusive
+        ends = map(lambda x: x.first_token, self._repeated.items)
+        for start, end, item in zip(starts, ends, self._repeated.items):
+            token = start
+            while token is not None and token is not end:
+                prev_token, token = token, self._repeated.token_store.get_next(token)
+                if not isinstance(prev_token, BlockComment):
+                    continue
+                if id(prev_token) not in self._comments_to_claim:
+                    continue
+                if prev_token.claimed:
+                    continue
+                self._comments_to_claim.discard(id(prev_token))
+                yield prev_token
+            yield item
+            self._comments_to_claim.discard(id(item))
+    
+    def _find_outer(
+            self,
+            start: base.RawTokenModel,
+            succ: Callable[[base.RawTokenModel], Optional[base.RawTokenModel]],
+            *,
+            limit: base.RawTokenModel,
+    ) -> Iterator[BlockComment]:
+        prev, token = start, succ(start)
+        while prev is not limit and token is not None:
+            if isinstance(token, Newline | Whitespace) or not token.raw_text:
+                pass
+            elif isinstance(token, BlockComment):
+                if token.claimed:
+                    break
+                if id(token) in self._comments_to_claim:
+                    yield token
+            else:
+                break
+            prev, token = token, succ(token)
+
+    def claim(self) -> list[BlockComment]:
+        comments_before = list(self._find_outer(
+            self._repeated.first_token,
+            self._repeated.token_store.get_prev,
+            limit=self._model.first_token))
+        comments_before.reverse()
+        items_inner = list(self._find_inner())
+        comments_after = list(self._find_outer(
+            self._repeated.last_token,
+            self._repeated.token_store.get_next,
+            limit=self._model.last_token))
+
+        if self._comments_to_claim:
+            raise ValueError(f'{len(self._comments_to_claim)} comment(s) not found.')
+
+        if comments_before:
+            first = self._repeated.token_store.get_prev(self._repeated.first_token)
+            assert first is not None
+            _shift_ignored(
+                self._repeated.token_store, first, comments_before[0], backwards=True)
+
+        if comments_after:
+            first = self._repeated.token_store.get_next(self._repeated.last_token)
+            assert first is not None
+            _shift_ignored(
+                self._repeated.token_store, first, comments_after[-1], backwards=False)
+
+        items = list(itertools.chain(comments_before, items_inner, comments_after))
+        comments = []
+        for item in items:
+            if isinstance(item, BlockComment):
+                comments.append(item)
+                item.claimed = True
+        self._repeated.items[:] = items
+        return comments
 
 
 class RepeatedNodeWithInterleavingCommentsWrapper(properties.RepeatedNodeWrapper[_M | BlockComment]):
@@ -36,49 +155,7 @@ class RepeatedNodeWithInterleavingCommentsWrapper(properties.RepeatedNodeWrapper
             self,
             comments: Optional[Iterable[BlockComment]] = None,
     ) -> tuple[BlockComment, ...]:
-        claimed_comments = []
-        comment_set = (
-            {id(comment) for comment in comments} if comments is not None else None)
-        token_store = self._repeated.token_store
-        start_boundary = _get_boundary(
-            self._repeated.first_token, token_store.get_prev, self._model.first_token)
-        # inclusive
-        starts = itertools.chain(
-            [start_boundary],
-            map(lambda x: token_store.get_next(x.last_token), self._repeated.items))
-        end_boundary = _get_boundary(
-            self._repeated.last_token, token_store.get_next, self._model.last_token)
-        # exclusive
-        ends = itertools.chain(
-            map(lambda x: x.first_token, self._repeated.items),
-            [token_store.get_next(end_boundary)],
-        )
-        items: list[_M | BlockComment] = []
-        for start, end, item in itertools.zip_longest(starts, ends, self._repeated.items):
-            token = start
-            while token is not None and token is not end:
-                prev_token, token = token, self._repeated.token_store.get_next(token)
-                if not isinstance(prev_token, BlockComment):
-                    continue
-                if comment_set is not None and id(prev_token) not in comment_set:
-                    continue
-                if prev_token.claimed:
-                    continue
-                if comment_set is not None:
-                    comment_set.discard(id(prev_token))
-                prev_token.claimed = True
-                items.append(prev_token)
-                claimed_comments.append(prev_token)
-            if item is not None:
-                items.append(item)
-                if isinstance(item, BlockComment):
-                    claimed_comments.append(item)
-                    if comment_set is not None:
-                        comment_set.discard(id(item))
-        if comment_set:
-            raise ValueError(f'{len(comment_set)} comment(s) not found.')
-        self._repeated.items[:] = items
-        return tuple(claimed_comments)
+        return tuple(_CommentClaimer(self._repeated, self._model, comments).claim())
 
     def unclaim_interleaving_comments(
             self,

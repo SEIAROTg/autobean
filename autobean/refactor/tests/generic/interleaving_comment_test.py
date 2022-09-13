@@ -1,4 +1,5 @@
 import copy
+import datetime
 import pytest
 from autobean.refactor import models
 from .. import base
@@ -161,6 +162,54 @@ class TestInterleavingComment(base.BaseTestModel):
         assert len(txn.raw_meta_with_comments) == 3
         assert len(txn.raw_meta) == 1
         assert len(txn.meta) == 1
+
+    def test_claim_comment_outer_stop_early(self) -> None:
+        txn = models.Transaction.from_value(
+            date=datetime.date(2000, 1, 1),
+            payee=None,
+            narration=None,
+            postings=())
+        comment_foo = models.BlockComment.from_value('foo', indent=' ' * 4)
+        comment_bar = models.BlockComment.from_value('foo', indent=' ' * 4)
+        txn.raw_meta_with_comments.append(comment_foo)
+        txn.raw_meta_with_comments.append(comment_bar)
+        txn.raw_meta_with_comments.unclaim_interleaving_comments([comment_foo])
+        assert not comment_foo.claimed
+        assert not txn.raw_postings_with_comments.claim_interleaving_comments()
+        txn.raw_meta_with_comments.unclaim_interleaving_comments([comment_bar])
+        claimed_comments = txn.raw_postings_with_comments.claim_interleaving_comments()
+        self.assert_iterable_same(claimed_comments, [comment_foo, comment_bar])
+
+    def test_claim_comment_move_placeholder(self) -> None:
+        file = self.parser.parse(_FILE_BAR, models.File)
+        txn, = file.raw_directives
+        assert isinstance(txn, models.Transaction)
+        claimed_comments = txn.raw_meta_with_comments.claim_interleaving_comments()
+        assert len(claimed_comments) == 2
+        self.check_disjoint(txn._meta, txn._postings)
+        txn.trailing_comment = 'foo'
+        assert self.print_model(file) == '''\
+; comment foo
+
+2000-01-01 *
+    ; comment aaa
+    aaa: 1
+    ; comment bbb
+; foo
+
+; comment bar\
+'''
+
+    def test_claim_comment_move_placeholder_again(self) -> None:
+        file = self.parser.parse(_FILE_BAR, models.File)
+        txn, = file.raw_directives
+        assert isinstance(txn, models.Transaction)
+        meta_comments = txn.raw_meta_with_comments.claim_interleaving_comments()
+        assert len(meta_comments) == 2
+        txn.raw_meta_with_comments.unclaim_interleaving_comments()
+        posting_comments = txn.raw_postings_with_comments.claim_interleaving_comments()
+        self.assert_iterable_same(posting_comments, [meta_comments[-1]])
+        self.check_disjoint(txn._meta, txn._postings)
 
     def test_insert_comment(self) -> None:
         file = self.parser.parse(_FILE_FOO, models.File)
