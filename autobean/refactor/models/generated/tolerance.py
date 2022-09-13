@@ -89,3 +89,6 @@ class Tolerance(base.RawTreeModel, internal.SpacingAccessorsMixin):
         return cls.from_children(
             number=NumberExpr.from_value(number),
         )
+
+    def auto_claim_comments(self) -> None:
+        self._number.auto_claim_comments()

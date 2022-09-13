@@ -219,3 +219,18 @@ class Transaction(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
         maybe_dedent_mark.reattach(token_store)
         maybe_trailing_comment.reattach(token_store)
         return cls(token_store, maybe_leading_comment, date, flag, maybe_string0, maybe_string1, maybe_string2, repeated_tags_links, maybe_inline_comment, eol, maybe_indent_mark, repeated_meta, repeated_postings, maybe_dedent_mark, maybe_trailing_comment)
+
+    def auto_claim_comments(self) -> None:
+        self.claim_leading_comment(ignore_if_already_claimed=True)
+        self.claim_trailing_comment(ignore_if_already_claimed=True)
+        self._trailing_comment.auto_claim_comments()
+        self.raw_postings_with_comments.auto_claim_comments()
+        self.raw_meta_with_comments.auto_claim_comments()
+        self._inline_comment.auto_claim_comments()
+        self.raw_tags_links.auto_claim_comments()
+        self._string2.auto_claim_comments()
+        self._string1.auto_claim_comments()
+        self._string0.auto_claim_comments()
+        self._flag.auto_claim_comments()
+        self._date.auto_claim_comments()
+        self._leading_comment.auto_claim_comments()

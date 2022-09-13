@@ -78,3 +78,7 @@ class NumberUnaryExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
         unary_op.reattach(token_store)
         operand.reattach(token_store)
         return cls(token_store, unary_op, operand)
+
+    def auto_claim_comments(self) -> None:
+        self._operand.auto_claim_comments()
+        self._unary_op.auto_claim_comments()

@@ -93,3 +93,6 @@ class UnitCost(base.RawTreeModel, internal.SpacingAccessorsMixin):
         repeated_components.reattach(token_store)
         right_brace.reattach(token_store)
         return cls(token_store, left_brace, repeated_components, right_brace)
+
+    def auto_claim_comments(self) -> None:
+        self.raw_components.auto_claim_comments()

@@ -74,3 +74,7 @@ class Repeated(base.RawTreeModel, Generic[_M]):
         self._token_store = token_store
         self.items = [item.reattach(token_store, token_transformer) for item in self.items]
         self._placeholder = self._placeholder.reattach(token_store, token_transformer)
+
+    def auto_claim_comments(self) -> None:
+        for item in reversed(self.items):
+            item.auto_claim_comments()

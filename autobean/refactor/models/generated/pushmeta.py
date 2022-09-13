@@ -157,3 +157,12 @@ class Pushmeta(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Sp
             inline_comment=InlineComment.from_value(inline_comment) if inline_comment is not None else None,
             trailing_comment=BlockComment.from_value(trailing_comment) if trailing_comment is not None else None,
         )
+
+    def auto_claim_comments(self) -> None:
+        self.claim_leading_comment(ignore_if_already_claimed=True)
+        self.claim_trailing_comment(ignore_if_already_claimed=True)
+        self._trailing_comment.auto_claim_comments()
+        self._inline_comment.auto_claim_comments()
+        self._value.auto_claim_comments()
+        self._key.auto_claim_comments()
+        self._leading_comment.auto_claim_comments()

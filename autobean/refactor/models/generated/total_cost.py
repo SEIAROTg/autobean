@@ -93,3 +93,6 @@ class TotalCost(base.RawTreeModel, internal.SpacingAccessorsMixin):
         repeated_components.reattach(token_store)
         dbl_right_brace.reattach(token_store)
         return cls(token_store, dbl_left_brace, repeated_components, dbl_right_brace)
+
+    def auto_claim_comments(self) -> None:
+        self.raw_components.auto_claim_comments()

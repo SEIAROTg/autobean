@@ -38,6 +38,10 @@ class Maybe(base.RawTreeModel, Generic[_M]):
             self.inner = self.inner.reattach(token_store, token_transformer)
         self._placeholder = self._placeholder.reattach(token_store, token_transformer)
 
+    def auto_claim_comments(self) -> None:
+        if self.inner is not None:
+            self.inner.auto_claim_comments()
+
     @abc.abstractmethod
     def create_inner(self, inner: _M, *, separators: tuple[base.RawTokenModel, ...]) -> None:
         ...

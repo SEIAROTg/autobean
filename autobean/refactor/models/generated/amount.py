@@ -88,3 +88,7 @@ class Amount(base.RawTreeModel, internal.SpacingAccessorsMixin):
             number=NumberExpr.from_value(number),
             currency=Currency.from_value(currency),
         )
+
+    def auto_claim_comments(self) -> None:
+        self._currency.auto_claim_comments()
+        self._number.auto_claim_comments()

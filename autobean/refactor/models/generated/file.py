@@ -94,3 +94,6 @@ class File(base.RawTreeModel, internal.SpacingAccessorsMixin):
         return cls.from_children(
             directives=directives,
         )
+
+    def auto_claim_comments(self) -> None:
+        self.raw_directives_with_comments.auto_claim_comments()

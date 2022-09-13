@@ -104,3 +104,7 @@ class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
             number=NumberExpr.from_value(number) if number is not None else None,
             currency=Currency.from_value(currency) if currency is not None else None,
         )
+
+    def auto_claim_comments(self) -> None:
+        self._currency.auto_claim_comments()
+        self._number.auto_claim_comments()

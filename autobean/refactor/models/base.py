@@ -87,6 +87,10 @@ class RawModel(abc.ABC):
     def reattach(self: _SelfRawModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawModel:
         ...
 
+    @abc.abstractmethod
+    def auto_claim_comments(self) -> None:
+        ...
+
 
 class RawTokenModel(token_store_lib.Token, RawModel):
     def __init__(self, raw_text: str) -> None:
@@ -133,6 +137,9 @@ class RawTokenModel(token_store_lib.Token, RawModel):
 
     def reattach(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTokenModel:
         return token_transformer.transform(self)
+
+    def auto_claim_comments(self) -> None:
+        pass
 
     def __hash__(self) -> int:
         return hash((type(self).RULE, self.raw_text))

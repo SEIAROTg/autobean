@@ -94,3 +94,6 @@ class NumberParenExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
         inner_expr.reattach(token_store)
         right_paren.reattach(token_store)
         return cls(token_store, left_paren, inner_expr, right_paren)
+
+    def auto_claim_comments(self) -> None:
+        self._inner_expr.auto_claim_comments()

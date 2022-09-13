@@ -61,3 +61,6 @@ class NumberExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
         token_store = base.TokenStore.from_tokens(tokens)
         number_add_expr.reattach(token_store)
         return cls(token_store, number_add_expr)
+
+    def auto_claim_comments(self) -> None:
+        self._number_add_expr.auto_claim_comments()

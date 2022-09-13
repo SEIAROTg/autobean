@@ -206,3 +206,17 @@ args.append(f'repeated_{field.name}')
 % endfor
         )
 % endif
+
+    def auto_claim_comments(self) -> None:
+% if model.block_commentable:
+        self.claim_leading_comment(ignore_if_already_claimed=True)
+        self.claim_trailing_comment(ignore_if_already_claimed=True)
+% endif
+% for field in reversed(model.fields):
+<% if not field.is_public: continue %>\
+% if field.cardinality == FieldCardinality.REPEATED:
+        self.${field.raw_property_name}.auto_claim_comments()
+% else:
+        self.${field.field_name}.auto_claim_comments()
+% endif
+% endfor

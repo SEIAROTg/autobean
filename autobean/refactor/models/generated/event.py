@@ -207,3 +207,14 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
             meta=meta_item_internal.from_mapping(meta) if meta is not None else (),
             trailing_comment=BlockComment.from_value(trailing_comment) if trailing_comment is not None else None,
         )
+
+    def auto_claim_comments(self) -> None:
+        self.claim_leading_comment(ignore_if_already_claimed=True)
+        self.claim_trailing_comment(ignore_if_already_claimed=True)
+        self._trailing_comment.auto_claim_comments()
+        self.raw_meta_with_comments.auto_claim_comments()
+        self._inline_comment.auto_claim_comments()
+        self._description.auto_claim_comments()
+        self._type.auto_claim_comments()
+        self._date.auto_claim_comments()
+        self._leading_comment.auto_claim_comments()

@@ -60,3 +60,6 @@ class CostSpec(base.RawTreeModel, internal.SpacingAccessorsMixin):
         token_store = base.TokenStore.from_tokens(tokens)
         cost.reattach(token_store)
         return cls(token_store, cost)
+
+    def auto_claim_comments(self) -> None:
+        self._cost.auto_claim_comments()

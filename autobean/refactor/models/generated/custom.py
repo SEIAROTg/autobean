@@ -187,3 +187,14 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
         maybe_dedent_mark.reattach(token_store)
         maybe_trailing_comment.reattach(token_store)
         return cls(token_store, maybe_leading_comment, date, label, type, repeated_values, maybe_inline_comment, eol, maybe_indent_mark, repeated_meta, maybe_dedent_mark, maybe_trailing_comment)
+
+    def auto_claim_comments(self) -> None:
+        self.claim_leading_comment(ignore_if_already_claimed=True)
+        self.claim_trailing_comment(ignore_if_already_claimed=True)
+        self._trailing_comment.auto_claim_comments()
+        self.raw_meta_with_comments.auto_claim_comments()
+        self._inline_comment.auto_claim_comments()
+        self.raw_values.auto_claim_comments()
+        self._type.auto_claim_comments()
+        self._date.auto_claim_comments()
+        self._leading_comment.auto_claim_comments()

@@ -237,6 +237,9 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
             isinstance(other, Collection) and
             all(a == b for a, b in itertools.zip_longest(self, other)))
 
+    def auto_claim_comments(self) -> None:
+        self._repeated.auto_claim_comments()
+
 
 class repeated_node_property(base_rw_property[RepeatedNodeWrapper[_M], base.RawTreeModel]):
     def __init__(self, inner_field: repeated_field[_M]) -> None:

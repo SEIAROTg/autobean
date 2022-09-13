@@ -118,3 +118,8 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
             number_total=NumberExpr.from_value(number_total) if number_total is not None else None,
             currency=Currency.from_value(currency),
         )
+
+    def auto_claim_comments(self) -> None:
+        self._currency.auto_claim_comments()
+        self._number_total.auto_claim_comments()
+        self._number_per.auto_claim_comments()

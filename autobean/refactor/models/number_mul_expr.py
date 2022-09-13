@@ -81,3 +81,6 @@ class NumberMulExpr(base.RawTreeModel):
             isinstance(other, NumberMulExpr)
             and self._raw_operands == other._raw_operands
             and self._raw_ops == other._raw_ops)
+
+    def auto_claim_comments(self) -> None:
+        pass  # no block comments

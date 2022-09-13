@@ -181,6 +181,10 @@ class RepeatedNodeWithInterleavingCommentsWrapper(properties.RepeatedNodeWrapper
         self._repeated.items[:] = items
         return tuple(unclaimed_comments)
 
+    def auto_claim_comments(self) -> None:
+        super().auto_claim_comments()
+        self.claim_interleaving_comments()
+
 
 class repeated_node_with_interleaving_comments_property(
         base_property.base_ro_property[RepeatedNodeWithInterleavingCommentsWrapper[_M], base.RawTreeModel]):
