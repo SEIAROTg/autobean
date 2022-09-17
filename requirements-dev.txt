@@ -1,5 +1,6 @@
 pytest
 pytest-cov
+pytest-benchmark
 mypy
 pylint
 types-python-dateutil
