@@ -158,6 +158,11 @@ class Pushtag(MetaModel, BlockCommentable):
     _eol: 'EOL' = field(separators=())
 
 
+class IgnoredLine(MetaModel, BlockCommentable):
+    ignored: 'IGNORED'
+    _eol: 'EOL' = field(separators=())
+
+
 # Entries
 
 
@@ -347,6 +352,7 @@ class File(MetaModel):
         'open',
         'custom',
         'transaction',
+        'ignored_line',
     ]] = field(
         type_alias='Directive',
         separators=('Newline.from_default()', 'Newline.from_default()'),

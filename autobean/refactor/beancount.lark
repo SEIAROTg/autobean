@@ -19,12 +19,17 @@ file: repeated{_file_directive}
           | open
           | custom
           | transaction
-// TODO: avoid removing ignored parts when removing a directive.
-file_ignored_: EOL | indent_mark_ EOL* dedent_mark_
-_file_directive: directive | file_ignored_
+          | ignored_line
+blank_lines_: EOL | indent_mark_ EOL* dedent_mark_
+_file_directive: directive | blank_lines_
 _comment_eol: maybe_left{INLINE_COMMENT} EOL
 _leading_comment: maybe_right{NEVER}
 _trailing_comment: maybe_left{NEVER}
+
+// Ignored
+// See: https://github.com/beancount/beancount/blob/d841487ccdda04c159de86b1186e7c2ea997a3e2/beancount/parser/lexer.l#L289-L293
+ignored_line: _leading_comment IGNORED EOL _trailing_comment
+IGNORED: /^/m (/[*:#]/ | POSTING_FLAG) /.*/
 
 // Labels
 OPTION:       "option"

@@ -20,6 +20,8 @@ poptag #foo
 pushmeta foo:
 popmeta foo:
 
+** foo
+
 ; comment
 
 2000-01-01 balance Assets:Foo 12.34 USD
@@ -90,7 +92,7 @@ class TestFile(base.BaseTestModel):
 
     @pytest.mark.parametrize(
         'text,length', [
-            (_FOO_FILE, 19),
+            (_FOO_FILE, 20),
             (_BAR_FILE, 3),
             (_EMPTY_FILE, 0),
             (_SINGLE_COMMENT_FILE, 0),
@@ -120,6 +122,7 @@ class TestFile(base.BaseTestModel):
             models.Poptag,
             models.Pushmeta,
             models.Popmeta,
+            models.IgnoredLine,
             models.Balance,
             models.Close,
             models.Commodity,

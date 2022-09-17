@@ -10,6 +10,7 @@ from ..commodity import Commodity
 from ..custom import Custom
 from ..document import Document
 from ..event import Event
+from ..ignored_line import IgnoredLine
 from ..include import Include
 from ..note import Note
 from ..open import Open
@@ -25,7 +26,7 @@ from ..query import Query
 from ..spacing import Newline
 from ..transaction import Transaction
 
-Directive = Balance | Close | Commodity | Custom | Document | Event | Include | Note | Open | Option | Pad | Plugin | Popmeta | Poptag | Price | Pushmeta | Pushtag | Query | Transaction
+Directive = Balance | Close | Commodity | Custom | Document | Event | IgnoredLine | Include | Note | Open | Option | Pad | Plugin | Popmeta | Poptag | Price | Pushmeta | Pushtag | Query | Transaction
 _Self = TypeVar('_Self', bound='File')
 
 
