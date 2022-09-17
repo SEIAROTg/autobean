@@ -223,8 +223,8 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz\
 '''
 
-    @pytest.mark.skip('TODO: unskip after implementing comment block')
     def test_del_first(self, simple_close: models.Close) -> None:
+        simple_close.auto_claim_comments()
         del simple_close.raw_meta[0]
         assert self.print_model(simple_close) == '''\
 2000-01-01 close Assets:Foo ; foo
