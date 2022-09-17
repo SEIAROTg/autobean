@@ -116,13 +116,25 @@ class BaseTestModel:
             assert c.last_token is tokens[-1]
         _check_copy_eq(tree, c, token_store, 2)
 
-    def check_consistency(self, tree: models.RawTreeModel) -> None:
-        for _, prop in _get_comparable_attributes(tree).items():
-            if isinstance(prop, models.RawTokenModel):
-                assert prop.token_store is tree.token_store
-            elif isinstance(prop, models.RawTreeModel) and prop is not tree:
-                assert prop.token_store is tree.token_store
-                self.check_consistency(prop)
+    def check_consistency(
+            self,
+            node: models.RawTreeModel | models.RawTokenModel,
+            token_store: Optional[models.TokenStore] = None,
+    ) -> None:
+        if token_store is None:
+            assert node.token_store is not None
+            return self.check_consistency(node, node.token_store)
+
+        assert node.token_store is token_store, 'Inconsistent token store.'
+        for _, prop in _get_comparable_attributes(node).items():
+            if prop is node:
+                continue
+            elif isinstance(prop, models.RawTreeModel | models.RawTokenModel):
+                self.check_consistency(prop, token_store)
+            elif isinstance(prop, list):
+                for item in prop:
+                    if isinstance(item, models.RawTreeModel | models.RawTokenModel):
+                        self.check_consistency(item, token_store)
 
     def check_disjoint(self, a: models.RawModel, b: models.RawModel) -> None:
         xs = {id(x) for x in a.tokens}

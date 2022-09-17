@@ -121,6 +121,7 @@ class TestMeta(base.BaseTestModel):
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
+        self.check_consistency(simple_close)
 
     def test_setitem_update_by_index(self, simple_close: models.Close) -> None:
         meta_item = models.MetaItem.from_value('qux', False)
@@ -133,6 +134,7 @@ class TestMeta(base.BaseTestModel):
     ; comment baz
   baz: 123 +  456   ; baz\
 '''
+        self.check_consistency(simple_close)
 
     def test_raw_setitem_update_by_key(self, simple_close: models.Close) -> None:
         date = models.Date.from_value(datetime.date(2012, 12, 12))
@@ -147,6 +149,7 @@ class TestMeta(base.BaseTestModel):
     ; comment baz
   baz: 2012-12-12   ; baz\
 '''
+        self.check_consistency(simple_close)
 
     def test_setitem_update_by_key(self, simple_close: models.Close) -> None:
         simple_close.meta['baz'] = datetime.date(2012, 12, 12)
@@ -158,6 +161,7 @@ class TestMeta(base.BaseTestModel):
     ; comment baz
   baz: 2012-12-12   ; baz\
 '''
+        self.check_consistency(simple_close)
 
     def test_raw_item_append_by_key(self, simple_close: models.Close) -> None:
         meta_item = models.MetaItem.from_value('qux', False)
@@ -174,6 +178,7 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz
     qux: FALSE\
 '''
+        self.check_consistency(simple_close)
 
     def test_setitem_append_by_key(self, simple_close: models.Close) -> None:
         simple_close.meta['qux'] = False
@@ -186,6 +191,7 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz
     qux: FALSE\
 '''
+        self.check_consistency(simple_close)
 
     def test_raw_delitem_by_index(self, simple_close: models.Close) -> None:
         del simple_close.raw_meta[1]
@@ -253,6 +259,7 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
+        self.check_consistency(simple_close)
 
     def test_pop_by_index(self, simple_close: models.Close) -> None:
         got_meta = simple_close.meta[1]
@@ -273,6 +280,7 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
+        self.check_consistency(simple_close)
 
     def test_raw_pop_by_key(self, simple_close: models.Close) -> None:
         got_meta = simple_close.raw_meta['bar']
@@ -293,6 +301,7 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz
     bar: "bar-value" ; bar\
 '''
+        self.check_consistency(simple_close)
 
     def test_pop_by_key(self) -> None:
         close = self.parser.parse('''\
@@ -321,6 +330,34 @@ class TestMeta(base.BaseTestModel):
   baz: 123 +  456   ; baz
     qux: Assets:Bar\
 '''
+        self.check_consistency(close)
+
+    def test_move(self, simple_close: models.Close) -> None:
+        for _ in range(20):
+            meta = simple_close.raw_meta_with_comments.pop()
+            simple_close.raw_meta_with_comments.insert(0, meta)
+        assert self.print_model(simple_close) == '''\
+2000-01-01 close Assets:Foo ; foo
+    bar: "bar-value" ; bar
+  baz: 123 +  456   ; baz
+    foo: "foo-value" ; foo\
+'''
+        self.check_consistency(simple_close)
+
+    def test_insert(self, simple_close: models.Close) -> None:
+        meta = models.MetaItem.from_value('qux', 'qux-value')
+        simple_close.raw_meta.insert(0, meta)
+        assert self.print_model(simple_close) == '''\
+2000-01-01 close Assets:Foo ; foo
+    qux: "qux-value"
+    foo: "foo-value" ; foo
+    ; comment bar
+    bar: "bar-value" ; bar
+    ; comment baz
+  baz: 123 +  456   ; baz\
+'''
+        self.check_consistency(simple_close)
+
 
     def test_insert_adaptive_indent(self) -> None:
         close = self.parser.parse(_ADAPTIVE_INDENT, models.Close)

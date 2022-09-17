@@ -166,6 +166,7 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
             assert not isinstance(value, Iterable)
             item = self._repeated.items[index]
             self._repeated.token_store.splice(value.detach(), item.first_token, item.last_token)
+            value.reattach(self._repeated.token_store)
             self._repeated.items[index] = value
             return
         assert isinstance(value, Iterable)
@@ -185,11 +186,13 @@ class RepeatedNodeWrapper(MutableSequence[_M]):
             for i, value in zip(r, values):
                 self._del_tokens(i, i + 1)
                 self._insert_tokens(i, [value], len(self._repeated.items) - 1, separators_before_last)
+                value.reattach(self._repeated.token_store)
                 self._repeated.items[i] = value
 
     def insert(self, index: int, value: _M) -> None:
         index = min(index, len(self._repeated.items))
         self._insert_tokens(index, [value])
+        value.reattach(self._repeated.token_store)
         self._repeated.items.insert(index, value)
 
     def append(self, value: _M) -> None:
