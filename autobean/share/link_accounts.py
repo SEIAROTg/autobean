@@ -14,17 +14,19 @@ class UnresolvedLinkError(error_lib.Error):
     pass
 
 
-@dataclass(repr=False, frozen=True)
 class Link:
-    directive: Custom
-
-    def __post_init__(self) -> None:
+    def __init__(self, directive: Custom) -> None:
+        self._directive = directive
         (
             self._filename,
             self._account,
             self._complement_filename,
             self._complement_account,
-        ) = self.directive.values
+        ) = directive.values
+
+    @property
+    def directive(self) -> Custom:
+        return self._directive
 
     @property
     def filename(self) -> str:
