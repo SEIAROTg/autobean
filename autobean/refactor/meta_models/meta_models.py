@@ -175,7 +175,6 @@ class Balance(MetaModel, BlockCommentable):
     currency: 'CURRENCY'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -186,7 +185,6 @@ class Close(MetaModel, BlockCommentable):
     account: 'ACCOUNT'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -197,7 +195,6 @@ class Commodity(MetaModel, BlockCommentable):
     currency: 'CURRENCY'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -209,7 +206,6 @@ class Event(MetaModel, BlockCommentable):
     description: 'ESCAPED_STRING'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -221,7 +217,6 @@ class Pad(MetaModel, BlockCommentable):
     source_account: 'ACCOUNT'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -233,7 +228,6 @@ class Price(MetaModel, BlockCommentable):
     amount: 'amount'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -245,7 +239,6 @@ class Query(MetaModel, BlockCommentable):
     query_string: 'ESCAPED_STRING'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -257,7 +250,6 @@ class Note(MetaModel, BlockCommentable):
     comment: 'ESCAPED_STRING'
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -270,7 +262,6 @@ class Document(MetaModel, BlockCommentable):
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True, is_keyword_only=True)
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -286,7 +277,6 @@ class Open(MetaModel, BlockCommentable):
     booking: Optional['ESCAPED_STRING'] = field(floating=Floating.LEFT, is_optional=True)
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -305,7 +295,6 @@ class Custom(MetaModel, BlockCommentable):
     ]] = field(type_alias='CustomRawValue')
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     _dedent_mark: Optional['DEDENT_MARK'] = field(floating=Floating.LEFT, separators=())
 
@@ -319,7 +308,6 @@ class Transaction(MetaModel, BlockCommentable):
     tags_links: list[Union['TAG', 'LINK']] = field(is_optional=True, is_keyword_only=True)
     inline_comment: Optional['INLINE_COMMENT'] = field(floating=Floating.LEFT, is_optional=True, is_keyword_only=True)
     _eol: 'EOL' = field(separators=())
-    _indent_mark: Optional['INDENT_MARK'] = field(floating=Floating.LEFT, separators=())
     meta: list['meta_item'] = _META
     postings: list['posting'] = field(
         separators=('Newline.from_default()',),

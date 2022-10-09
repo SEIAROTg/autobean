@@ -73,9 +73,9 @@ document:     _leading_comment DATE DOCUMENT ACCOUNT ESCAPED_STRING repeated{_ta
 open:         _leading_comment DATE OPEN ACCOUNT repeated_sep{CURRENCY, _COMMA} maybe_left{ESCAPED_STRING} _comment_eol _meta_items _trailing_comment
 custom:       _leading_comment DATE CUSTOM ESCAPED_STRING repeated{_custom_value} _comment_eol _meta_items _trailing_comment
 transaction:  _leading_comment DATE TRANSACTION_FLAG  maybe_left{NEVER} maybe_left{ESCAPED_STRING} maybe_left{ESCAPED_STRING} repeated{_tag_or_link} _comment_eol _meta_items_or_postings _trailing_comment
-_meta_items_or_postings: maybe_required{INDENT_MARK} repeated{meta_item} repeated{posting} maybe_required{DEDENT_MARK}
-                       | maybe_left{NEVER2} repeated{NEVER} repeated{NEVER} maybe_left{NEVER2}
-                       | maybe_required{INDENT_MARK} eol_+ repeated{NEVER} repeated{NEVER} maybe_required{DEDENT_MARK}
+_meta_items_or_postings: indent_mark_ repeated{meta_item} repeated{posting} maybe_required{DEDENT_MARK}
+                       | repeated{NEVER} repeated{NEVER} maybe_left{NEVER2}
+                       | indent_mark_ eol_+ repeated{NEVER} repeated{NEVER} maybe_required{DEDENT_MARK}
 
 // Punctuations
 WHITESPACE: /[ \t]+/
@@ -174,9 +174,9 @@ META_KEY: /[a-z][a-zA-Z0-9-_]+:/
 // MetaItem
 _meta_item: _leading_comment indent2 META_KEY maybe_left{meta_value} _comment_eol _trailing_comment
 meta_item: _allow_direct_parse{_meta_item}
-_meta_items: maybe_required{INDENT_MARK} repeated{meta_item} maybe_required{DEDENT_MARK}
-           | maybe_left{NEVER2} repeated{NEVER} maybe_left{NEVER2}
-           | maybe_required{INDENT_MARK} eol_+ repeated{NEVER} maybe_required{DEDENT_MARK}
+_meta_items: indent_mark_ repeated{meta_item} maybe_required{DEDENT_MARK}
+           | repeated{NEVER} maybe_left{NEVER2}
+           | indent_mark_ eol_+ repeated{NEVER} maybe_required{DEDENT_MARK}
 
 // Tolerance
 TILDE:        "~"

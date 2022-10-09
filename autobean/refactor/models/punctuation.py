@@ -14,12 +14,6 @@ class Indent(internal.SimpleSingleValueRawTokenModel, internal.DefaultRawTokenMo
 
 
 @internal.token_model
-class IndentMark(internal.SimpleDefaultRawTokenModel):
-    RULE = 'INDENT_MARK'
-    DEFAULT = ''
-
-
-@internal.token_model
 class DedentMark(internal.SimpleDefaultRawTokenModel):
     RULE = 'DEDENT_MARK'
     DEFAULT = ''

@@ -460,3 +460,15 @@ class TestMeta(base.BaseTestModel):
                 assert actual_value == expected.value
         simple_close.meta['xxx'] = 'yyy'
         assert len(keys) == len(values) == len(items) == 4
+
+    def test_insert_first_meta_to_transaction_with_postings(self) -> None:
+        txn = self.parser.parse('''\
+2000-01-01 *
+    Assets:Foo  100.00 USD
+    Assets:Bar -100.00 USD''', models.Transaction)
+        txn.meta['foo'] = 'bar'
+        assert self.print_model(txn) == '''\
+2000-01-01 *
+    foo: "bar"
+    Assets:Foo  100.00 USD
+    Assets:Bar -100.00 USD'''

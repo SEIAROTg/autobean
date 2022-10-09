@@ -12,7 +12,7 @@ from ..escaped_string import EscapedString
 from ..inline_comment import InlineComment
 from ..meta_item import MetaItem
 from ..number_expr import NumberExpr
-from ..punctuation import DedentMark, Eol, IndentMark
+from ..punctuation import DedentMark, Eol
 from ..spacing import Newline, Whitespace
 
 CustomRawValue = Account | Amount | Bool | Date | EscapedString | NumberExpr
@@ -35,7 +35,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     _values = internal.repeated_field[CustomRawValue](separators=(Whitespace.from_default(),))
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
-    _indent_mark = internal.optional_left_field[IndentMark](separators=())
     _meta = internal.repeated_field[MetaItem | BlockComment](separators=(Newline.from_default(),), default_indent='    ')
     _dedent_mark = internal.optional_left_field[DedentMark](separators=())
 
@@ -66,7 +65,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
             values: internal.Repeated[CustomRawValue],
             inline_comment: internal.Maybe[InlineComment],
             eol: Eol,
-            indent_mark: internal.Maybe[IndentMark],
             meta: internal.Repeated[MetaItem | BlockComment],
             dedent_mark: internal.Maybe[DedentMark],
             trailing_comment: internal.Maybe[BlockComment],
@@ -79,7 +77,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
         self._values = values
         self._inline_comment = inline_comment
         self._eol = eol
-        self._indent_mark = indent_mark
         self._meta = meta
         self._dedent_mark = dedent_mark
         self._trailing_comment = trailing_comment
@@ -102,7 +99,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
             self._values.clone(token_store, token_transformer),
             self._inline_comment.clone(token_store, token_transformer),
             self._eol.clone(token_store, token_transformer),
-            self._indent_mark.clone(token_store, token_transformer),
             self._meta.clone(token_store, token_transformer),
             self._dedent_mark.clone(token_store, token_transformer),
             self._trailing_comment.clone(token_store, token_transformer),
@@ -117,7 +113,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
         self._values = self._values.reattach(token_store, token_transformer)
         self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
         self._eol = self._eol.reattach(token_store, token_transformer)
-        self._indent_mark = self._indent_mark.reattach(token_store, token_transformer)
         self._meta = self._meta.reattach(token_store, token_transformer)
         self._dedent_mark = self._dedent_mark.reattach(token_store, token_transformer)
         self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
@@ -132,7 +127,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
             and self._values == other._values
             and self._inline_comment == other._inline_comment
             and self._eol == other._eol
-            and self._indent_mark == other._indent_mark
             and self._meta == other._meta
             and self._dedent_mark == other._dedent_mark
             and self._trailing_comment == other._trailing_comment
@@ -155,7 +149,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
         repeated_values = cls._values.create_repeated(values)
         maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
-        maybe_indent_mark = cls._indent_mark.create_maybe(None)
         repeated_meta = cls._meta.create_repeated(meta)
         maybe_dedent_mark = cls._dedent_mark.create_maybe(None)
         maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
@@ -169,7 +162,6 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
             *repeated_values.detach(),
             *maybe_inline_comment.detach(),
             *eol.detach(),
-            *maybe_indent_mark.detach(),
             *repeated_meta.detach(),
             *maybe_dedent_mark.detach(),
             *maybe_trailing_comment.detach(),
@@ -182,11 +174,10 @@ class Custom(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
         repeated_values.reattach(token_store)
         maybe_inline_comment.reattach(token_store)
         eol.reattach(token_store)
-        maybe_indent_mark.reattach(token_store)
         repeated_meta.reattach(token_store)
         maybe_dedent_mark.reattach(token_store)
         maybe_trailing_comment.reattach(token_store)
-        return cls(token_store, maybe_leading_comment, date, label, type, repeated_values, maybe_inline_comment, eol, maybe_indent_mark, repeated_meta, maybe_dedent_mark, maybe_trailing_comment)
+        return cls(token_store, maybe_leading_comment, date, label, type, repeated_values, maybe_inline_comment, eol, repeated_meta, maybe_dedent_mark, maybe_trailing_comment)
 
     def auto_claim_comments(self) -> None:
         self.claim_leading_comment(ignore_if_already_claimed=True)

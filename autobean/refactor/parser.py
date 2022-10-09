@@ -231,7 +231,7 @@ class ModelBuilder:
             self._build_required_node(child) for child in node.children
             if not (isinstance(child, lark.Tree) and child.data.endswith('_'))
         ]
-        indent = getattr(items[0], 'indent', None) if items else ''
+        indent = getattr(items[0], 'indent', None) if items else None
         return internal.Repeated(self._token_store, items, placeholder, indent)
 
     def build(self, tree: lark.Tree, model_type: Type[_U]) -> _U:

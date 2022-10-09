@@ -46,7 +46,6 @@ def _model_name_to_module(model_name: str) -> str:
         'Whitespace': 'spacing',
         'Newline': 'spacing',
         'Comma': 'punctuation',
-        'IndentMark': 'punctuation',
         'DedentMark': 'punctuation',
         'Indent': 'punctuation',
         'Eol': 'punctuation',
