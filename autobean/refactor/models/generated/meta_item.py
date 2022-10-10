@@ -23,12 +23,28 @@ class MetaItem(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Sp
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
-    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
+    @internal.custom_property
+    def _leading_comment_pivot(self) -> base.RawTokenModel:
+        return self._indent.first_token
+
+    @internal.custom_property
+    def _value_pivot(self) -> base.RawTokenModel:
+        return self._key.last_token
+
+    @internal.custom_property
+    def _inline_comment_pivot(self) -> base.RawTokenModel:
+        return (self._value and self._value.last_token) or self._key.last_token
+
+    @internal.custom_property
+    def _trailing_comment_pivot(self) -> base.RawTokenModel:
+        return self._eol.last_token
+
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment, _leading_comment_pivot)
     raw_indent = internal.required_node_property(_indent)
     raw_key = internal.required_node_property(_key)
-    raw_value = internal.optional_node_property(_value)
-    raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
+    raw_value = internal.optional_node_property(_value, _value_pivot)
+    raw_inline_comment = internal.optional_node_property(_inline_comment, _inline_comment_pivot)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment, _trailing_comment_pivot)
 
     leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
     indent = internal.required_value_property(raw_indent)
@@ -41,13 +57,13 @@ class MetaItem(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Sp
     def __init__(
             self,
             token_store: base.TokenStore,
-            leading_comment: internal.Maybe[BlockComment],
+            leading_comment: Optional[BlockComment],
             indent: Indent,
             key: MetaKey,
-            value: internal.Maybe[MetaRawValue],
-            inline_comment: internal.Maybe[InlineComment],
+            value: Optional[MetaRawValue],
+            inline_comment: Optional[InlineComment],
             eol: Eol,
-            trailing_comment: internal.Maybe[BlockComment],
+            trailing_comment: Optional[BlockComment],
     ):
         super().__init__(token_store)
         self._leading_comment = leading_comment
@@ -60,33 +76,33 @@ class MetaItem(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Sp
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._leading_comment.first_token
+        return (self._leading_comment and self._leading_comment.first_token) or self._indent.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._trailing_comment.last_token
+        return (self._trailing_comment and self._trailing_comment.last_token) or self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._leading_comment.clone(token_store, token_transformer),
-            self._indent.clone(token_store, token_transformer),
-            self._key.clone(token_store, token_transformer),
-            self._value.clone(token_store, token_transformer),
-            self._inline_comment.clone(token_store, token_transformer),
-            self._eol.clone(token_store, token_transformer),
-            self._trailing_comment.clone(token_store, token_transformer),
+            type(self)._leading_comment.clone(self._leading_comment, token_store, token_transformer),
+            type(self)._indent.clone(self._indent, token_store, token_transformer),
+            type(self)._key.clone(self._key, token_store, token_transformer),
+            type(self)._value.clone(self._value, token_store, token_transformer),
+            type(self)._inline_comment.clone(self._inline_comment, token_store, token_transformer),
+            type(self)._eol.clone(self._eol, token_store, token_transformer),
+            type(self)._trailing_comment.clone(self._trailing_comment, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
-        self._indent = self._indent.reattach(token_store, token_transformer)
-        self._key = self._key.reattach(token_store, token_transformer)
-        self._value = self._value.reattach(token_store, token_transformer)
-        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
-        self._eol = self._eol.reattach(token_store, token_transformer)
-        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
+        self._leading_comment = type(self)._leading_comment.reattach(self._leading_comment, token_store, token_transformer)
+        self._indent = type(self)._indent.reattach(self._indent, token_store, token_transformer)
+        self._key = type(self)._key.reattach(self._key, token_store, token_transformer)
+        self._value = type(self)._value.reattach(self._value, token_store, token_transformer)
+        self._inline_comment = type(self)._inline_comment.reattach(self._inline_comment, token_store, token_transformer)
+        self._eol = type(self)._eol.reattach(self._eol, token_store, token_transformer)
+        self._trailing_comment = type(self)._trailing_comment.reattach(self._trailing_comment, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -111,29 +127,25 @@ class MetaItem(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Sp
             inline_comment: Optional[InlineComment] = None,
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
-        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
-        maybe_value = cls._value.create_maybe(value)
-        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
-        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
         tokens = [
-            *maybe_leading_comment.detach(),
+            *cls._leading_comment.detach_with_separators(leading_comment),
             *indent.detach(),
             *key.detach(),
-            *maybe_value.detach(),
-            *maybe_inline_comment.detach(),
+            *cls._value.detach_with_separators(value),
+            *cls._inline_comment.detach_with_separators(inline_comment),
             *eol.detach(),
-            *maybe_trailing_comment.detach(),
+            *cls._trailing_comment.detach_with_separators(trailing_comment),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        maybe_leading_comment.reattach(token_store)
-        indent.reattach(token_store)
-        key.reattach(token_store)
-        maybe_value.reattach(token_store)
-        maybe_inline_comment.reattach(token_store)
-        eol.reattach(token_store)
-        maybe_trailing_comment.reattach(token_store)
-        return cls(token_store, maybe_leading_comment, indent, key, maybe_value, maybe_inline_comment, eol, maybe_trailing_comment)
+        cls._leading_comment.reattach(leading_comment, token_store)
+        cls._indent.reattach(indent, token_store)
+        cls._key.reattach(key, token_store)
+        cls._value.reattach(value, token_store)
+        cls._inline_comment.reattach(inline_comment, token_store)
+        cls._eol.reattach(eol, token_store)
+        cls._trailing_comment.reattach(trailing_comment, token_store)
+        return cls(token_store, leading_comment, indent, key, value, inline_comment, eol, trailing_comment)
 
     @classmethod
     def from_value(
@@ -158,9 +170,9 @@ class MetaItem(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Sp
     def auto_claim_comments(self) -> None:
         self.claim_leading_comment(ignore_if_already_claimed=True)
         self.claim_trailing_comment(ignore_if_already_claimed=True)
-        self._trailing_comment.auto_claim_comments()
-        self._inline_comment.auto_claim_comments()
-        self._value.auto_claim_comments()
-        self._key.auto_claim_comments()
-        self._indent.auto_claim_comments()
-        self._leading_comment.auto_claim_comments()
+        type(self)._trailing_comment.auto_claim_comments(self._trailing_comment)
+        type(self)._inline_comment.auto_claim_comments(self._inline_comment)
+        type(self)._value.auto_claim_comments(self._value)
+        type(self)._key.auto_claim_comments(self._key)
+        type(self)._indent.auto_claim_comments(self._indent)
+        type(self)._leading_comment.auto_claim_comments(self._leading_comment)

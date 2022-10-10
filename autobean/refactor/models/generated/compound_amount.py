@@ -26,8 +26,16 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     _number_total = internal.optional_left_field[NumberExpr](separators=(Whitespace.from_default(),))
     _currency = internal.required_field[Currency]()
 
-    raw_number_per = internal.optional_node_property(_number_per)
-    raw_number_total = internal.optional_node_property(_number_total)
+    @internal.custom_property
+    def _number_per_pivot(self) -> base.RawTokenModel:
+        return self._hash.first_token
+
+    @internal.custom_property
+    def _number_total_pivot(self) -> base.RawTokenModel:
+        return self._hash.last_token
+
+    raw_number_per = internal.optional_node_property(_number_per, _number_per_pivot)
+    raw_number_total = internal.optional_node_property(_number_total, _number_total_pivot)
     raw_currency = internal.required_node_property(_currency)
 
     number_per = internal.optional_decimal_property(raw_number_per, NumberExpr)
@@ -38,9 +46,9 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def __init__(
             self,
             token_store: base.TokenStore,
-            number_per: internal.Maybe[NumberExpr],
+            number_per: Optional[NumberExpr],
             hash: Hash,
-            number_total: internal.Maybe[NumberExpr],
+            number_total: Optional[NumberExpr],
             currency: Currency,
     ):
         super().__init__(token_store)
@@ -51,7 +59,7 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._number_per.first_token
+        return (self._number_per and self._number_per.first_token) or self._hash.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
@@ -60,18 +68,18 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._number_per.clone(token_store, token_transformer),
-            self._hash.clone(token_store, token_transformer),
-            self._number_total.clone(token_store, token_transformer),
-            self._currency.clone(token_store, token_transformer),
+            type(self)._number_per.clone(self._number_per, token_store, token_transformer),
+            type(self)._hash.clone(self._hash, token_store, token_transformer),
+            type(self)._number_total.clone(self._number_total, token_store, token_transformer),
+            type(self)._currency.clone(self._currency, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._number_per = self._number_per.reattach(token_store, token_transformer)
-        self._hash = self._hash.reattach(token_store, token_transformer)
-        self._number_total = self._number_total.reattach(token_store, token_transformer)
-        self._currency = self._currency.reattach(token_store, token_transformer)
+        self._number_per = type(self)._number_per.reattach(self._number_per, token_store, token_transformer)
+        self._hash = type(self)._hash.reattach(self._hash, token_store, token_transformer)
+        self._number_total = type(self)._number_total.reattach(self._number_total, token_store, token_transformer)
+        self._currency = type(self)._currency.reattach(self._currency, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -89,22 +97,20 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
             number_total: Optional[NumberExpr],
             currency: Currency,
     ) -> _Self:
-        maybe_number_per = cls._number_per.create_maybe(number_per)
         hash = Hash.from_default()
-        maybe_number_total = cls._number_total.create_maybe(number_total)
         tokens = [
-            *maybe_number_per.detach(),
+            *cls._number_per.detach_with_separators(number_per),
             *hash.detach(),
-            *maybe_number_total.detach(),
+            *cls._number_total.detach_with_separators(number_total),
             Whitespace.from_default(),
             *currency.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        maybe_number_per.reattach(token_store)
-        hash.reattach(token_store)
-        maybe_number_total.reattach(token_store)
-        currency.reattach(token_store)
-        return cls(token_store, maybe_number_per, hash, maybe_number_total, currency)
+        cls._number_per.reattach(number_per, token_store)
+        cls._hash.reattach(hash, token_store)
+        cls._number_total.reattach(number_total, token_store)
+        cls._currency.reattach(currency, token_store)
+        return cls(token_store, number_per, hash, number_total, currency)
 
     @classmethod
     def from_value(
@@ -120,6 +126,6 @@ class CompoundAmount(base.RawTreeModel, internal.SpacingAccessorsMixin):
         )
 
     def auto_claim_comments(self) -> None:
-        self._currency.auto_claim_comments()
-        self._number_total.auto_claim_comments()
-        self._number_per.auto_claim_comments()
+        type(self)._currency.auto_claim_comments(self._currency)
+        type(self)._number_total.auto_claim_comments(self._number_total)
+        type(self)._number_per.auto_claim_comments(self._number_per)

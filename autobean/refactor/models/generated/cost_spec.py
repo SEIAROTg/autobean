@@ -36,12 +36,12 @@ class CostSpec(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._cost.clone(token_store, token_transformer),
+            type(self)._cost.clone(self._cost, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._cost = self._cost.reattach(token_store, token_transformer)
+        self._cost = type(self)._cost.reattach(self._cost, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -58,8 +58,8 @@ class CostSpec(base.RawTreeModel, internal.SpacingAccessorsMixin):
             *cost.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        cost.reattach(token_store)
+        cls._cost.reattach(cost, token_store)
         return cls(token_store, cost)
 
     def auto_claim_comments(self) -> None:
-        self._cost.auto_claim_comments()
+        type(self)._cost.auto_claim_comments(self._cost)

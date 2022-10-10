@@ -32,7 +32,7 @@ class IdentityTokenTransformer(TokenTransformer):
         return token
 
 
-_IDENTITY_TOKEN_TRANSFORMER = IdentityTokenTransformer()
+IDENTITY_TOKEN_TRANSFORMER = IdentityTokenTransformer()
 
 
 class RawModel(abc.ABC):
@@ -84,7 +84,7 @@ class RawModel(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def reattach(self: _SelfRawModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawModel:
+    def reattach(self: _SelfRawModel, token_store: TokenStore, token_transformer: TokenTransformer = IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawModel:
         ...
 
     @abc.abstractmethod
@@ -135,7 +135,7 @@ class RawTokenModel(token_store_lib.Token, RawModel):
     def clone(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer) -> _SelfRawTokenModel:
         return token_transformer.transform(self)
 
-    def reattach(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTokenModel:
+    def reattach(self: _SelfRawTokenModel, token_store: TokenStore, token_transformer: TokenTransformer = IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTokenModel:
         return token_transformer.transform(self)
 
     def auto_claim_comments(self) -> None:
@@ -176,7 +176,7 @@ class RawTreeModel(RawModel):
     def _eq(self, other: 'RawTreeModel') -> bool:
         ...
 
-    def reattach(self: _SelfRawTreeModel, token_store: TokenStore, token_transformer: TokenTransformer = _IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTreeModel:
+    def reattach(self: _SelfRawTreeModel, token_store: TokenStore, token_transformer: TokenTransformer = IDENTITY_TOKEN_TRANSFORMER) -> _SelfRawTreeModel:
         self._reattach(token_store, token_transformer)
         return self
 

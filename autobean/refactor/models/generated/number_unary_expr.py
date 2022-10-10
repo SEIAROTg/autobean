@@ -47,14 +47,14 @@ class NumberUnaryExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._unary_op.clone(token_store, token_transformer),
-            self._operand.clone(token_store, token_transformer),
+            type(self)._unary_op.clone(self._unary_op, token_store, token_transformer),
+            type(self)._operand.clone(self._operand, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._unary_op = self._unary_op.reattach(token_store, token_transformer)
-        self._operand = self._operand.reattach(token_store, token_transformer)
+        self._unary_op = type(self)._unary_op.reattach(self._unary_op, token_store, token_transformer)
+        self._operand = type(self)._operand.reattach(self._operand, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -75,10 +75,10 @@ class NumberUnaryExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
             *operand.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        unary_op.reattach(token_store)
-        operand.reattach(token_store)
+        cls._unary_op.reattach(unary_op, token_store)
+        cls._operand.reattach(operand, token_store)
         return cls(token_store, unary_op, operand)
 
     def auto_claim_comments(self) -> None:
-        self._operand.auto_claim_comments()
-        self._unary_op.auto_claim_comments()
+        type(self)._operand.auto_claim_comments(self._operand)
+        type(self)._unary_op.auto_claim_comments(self._unary_op)

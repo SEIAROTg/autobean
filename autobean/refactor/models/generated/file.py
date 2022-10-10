@@ -45,10 +45,10 @@ class File(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def __init__(
             self,
             token_store: base.TokenStore,
-            directives: internal.Repeated[Directive | BlockComment],
+            repeated_directives: internal.Repeated[Directive | BlockComment],
     ):
         super().__init__(token_store)
-        self._directives = directives
+        self._directives = repeated_directives
 
     @property
     def first_token(self) -> base.RawTokenModel:
@@ -61,12 +61,12 @@ class File(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._directives.clone(token_store, token_transformer),
+            type(self)._directives.clone(self._directives, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._directives = self._directives.reattach(token_store, token_transformer)
+        self._directives = type(self)._directives.reattach(self._directives, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -81,10 +81,10 @@ class File(base.RawTreeModel, internal.SpacingAccessorsMixin):
     ) -> _Self:
         repeated_directives = cls._directives.create_repeated(directives)
         tokens = [
-            *repeated_directives.detach(),
+            *cls._directives.detach_with_separators(repeated_directives),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        repeated_directives.reattach(token_store)
+        cls._directives.reattach(repeated_directives, token_store)
         return cls(token_store, repeated_directives)
 
     @classmethod

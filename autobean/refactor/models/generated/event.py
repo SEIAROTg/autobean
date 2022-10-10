@@ -35,14 +35,30 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
     _meta = internal.repeated_field[MetaItem | BlockComment](separators=(Newline.from_default(),), default_indent='    ')
     _dedent_mark = internal.optional_left_field[DedentMark](separators=())
 
-    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
+    @internal.custom_property
+    def _leading_comment_pivot(self) -> base.RawTokenModel:
+        return self._date.first_token
+
+    @internal.custom_property
+    def _inline_comment_pivot(self) -> base.RawTokenModel:
+        return self._description.last_token
+
+    @internal.custom_property
+    def _dedent_mark_pivot(self) -> base.RawTokenModel:
+        return self._meta.last_token or self._eol.last_token
+
+    @internal.custom_property
+    def _trailing_comment_pivot(self) -> base.RawTokenModel:
+        return (self._dedent_mark and self._dedent_mark.last_token) or self._meta.last_token or self._eol.last_token
+
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment, _leading_comment_pivot)
     raw_date = internal.required_node_property(_date)
     raw_type = internal.required_node_property(_type)
     raw_description = internal.required_node_property(_description)
-    raw_inline_comment = internal.optional_node_property(_inline_comment)
+    raw_inline_comment = internal.optional_node_property(_inline_comment, _inline_comment_pivot)
     raw_meta_with_comments = internal.repeated_node_with_interleaving_comments_property(_meta)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(raw_meta_with_comments)
-    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment, _trailing_comment_pivot)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     date = internal.required_value_property(raw_date)
@@ -56,16 +72,16 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
     def __init__(
             self,
             token_store: base.TokenStore,
-            leading_comment: internal.Maybe[BlockComment],
+            leading_comment: Optional[BlockComment],
             date: Date,
             label: EventLabel,
             type: EscapedString,
             description: EscapedString,
-            inline_comment: internal.Maybe[InlineComment],
+            inline_comment: Optional[InlineComment],
             eol: Eol,
-            meta: internal.Repeated[MetaItem | BlockComment],
-            dedent_mark: internal.Maybe[DedentMark],
-            trailing_comment: internal.Maybe[BlockComment],
+            repeated_meta: internal.Repeated[MetaItem | BlockComment],
+            dedent_mark: Optional[DedentMark],
+            trailing_comment: Optional[BlockComment],
     ):
         super().__init__(token_store)
         self._leading_comment = leading_comment
@@ -75,45 +91,45 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
         self._description = description
         self._inline_comment = inline_comment
         self._eol = eol
-        self._meta = meta
+        self._meta = repeated_meta
         self._dedent_mark = dedent_mark
         self._trailing_comment = trailing_comment
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._leading_comment.first_token
+        return (self._leading_comment and self._leading_comment.first_token) or self._date.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._trailing_comment.last_token
+        return (self._trailing_comment and self._trailing_comment.last_token) or (self._dedent_mark and self._dedent_mark.last_token) or self._meta.last_token or self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._leading_comment.clone(token_store, token_transformer),
-            self._date.clone(token_store, token_transformer),
-            self._label.clone(token_store, token_transformer),
-            self._type.clone(token_store, token_transformer),
-            self._description.clone(token_store, token_transformer),
-            self._inline_comment.clone(token_store, token_transformer),
-            self._eol.clone(token_store, token_transformer),
-            self._meta.clone(token_store, token_transformer),
-            self._dedent_mark.clone(token_store, token_transformer),
-            self._trailing_comment.clone(token_store, token_transformer),
+            type(self)._leading_comment.clone(self._leading_comment, token_store, token_transformer),
+            type(self)._date.clone(self._date, token_store, token_transformer),
+            type(self)._label.clone(self._label, token_store, token_transformer),
+            type(self)._type.clone(self._type, token_store, token_transformer),
+            type(self)._description.clone(self._description, token_store, token_transformer),
+            type(self)._inline_comment.clone(self._inline_comment, token_store, token_transformer),
+            type(self)._eol.clone(self._eol, token_store, token_transformer),
+            type(self)._meta.clone(self._meta, token_store, token_transformer),
+            type(self)._dedent_mark.clone(self._dedent_mark, token_store, token_transformer),
+            type(self)._trailing_comment.clone(self._trailing_comment, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
-        self._date = self._date.reattach(token_store, token_transformer)
-        self._label = self._label.reattach(token_store, token_transformer)
-        self._type = self._type.reattach(token_store, token_transformer)
-        self._description = self._description.reattach(token_store, token_transformer)
-        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
-        self._eol = self._eol.reattach(token_store, token_transformer)
-        self._meta = self._meta.reattach(token_store, token_transformer)
-        self._dedent_mark = self._dedent_mark.reattach(token_store, token_transformer)
-        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
+        self._leading_comment = type(self)._leading_comment.reattach(self._leading_comment, token_store, token_transformer)
+        self._date = type(self)._date.reattach(self._date, token_store, token_transformer)
+        self._label = type(self)._label.reattach(self._label, token_store, token_transformer)
+        self._type = type(self)._type.reattach(self._type, token_store, token_transformer)
+        self._description = type(self)._description.reattach(self._description, token_store, token_transformer)
+        self._inline_comment = type(self)._inline_comment.reattach(self._inline_comment, token_store, token_transformer)
+        self._eol = type(self)._eol.reattach(self._eol, token_store, token_transformer)
+        self._meta = type(self)._meta.reattach(self._meta, token_store, token_transformer)
+        self._dedent_mark = type(self)._dedent_mark.reattach(self._dedent_mark, token_store, token_transformer)
+        self._trailing_comment = type(self)._trailing_comment.reattach(self._trailing_comment, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -142,15 +158,12 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
             meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
-        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
         label = EventLabel.from_default()
-        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
-        maybe_dedent_mark = cls._dedent_mark.create_maybe(None)
-        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
+        dedent_mark = None
         tokens = [
-            *maybe_leading_comment.detach(),
+            *cls._leading_comment.detach_with_separators(leading_comment),
             *date.detach(),
             Whitespace.from_default(),
             *label.detach(),
@@ -158,24 +171,24 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
             *type.detach(),
             Whitespace.from_default(),
             *description.detach(),
-            *maybe_inline_comment.detach(),
+            *cls._inline_comment.detach_with_separators(inline_comment),
             *eol.detach(),
-            *repeated_meta.detach(),
-            *maybe_dedent_mark.detach(),
-            *maybe_trailing_comment.detach(),
+            *cls._meta.detach_with_separators(repeated_meta),
+            *cls._dedent_mark.detach_with_separators(dedent_mark),
+            *cls._trailing_comment.detach_with_separators(trailing_comment),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        maybe_leading_comment.reattach(token_store)
-        date.reattach(token_store)
-        label.reattach(token_store)
-        type.reattach(token_store)
-        description.reattach(token_store)
-        maybe_inline_comment.reattach(token_store)
-        eol.reattach(token_store)
-        repeated_meta.reattach(token_store)
-        maybe_dedent_mark.reattach(token_store)
-        maybe_trailing_comment.reattach(token_store)
-        return cls(token_store, maybe_leading_comment, date, label, type, description, maybe_inline_comment, eol, repeated_meta, maybe_dedent_mark, maybe_trailing_comment)
+        cls._leading_comment.reattach(leading_comment, token_store)
+        cls._date.reattach(date, token_store)
+        cls._label.reattach(label, token_store)
+        cls._type.reattach(type, token_store)
+        cls._description.reattach(description, token_store)
+        cls._inline_comment.reattach(inline_comment, token_store)
+        cls._eol.reattach(eol, token_store)
+        cls._meta.reattach(repeated_meta, token_store)
+        cls._dedent_mark.reattach(dedent_mark, token_store)
+        cls._trailing_comment.reattach(trailing_comment, token_store)
+        return cls(token_store, leading_comment, date, label, type, description, inline_comment, eol, repeated_meta, dedent_mark, trailing_comment)
 
     @classmethod
     def from_value(
@@ -202,10 +215,10 @@ class Event(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spaci
     def auto_claim_comments(self) -> None:
         self.claim_leading_comment(ignore_if_already_claimed=True)
         self.claim_trailing_comment(ignore_if_already_claimed=True)
-        self._trailing_comment.auto_claim_comments()
+        type(self)._trailing_comment.auto_claim_comments(self._trailing_comment)
         self.raw_meta_with_comments.auto_claim_comments()
-        self._inline_comment.auto_claim_comments()
-        self._description.auto_claim_comments()
-        self._type.auto_claim_comments()
-        self._date.auto_claim_comments()
-        self._leading_comment.auto_claim_comments()
+        type(self)._inline_comment.auto_claim_comments(self._inline_comment)
+        type(self)._description.auto_claim_comments(self._description)
+        type(self)._type.auto_claim_comments(self._type)
+        type(self)._date.auto_claim_comments(self._date)
+        type(self)._leading_comment.auto_claim_comments(self._leading_comment)

@@ -31,9 +31,7 @@ class Transaction(transaction.Transaction):
             string2,
             *args,
         ) = children
-        assert isinstance(string1, internal.Maybe)
-        assert isinstance(string2, internal.Maybe)
-        if string1.inner is not None and string2.inner is None:
+        if string1 is not None and string2 is None:
             string1, string2 = string0, string1
         return super().from_parsed_children(
             token_store,

@@ -2,7 +2,7 @@ import copy
 import enum
 import pathlib
 import re
-from typing import Iterable, Iterator, Type, TypeVar
+from typing import Iterable, Iterator, Optional, Type, TypeVar
 import lark
 from lark import exceptions
 from lark import lexer
@@ -137,7 +137,6 @@ class ModelBuilder:
         self._built_tokens: list[models.RawTokenModel] = []
         self._token_to_index = {id(token): i for i, token in enumerate(tokens)}
         self._cursor = 0
-        self._right_floating_placeholders: list[internal.Placeholder] = []
         self._token_store = models.TokenStore.from_tokens([])
 
     def _add_tokens(self, tokens: Iterable[models.RawTokenModel]) -> None:
@@ -152,8 +151,6 @@ class ModelBuilder:
                 built_token.claimed = False
             self._add_tokens([built_token])
         self._cursor = cursor
-        self._add_tokens(self._right_floating_placeholders)
-        self._right_floating_placeholders.clear()
 
     def _build_indent(self) -> models.RawTokenModel:
         cursor = self._cursor
@@ -171,10 +168,8 @@ class ModelBuilder:
     def _build_placeholder(self, floating: _Floating) -> internal.Placeholder:
         placeholder = internal.Placeholder.from_default()
         if floating == _Floating.RIGHT:
-            self._right_floating_placeholders.append(placeholder)
+            assert False, 'deprecated code path'
         elif floating == _Floating.LEFT:
-            if self._right_floating_placeholders:
-                raise ValueError('Floating direction cannot be satisified.')
             self._built_tokens.append(placeholder)
         else:
             assert False
@@ -189,13 +184,11 @@ class ModelBuilder:
 
     def _build_tree(self, tree: lark.Tree) -> models.RawTreeModel:
         model_type = models.TREE_MODELS[tree.data]
-        children = []
+        children: list[Optional[models.RawModel]] = []
         for child in tree.children:
             is_tree = isinstance(child, lark.Tree)
-            if is_tree and child.data in ('maybe_left', 'maybe_required'):
-                children.append(self._build_optional_node(child, _Floating.LEFT))
-            elif is_tree and child.data == 'maybe_right':
-                children.append(self._build_optional_node(child, _Floating.RIGHT))
+            if child is None:
+                children.append(child)
             elif is_tree and child.data in ('repeated', 'repeated_sep'):
                 children.append(self._build_repeated_node(child))
             elif is_tree and child.data in ('indent', 'indent2'):
@@ -211,18 +204,6 @@ class ModelBuilder:
             return self._build_token(node)
         if isinstance(node, lark.Tree):
             return self._build_tree(node)
-        assert False
-
-    def _build_optional_node(self, node: lark.Tree, floating: _Floating) -> models.RawModel:
-        inner_node, = node.children
-        if floating == _Floating.LEFT:
-            placeholder = self._build_placeholder(floating)
-            inner = self._build_required_node(inner_node) if inner_node is not None else None
-            return internal.MaybeL(self._token_store, inner, placeholder)
-        if floating == _Floating.RIGHT:
-            inner = self._build_required_node(inner_node) if inner_node is not None else None
-            placeholder = self._build_placeholder(floating)
-            return internal.MaybeR(self._token_store, inner, placeholder)
         assert False
 
     def _build_repeated_node(self, node: lark.Tree) -> models.RawModel:

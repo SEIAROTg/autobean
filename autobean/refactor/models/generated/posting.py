@@ -37,18 +37,50 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     _eol = internal.required_field[Eol]()
     _meta = internal.repeated_field[MetaItem | BlockComment](separators=(Newline.from_default(),), default_indent='        ')
 
-    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
+    @internal.custom_property
+    def _leading_comment_pivot(self) -> base.RawTokenModel:
+        return self._indent.first_token
+
+    @internal.custom_property
+    def _flag_pivot(self) -> base.RawTokenModel:
+        return self._account.first_token
+
+    @internal.custom_property
+    def _number_pivot(self) -> base.RawTokenModel:
+        return self._account.last_token
+
+    @internal.custom_property
+    def _currency_pivot(self) -> base.RawTokenModel:
+        return (self._number and self._number.last_token) or self._account.last_token
+
+    @internal.custom_property
+    def _cost_pivot(self) -> base.RawTokenModel:
+        return (self._currency and self._currency.last_token) or (self._number and self._number.last_token) or self._account.last_token
+
+    @internal.custom_property
+    def _price_pivot(self) -> base.RawTokenModel:
+        return (self._cost and self._cost.last_token) or (self._currency and self._currency.last_token) or (self._number and self._number.last_token) or self._account.last_token
+
+    @internal.custom_property
+    def _inline_comment_pivot(self) -> base.RawTokenModel:
+        return (self._price and self._price.last_token) or (self._cost and self._cost.last_token) or (self._currency and self._currency.last_token) or (self._number and self._number.last_token) or self._account.last_token
+
+    @internal.custom_property
+    def _trailing_comment_pivot(self) -> base.RawTokenModel:
+        return self._meta.last_token or self._eol.last_token
+
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment, _leading_comment_pivot)
     raw_indent = internal.required_node_property(_indent)
-    raw_flag = internal.optional_node_property(_flag)
+    raw_flag = internal.optional_node_property(_flag, _flag_pivot)
     raw_account = internal.required_node_property(_account)
-    raw_number = internal.optional_node_property(_number)
-    raw_currency = internal.optional_node_property(_currency)
-    raw_cost = internal.optional_node_property(_cost)
-    raw_price = internal.optional_node_property[PriceAnnotation](_price)
-    raw_inline_comment = internal.optional_node_property(_inline_comment)
+    raw_number = internal.optional_node_property(_number, _number_pivot)
+    raw_currency = internal.optional_node_property(_currency, _currency_pivot)
+    raw_cost = internal.optional_node_property(_cost, _cost_pivot)
+    raw_price = internal.optional_node_property[PriceAnnotation, _Self](_price, _price_pivot)
+    raw_inline_comment = internal.optional_node_property(_inline_comment, _inline_comment_pivot)
     raw_meta_with_comments = internal.repeated_node_with_interleaving_comments_property(_meta)
     raw_meta = meta_item_internal.repeated_raw_meta_item_property(raw_meta_with_comments)
-    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment, _trailing_comment_pivot)
 
     leading_comment = internal.optional_indented_string_property(raw_leading_comment, BlockComment, raw_indent)
     indent = internal.required_value_property(raw_indent)
@@ -66,18 +98,18 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     def __init__(
             self,
             token_store: base.TokenStore,
-            leading_comment: internal.Maybe[BlockComment],
+            leading_comment: Optional[BlockComment],
             indent: Indent,
-            flag: internal.Maybe[PostingFlag],
+            flag: Optional[PostingFlag],
             account: Account,
-            number: internal.Maybe[NumberExpr],
-            currency: internal.Maybe[Currency],
-            cost: internal.Maybe[CostSpec],
-            price: internal.Maybe[PriceAnnotation],
-            inline_comment: internal.Maybe[InlineComment],
+            number: Optional[NumberExpr],
+            currency: Optional[Currency],
+            cost: Optional[CostSpec],
+            price: Optional[PriceAnnotation],
+            inline_comment: Optional[InlineComment],
             eol: Eol,
-            meta: internal.Repeated[MetaItem | BlockComment],
-            trailing_comment: internal.Maybe[BlockComment],
+            repeated_meta: internal.Repeated[MetaItem | BlockComment],
+            trailing_comment: Optional[BlockComment],
     ):
         super().__init__(token_store)
         self._leading_comment = leading_comment
@@ -90,48 +122,48 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
         self._price = price
         self._inline_comment = inline_comment
         self._eol = eol
-        self._meta = meta
+        self._meta = repeated_meta
         self._trailing_comment = trailing_comment
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._leading_comment.first_token
+        return (self._leading_comment and self._leading_comment.first_token) or self._indent.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._trailing_comment.last_token
+        return (self._trailing_comment and self._trailing_comment.last_token) or self._meta.last_token or self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._leading_comment.clone(token_store, token_transformer),
-            self._indent.clone(token_store, token_transformer),
-            self._flag.clone(token_store, token_transformer),
-            self._account.clone(token_store, token_transformer),
-            self._number.clone(token_store, token_transformer),
-            self._currency.clone(token_store, token_transformer),
-            self._cost.clone(token_store, token_transformer),
-            self._price.clone(token_store, token_transformer),
-            self._inline_comment.clone(token_store, token_transformer),
-            self._eol.clone(token_store, token_transformer),
-            self._meta.clone(token_store, token_transformer),
-            self._trailing_comment.clone(token_store, token_transformer),
+            type(self)._leading_comment.clone(self._leading_comment, token_store, token_transformer),
+            type(self)._indent.clone(self._indent, token_store, token_transformer),
+            type(self)._flag.clone(self._flag, token_store, token_transformer),
+            type(self)._account.clone(self._account, token_store, token_transformer),
+            type(self)._number.clone(self._number, token_store, token_transformer),
+            type(self)._currency.clone(self._currency, token_store, token_transformer),
+            type(self)._cost.clone(self._cost, token_store, token_transformer),
+            type(self)._price.clone(self._price, token_store, token_transformer),
+            type(self)._inline_comment.clone(self._inline_comment, token_store, token_transformer),
+            type(self)._eol.clone(self._eol, token_store, token_transformer),
+            type(self)._meta.clone(self._meta, token_store, token_transformer),
+            type(self)._trailing_comment.clone(self._trailing_comment, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
-        self._indent = self._indent.reattach(token_store, token_transformer)
-        self._flag = self._flag.reattach(token_store, token_transformer)
-        self._account = self._account.reattach(token_store, token_transformer)
-        self._number = self._number.reattach(token_store, token_transformer)
-        self._currency = self._currency.reattach(token_store, token_transformer)
-        self._cost = self._cost.reattach(token_store, token_transformer)
-        self._price = self._price.reattach(token_store, token_transformer)
-        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
-        self._eol = self._eol.reattach(token_store, token_transformer)
-        self._meta = self._meta.reattach(token_store, token_transformer)
-        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
+        self._leading_comment = type(self)._leading_comment.reattach(self._leading_comment, token_store, token_transformer)
+        self._indent = type(self)._indent.reattach(self._indent, token_store, token_transformer)
+        self._flag = type(self)._flag.reattach(self._flag, token_store, token_transformer)
+        self._account = type(self)._account.reattach(self._account, token_store, token_transformer)
+        self._number = type(self)._number.reattach(self._number, token_store, token_transformer)
+        self._currency = type(self)._currency.reattach(self._currency, token_store, token_transformer)
+        self._cost = type(self)._cost.reattach(self._cost, token_store, token_transformer)
+        self._price = type(self)._price.reattach(self._price, token_store, token_transformer)
+        self._inline_comment = type(self)._inline_comment.reattach(self._inline_comment, token_store, token_transformer)
+        self._eol = type(self)._eol.reattach(self._eol, token_store, token_transformer)
+        self._meta = type(self)._meta.reattach(self._meta, token_store, token_transformer)
+        self._trailing_comment = type(self)._trailing_comment.reattach(self._trailing_comment, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -166,44 +198,36 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
             meta: Iterable[MetaItem | BlockComment] = (),
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
-        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
-        maybe_flag = cls._flag.create_maybe(flag)
-        maybe_number = cls._number.create_maybe(number)
-        maybe_currency = cls._currency.create_maybe(currency)
-        maybe_cost = cls._cost.create_maybe(cost)
-        maybe_price = cls._price.create_maybe(price)
-        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
         repeated_meta = cls._meta.create_repeated(meta)
-        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
         tokens = [
-            *maybe_leading_comment.detach(),
+            *cls._leading_comment.detach_with_separators(leading_comment),
             *indent.detach(),
-            *maybe_flag.detach(),
+            *cls._flag.detach_with_separators(flag),
             *account.detach(),
-            *maybe_number.detach(),
-            *maybe_currency.detach(),
-            *maybe_cost.detach(),
-            *maybe_price.detach(),
-            *maybe_inline_comment.detach(),
+            *cls._number.detach_with_separators(number),
+            *cls._currency.detach_with_separators(currency),
+            *cls._cost.detach_with_separators(cost),
+            *cls._price.detach_with_separators(price),
+            *cls._inline_comment.detach_with_separators(inline_comment),
             *eol.detach(),
-            *repeated_meta.detach(),
-            *maybe_trailing_comment.detach(),
+            *cls._meta.detach_with_separators(repeated_meta),
+            *cls._trailing_comment.detach_with_separators(trailing_comment),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        maybe_leading_comment.reattach(token_store)
-        indent.reattach(token_store)
-        maybe_flag.reattach(token_store)
-        account.reattach(token_store)
-        maybe_number.reattach(token_store)
-        maybe_currency.reattach(token_store)
-        maybe_cost.reattach(token_store)
-        maybe_price.reattach(token_store)
-        maybe_inline_comment.reattach(token_store)
-        eol.reattach(token_store)
-        repeated_meta.reattach(token_store)
-        maybe_trailing_comment.reattach(token_store)
-        return cls(token_store, maybe_leading_comment, indent, maybe_flag, account, maybe_number, maybe_currency, maybe_cost, maybe_price, maybe_inline_comment, eol, repeated_meta, maybe_trailing_comment)
+        cls._leading_comment.reattach(leading_comment, token_store)
+        cls._indent.reattach(indent, token_store)
+        cls._flag.reattach(flag, token_store)
+        cls._account.reattach(account, token_store)
+        cls._number.reattach(number, token_store)
+        cls._currency.reattach(currency, token_store)
+        cls._cost.reattach(cost, token_store)
+        cls._price.reattach(price, token_store)
+        cls._inline_comment.reattach(inline_comment, token_store)
+        cls._eol.reattach(eol, token_store)
+        cls._meta.reattach(repeated_meta, token_store)
+        cls._trailing_comment.reattach(trailing_comment, token_store)
+        return cls(token_store, leading_comment, indent, flag, account, number, currency, cost, price, inline_comment, eol, repeated_meta, trailing_comment)
 
     @classmethod
     def from_value(
@@ -238,14 +262,14 @@ class Posting(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spa
     def auto_claim_comments(self) -> None:
         self.claim_leading_comment(ignore_if_already_claimed=True)
         self.claim_trailing_comment(ignore_if_already_claimed=True)
-        self._trailing_comment.auto_claim_comments()
+        type(self)._trailing_comment.auto_claim_comments(self._trailing_comment)
         self.raw_meta_with_comments.auto_claim_comments()
-        self._inline_comment.auto_claim_comments()
-        self._price.auto_claim_comments()
-        self._cost.auto_claim_comments()
-        self._currency.auto_claim_comments()
-        self._number.auto_claim_comments()
-        self._account.auto_claim_comments()
-        self._flag.auto_claim_comments()
-        self._indent.auto_claim_comments()
-        self._leading_comment.auto_claim_comments()
+        type(self)._inline_comment.auto_claim_comments(self._inline_comment)
+        type(self)._price.auto_claim_comments(self._price)
+        type(self)._cost.auto_claim_comments(self._cost)
+        type(self)._currency.auto_claim_comments(self._currency)
+        type(self)._number.auto_claim_comments(self._number)
+        type(self)._account.auto_claim_comments(self._account)
+        type(self)._flag.auto_claim_comments(self._flag)
+        type(self)._indent.auto_claim_comments(self._indent)
+        type(self)._leading_comment.auto_claim_comments(self._leading_comment)

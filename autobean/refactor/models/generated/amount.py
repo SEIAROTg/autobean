@@ -46,14 +46,14 @@ class Amount(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._number.clone(token_store, token_transformer),
-            self._currency.clone(token_store, token_transformer),
+            type(self)._number.clone(self._number, token_store, token_transformer),
+            type(self)._currency.clone(self._currency, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._number = self._number.reattach(token_store, token_transformer)
-        self._currency = self._currency.reattach(token_store, token_transformer)
+        self._number = type(self)._number.reattach(self._number, token_store, token_transformer)
+        self._currency = type(self)._currency.reattach(self._currency, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -74,8 +74,8 @@ class Amount(base.RawTreeModel, internal.SpacingAccessorsMixin):
             *currency.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        number.reattach(token_store)
-        currency.reattach(token_store)
+        cls._number.reattach(number, token_store)
+        cls._currency.reattach(currency, token_store)
         return cls(token_store, number, currency)
 
     @classmethod
@@ -90,5 +90,5 @@ class Amount(base.RawTreeModel, internal.SpacingAccessorsMixin):
         )
 
     def auto_claim_comments(self) -> None:
-        self._currency.auto_claim_comments()
-        self._number.auto_claim_comments()
+        type(self)._currency.auto_claim_comments(self._currency)
+        type(self)._number.auto_claim_comments(self._number)

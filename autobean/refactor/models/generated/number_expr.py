@@ -37,12 +37,12 @@ class NumberExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._number_add_expr.clone(token_store, token_transformer),
+            type(self)._number_add_expr.clone(self._number_add_expr, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._number_add_expr = self._number_add_expr.reattach(token_store, token_transformer)
+        self._number_add_expr = type(self)._number_add_expr.reattach(self._number_add_expr, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -59,8 +59,8 @@ class NumberExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
             *number_add_expr.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        number_add_expr.reattach(token_store)
+        cls._number_add_expr.reattach(number_add_expr, token_store)
         return cls(token_store, number_add_expr)
 
     def auto_claim_comments(self) -> None:
-        self._number_add_expr.auto_claim_comments()
+        type(self)._number_add_expr.auto_claim_comments(self._number_add_expr)

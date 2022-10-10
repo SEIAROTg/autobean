@@ -83,7 +83,7 @@ class optional_indented_string_property(Generic[_ISV]):
             self,
             inner_property: base_property.base_rw_property[Optional[_ISV], _U],
             inner_type: Type[_ISV],
-            indent_property: base_property.base_rw_property[_SV, _U]):
+            indent_property: base_property.base_ro_property[_SV, base.RawTreeModel]):
         self._inner_property = inner_property
         self._inner_type = inner_type
         self._indent_property = indent_property

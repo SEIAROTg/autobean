@@ -209,7 +209,7 @@ class FieldDescriptor:
         if self.cardinality == FieldCardinality.REQUIRED:
             return self.inner_type_with_comments
         elif self.cardinality == FieldCardinality.OPTIONAL:
-            return f'internal.Maybe[{self.inner_type_with_comments}]'
+            return f'Optional[{self.inner_type_with_comments}]'
         elif self.cardinality == FieldCardinality.REPEATED:
             return f'internal.Repeated[{self.inner_type_with_comments}]'
         else:
@@ -233,6 +233,12 @@ class FieldDescriptor:
 
     @functools.cached_property
     def value_property_name(self) -> str:
+        return self.name
+
+    @functools.cached_property
+    def ctor_param_name(self) -> str:
+        if self.cardinality == FieldCardinality.REPEATED:
+            return f'repeated_{self.name}'
         return self.name
 
     @functools.cached_property
@@ -269,10 +275,11 @@ class FieldDescriptor:
         if self.cardinality == FieldCardinality.REQUIRED:
             return f'internal.required_node_property{typefix}({self.field_name})'
         if self.cardinality == FieldCardinality.OPTIONAL:
+            typefix = f'[{self.inner_type_with_comments}, _Self]' if len(self.model_types) > 1 else ''
             if self.inner_type == 'BlockComment':
-                return f'internal.optional_node_property{typefix}(internal.SurroundingCommentsMixin.{self.field_name})'
+                return f'internal.optional_node_property{typefix}(internal.SurroundingCommentsMixin.{self.field_name}, {self.pivot_property_name})'
             else:
-                return f'internal.optional_node_property{typefix}({self.field_name})'
+                return f'internal.optional_node_property{typefix}({self.field_name}, {self.pivot_property_name})'
         if self.cardinality == FieldCardinality.REPEATED:
             if self.has_interleaving_comments:
                 return f'internal.repeated_node_with_interleaving_comments_property{typefix}({self.field_name})'
@@ -362,6 +369,12 @@ class FieldDescriptor:
             return f'map({ctor}, {self.name})'
         assert False
 
+    @functools.cached_property
+    def pivot_property_name(self) -> Optional[str]:
+        if self.cardinality != FieldCardinality.OPTIONAL:
+            return None
+        return f'_{self.name}_pivot'
+
 
 @dataclasses.dataclass
 class MetaModelDescriptor:
@@ -437,6 +450,34 @@ class MetaModelDescriptor:
     @functools.cached_property
     def ctor_keyword_fields(self) -> list[FieldDescriptor]:
         return [field for field in self.public_fields if field.is_keyword_only]
+
+    def pivot_token(
+            self,
+            current_field: Optional[FieldDescriptor],
+            floating: FieldCardinality,
+    ) -> Optional[str]:
+        if floating == base.Floating.RIGHT:
+            it = iter(self.fields)
+            border_prop = 'first_token'
+        else:
+            it = reversed(self.fields)
+            border_prop = 'last_token'
+        if current_field is not None:
+            it = itertools.dropwhile(lambda f: f is not current_field, it)
+            next(it)
+        parts = []
+        for field in it:
+            if field.cardinality == FieldCardinality.REQUIRED:
+                parts.append(f'self.{field.field_name}.{border_prop}')
+                break
+            elif field.cardinality == FieldCardinality.OPTIONAL:
+                parts.append(f'(self.{field.field_name} and self.{field.field_name}.{border_prop})')
+            elif field.cardinality == FieldCardinality.REPEATED:
+                parts.append(f'self.{field.field_name}.{border_prop}')
+            else:
+                assert False
+        assert parts
+        return ' or '.join(parts)
 
 
 def is_token(rule: str) -> bool:

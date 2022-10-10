@@ -56,16 +56,16 @@ class NumberParenExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._left_paren.clone(token_store, token_transformer),
-            self._inner_expr.clone(token_store, token_transformer),
-            self._right_paren.clone(token_store, token_transformer),
+            type(self)._left_paren.clone(self._left_paren, token_store, token_transformer),
+            type(self)._inner_expr.clone(self._inner_expr, token_store, token_transformer),
+            type(self)._right_paren.clone(self._right_paren, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._left_paren = self._left_paren.reattach(token_store, token_transformer)
-        self._inner_expr = self._inner_expr.reattach(token_store, token_transformer)
-        self._right_paren = self._right_paren.reattach(token_store, token_transformer)
+        self._left_paren = type(self)._left_paren.reattach(self._left_paren, token_store, token_transformer)
+        self._inner_expr = type(self)._inner_expr.reattach(self._inner_expr, token_store, token_transformer)
+        self._right_paren = type(self)._right_paren.reattach(self._right_paren, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -90,10 +90,10 @@ class NumberParenExpr(base.RawTreeModel, internal.SpacingAccessorsMixin):
             *right_paren.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        left_paren.reattach(token_store)
-        inner_expr.reattach(token_store)
-        right_paren.reattach(token_store)
+        cls._left_paren.reattach(left_paren, token_store)
+        cls._inner_expr.reattach(inner_expr, token_store)
+        cls._right_paren.reattach(right_paren, token_store)
         return cls(token_store, left_paren, inner_expr, right_paren)
 
     def auto_claim_comments(self) -> None:
-        self._inner_expr.auto_claim_comments()
+        type(self)._inner_expr.auto_claim_comments(self._inner_expr)

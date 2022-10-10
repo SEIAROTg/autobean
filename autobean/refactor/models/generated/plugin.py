@@ -28,11 +28,27 @@ class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     _inline_comment = internal.optional_left_field[InlineComment](separators=(Whitespace.from_default(),))
     _eol = internal.required_field[Eol]()
 
-    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
+    @internal.custom_property
+    def _leading_comment_pivot(self) -> base.RawTokenModel:
+        return self._label.first_token
+
+    @internal.custom_property
+    def _config_pivot(self) -> base.RawTokenModel:
+        return self._name.last_token
+
+    @internal.custom_property
+    def _inline_comment_pivot(self) -> base.RawTokenModel:
+        return (self._config and self._config.last_token) or self._name.last_token
+
+    @internal.custom_property
+    def _trailing_comment_pivot(self) -> base.RawTokenModel:
+        return self._eol.last_token
+
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment, _leading_comment_pivot)
     raw_name = internal.required_node_property(_name)
-    raw_config = internal.optional_node_property(_config)
-    raw_inline_comment = internal.optional_node_property(_inline_comment)
-    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
+    raw_config = internal.optional_node_property(_config, _config_pivot)
+    raw_inline_comment = internal.optional_node_property(_inline_comment, _inline_comment_pivot)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment, _trailing_comment_pivot)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     name = internal.required_value_property(raw_name)
@@ -44,13 +60,13 @@ class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     def __init__(
             self,
             token_store: base.TokenStore,
-            leading_comment: internal.Maybe[BlockComment],
+            leading_comment: Optional[BlockComment],
             label: PluginLabel,
             name: EscapedString,
-            config: internal.Maybe[EscapedString],
-            inline_comment: internal.Maybe[InlineComment],
+            config: Optional[EscapedString],
+            inline_comment: Optional[InlineComment],
             eol: Eol,
-            trailing_comment: internal.Maybe[BlockComment],
+            trailing_comment: Optional[BlockComment],
     ):
         super().__init__(token_store)
         self._leading_comment = leading_comment
@@ -63,33 +79,33 @@ class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._leading_comment.first_token
+        return (self._leading_comment and self._leading_comment.first_token) or self._label.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._trailing_comment.last_token
+        return (self._trailing_comment and self._trailing_comment.last_token) or self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._leading_comment.clone(token_store, token_transformer),
-            self._label.clone(token_store, token_transformer),
-            self._name.clone(token_store, token_transformer),
-            self._config.clone(token_store, token_transformer),
-            self._inline_comment.clone(token_store, token_transformer),
-            self._eol.clone(token_store, token_transformer),
-            self._trailing_comment.clone(token_store, token_transformer),
+            type(self)._leading_comment.clone(self._leading_comment, token_store, token_transformer),
+            type(self)._label.clone(self._label, token_store, token_transformer),
+            type(self)._name.clone(self._name, token_store, token_transformer),
+            type(self)._config.clone(self._config, token_store, token_transformer),
+            type(self)._inline_comment.clone(self._inline_comment, token_store, token_transformer),
+            type(self)._eol.clone(self._eol, token_store, token_transformer),
+            type(self)._trailing_comment.clone(self._trailing_comment, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
-        self._label = self._label.reattach(token_store, token_transformer)
-        self._name = self._name.reattach(token_store, token_transformer)
-        self._config = self._config.reattach(token_store, token_transformer)
-        self._inline_comment = self._inline_comment.reattach(token_store, token_transformer)
-        self._eol = self._eol.reattach(token_store, token_transformer)
-        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
+        self._leading_comment = type(self)._leading_comment.reattach(self._leading_comment, token_store, token_transformer)
+        self._label = type(self)._label.reattach(self._label, token_store, token_transformer)
+        self._name = type(self)._name.reattach(self._name, token_store, token_transformer)
+        self._config = type(self)._config.reattach(self._config, token_store, token_transformer)
+        self._inline_comment = type(self)._inline_comment.reattach(self._inline_comment, token_store, token_transformer)
+        self._eol = type(self)._eol.reattach(self._eol, token_store, token_transformer)
+        self._trailing_comment = type(self)._trailing_comment.reattach(self._trailing_comment, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -113,31 +129,27 @@ class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
             inline_comment: Optional[InlineComment] = None,
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
-        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
         label = PluginLabel.from_default()
-        maybe_config = cls._config.create_maybe(config)
-        maybe_inline_comment = cls._inline_comment.create_maybe(inline_comment)
         eol = Eol.from_default()
-        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
         tokens = [
-            *maybe_leading_comment.detach(),
+            *cls._leading_comment.detach_with_separators(leading_comment),
             *label.detach(),
             Whitespace.from_default(),
             *name.detach(),
-            *maybe_config.detach(),
-            *maybe_inline_comment.detach(),
+            *cls._config.detach_with_separators(config),
+            *cls._inline_comment.detach_with_separators(inline_comment),
             *eol.detach(),
-            *maybe_trailing_comment.detach(),
+            *cls._trailing_comment.detach_with_separators(trailing_comment),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        maybe_leading_comment.reattach(token_store)
-        label.reattach(token_store)
-        name.reattach(token_store)
-        maybe_config.reattach(token_store)
-        maybe_inline_comment.reattach(token_store)
-        eol.reattach(token_store)
-        maybe_trailing_comment.reattach(token_store)
-        return cls(token_store, maybe_leading_comment, label, name, maybe_config, maybe_inline_comment, eol, maybe_trailing_comment)
+        cls._leading_comment.reattach(leading_comment, token_store)
+        cls._label.reattach(label, token_store)
+        cls._name.reattach(name, token_store)
+        cls._config.reattach(config, token_store)
+        cls._inline_comment.reattach(inline_comment, token_store)
+        cls._eol.reattach(eol, token_store)
+        cls._trailing_comment.reattach(trailing_comment, token_store)
+        return cls(token_store, leading_comment, label, name, config, inline_comment, eol, trailing_comment)
 
     @classmethod
     def from_value(
@@ -160,8 +172,8 @@ class Plugin(internal.SurroundingCommentsMixin, base.RawTreeModel, internal.Spac
     def auto_claim_comments(self) -> None:
         self.claim_leading_comment(ignore_if_already_claimed=True)
         self.claim_trailing_comment(ignore_if_already_claimed=True)
-        self._trailing_comment.auto_claim_comments()
-        self._inline_comment.auto_claim_comments()
-        self._config.auto_claim_comments()
-        self._name.auto_claim_comments()
-        self._leading_comment.auto_claim_comments()
+        type(self)._trailing_comment.auto_claim_comments(self._trailing_comment)
+        type(self)._inline_comment.auto_claim_comments(self._inline_comment)
+        type(self)._config.auto_claim_comments(self._config)
+        type(self)._name.auto_claim_comments(self._name)
+        type(self)._leading_comment.auto_claim_comments(self._leading_comment)

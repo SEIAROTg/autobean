@@ -37,12 +37,12 @@ class TotalCost(base.RawTreeModel, internal.SpacingAccessorsMixin):
             self,
             token_store: base.TokenStore,
             dbl_left_brace: DblLeftBrace,
-            components: internal.Repeated[CostComponent],
+            repeated_components: internal.Repeated[CostComponent],
             dbl_right_brace: DblRightBrace,
     ):
         super().__init__(token_store)
         self._dbl_left_brace = dbl_left_brace
-        self._components = components
+        self._components = repeated_components
         self._dbl_right_brace = dbl_right_brace
 
     @property
@@ -56,16 +56,16 @@ class TotalCost(base.RawTreeModel, internal.SpacingAccessorsMixin):
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._dbl_left_brace.clone(token_store, token_transformer),
-            self._components.clone(token_store, token_transformer),
-            self._dbl_right_brace.clone(token_store, token_transformer),
+            type(self)._dbl_left_brace.clone(self._dbl_left_brace, token_store, token_transformer),
+            type(self)._components.clone(self._components, token_store, token_transformer),
+            type(self)._dbl_right_brace.clone(self._dbl_right_brace, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._dbl_left_brace = self._dbl_left_brace.reattach(token_store, token_transformer)
-        self._components = self._components.reattach(token_store, token_transformer)
-        self._dbl_right_brace = self._dbl_right_brace.reattach(token_store, token_transformer)
+        self._dbl_left_brace = type(self)._dbl_left_brace.reattach(self._dbl_left_brace, token_store, token_transformer)
+        self._components = type(self)._components.reattach(self._components, token_store, token_transformer)
+        self._dbl_right_brace = type(self)._dbl_right_brace.reattach(self._dbl_right_brace, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -85,13 +85,13 @@ class TotalCost(base.RawTreeModel, internal.SpacingAccessorsMixin):
         dbl_right_brace = DblRightBrace.from_default()
         tokens = [
             *dbl_left_brace.detach(),
-            *repeated_components.detach(),
+            *cls._components.detach_with_separators(repeated_components),
             *dbl_right_brace.detach(),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        dbl_left_brace.reattach(token_store)
-        repeated_components.reattach(token_store)
-        dbl_right_brace.reattach(token_store)
+        cls._dbl_left_brace.reattach(dbl_left_brace, token_store)
+        cls._components.reattach(repeated_components, token_store)
+        cls._dbl_right_brace.reattach(dbl_right_brace, token_store)
         return cls(token_store, dbl_left_brace, repeated_components, dbl_right_brace)
 
     def auto_claim_comments(self) -> None:

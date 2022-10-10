@@ -1,8 +1,9 @@
+import abc
 import copy
 import functools
 import itertools
 from typing import Any, Callable, Collection, Iterable, MutableSequence, Optional, Type, TypeVar, overload
-from .base_property import base_rw_property
+from .base_property import base_ro_property, base_rw_property
 from .fields import required_field, optional_field, repeated_field
 from .repeated import Repeated
 from . import indexes
@@ -39,23 +40,30 @@ class required_node_property(base_rw_property[_M, base.RawTreeModel]):
         self._inner_field.__set__(instance, value)
 
 
-class optional_node_property(base_rw_property[Optional[_M], base.RawTreeModel]):
-    def __init__(self, inner_field: optional_field[_M]) -> None:
+class optional_node_property(base_rw_property[Optional[_M], _U]):
+    def __init__(
+            self,
+            inner_field: optional_field[_M],
+            pivot_property: base_ro_property[base.RawTokenModel, _U],
+    ) -> None:
         super().__init__()
         self._inner_field = inner_field
+        self._pivot_property = pivot_property
 
     def _get(self, instance: _U) -> Optional[_M]:
-        return self._inner_field.__get__(instance).inner
+        return self._inner_field.__get__(instance)
 
-    def __set__(self, instance: _U, inner: Optional[_M]) -> None:
-        maybe = self._inner_field.__get__(instance)
-        if maybe.inner is None and inner is not None:
-            maybe.create_inner(inner, separators=self._inner_field.separators)
-        elif maybe.inner is not None and inner is None:
-            maybe.remove_inner(maybe.inner)
-        elif maybe.inner is not None and inner is not None:
-            replace_node(maybe.inner, inner)
-        maybe.inner = inner
+    def __set__(self, instance: _U, value: Optional[_M]) -> None:
+        current = self._inner_field.__get__(instance)
+        if current is None and value is not None:
+            pivot = self._pivot_property.__get__(instance)
+            self._inner_field._create_node(instance.token_store, pivot, value)
+        elif current is not None and value is None:
+            pivot = self._pivot_property.__get__(instance)
+            self._inner_field._remove_node(instance.token_store, pivot, current)
+        elif current is not None and value is not None:
+            replace_node(current, value)
+        self._inner_field.__set__(instance, value)
 
 
 class RepeatedNodeWrapper(MutableSequence[_M]):

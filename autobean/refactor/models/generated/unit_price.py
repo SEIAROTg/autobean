@@ -25,8 +25,16 @@ class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
     _number = internal.optional_left_field[NumberExpr](separators=(Whitespace.from_default(),))
     _currency = internal.optional_left_field[Currency](separators=(Whitespace.from_default(),))
 
-    raw_number = internal.optional_node_property(_number)
-    raw_currency = internal.optional_node_property(_currency)
+    @internal.custom_property
+    def _number_pivot(self) -> base.RawTokenModel:
+        return self._label.last_token
+
+    @internal.custom_property
+    def _currency_pivot(self) -> base.RawTokenModel:
+        return (self._number and self._number.last_token) or self._label.last_token
+
+    raw_number = internal.optional_node_property(_number, _number_pivot)
+    raw_currency = internal.optional_node_property(_currency, _currency_pivot)
 
     number = internal.optional_decimal_property(raw_number, NumberExpr)
     currency = internal.optional_string_property(raw_currency, Currency)
@@ -36,8 +44,8 @@ class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
             self,
             token_store: base.TokenStore,
             label: At,
-            number: internal.Maybe[NumberExpr],
-            currency: internal.Maybe[Currency],
+            number: Optional[NumberExpr],
+            currency: Optional[Currency],
     ):
         super().__init__(token_store)
         self._label = label
@@ -50,21 +58,21 @@ class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._currency.last_token
+        return (self._currency and self._currency.last_token) or (self._number and self._number.last_token) or self._label.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._label.clone(token_store, token_transformer),
-            self._number.clone(token_store, token_transformer),
-            self._currency.clone(token_store, token_transformer),
+            type(self)._label.clone(self._label, token_store, token_transformer),
+            type(self)._number.clone(self._number, token_store, token_transformer),
+            type(self)._currency.clone(self._currency, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._label = self._label.reattach(token_store, token_transformer)
-        self._number = self._number.reattach(token_store, token_transformer)
-        self._currency = self._currency.reattach(token_store, token_transformer)
+        self._label = type(self)._label.reattach(self._label, token_store, token_transformer)
+        self._number = type(self)._number.reattach(self._number, token_store, token_transformer)
+        self._currency = type(self)._currency.reattach(self._currency, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -81,18 +89,16 @@ class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
             currency: Optional[Currency],
     ) -> _Self:
         label = At.from_default()
-        maybe_number = cls._number.create_maybe(number)
-        maybe_currency = cls._currency.create_maybe(currency)
         tokens = [
             *label.detach(),
-            *maybe_number.detach(),
-            *maybe_currency.detach(),
+            *cls._number.detach_with_separators(number),
+            *cls._currency.detach_with_separators(currency),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        label.reattach(token_store)
-        maybe_number.reattach(token_store)
-        maybe_currency.reattach(token_store)
-        return cls(token_store, label, maybe_number, maybe_currency)
+        cls._label.reattach(label, token_store)
+        cls._number.reattach(number, token_store)
+        cls._currency.reattach(currency, token_store)
+        return cls(token_store, label, number, currency)
 
     @classmethod
     def from_value(
@@ -106,5 +112,5 @@ class UnitPrice(base.RawTreeModel, internal.SpacingAccessorsMixin):
         )
 
     def auto_claim_comments(self) -> None:
-        self._currency.auto_claim_comments()
-        self._number.auto_claim_comments()
+        type(self)._currency.auto_claim_comments(self._currency)
+        type(self)._number.auto_claim_comments(self._number)

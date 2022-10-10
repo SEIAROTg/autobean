@@ -1,7 +1,6 @@
 from .base_property import *
 from .fields import *
 from .interleaving_comments import *
-from .maybe import *
 from .placeholder import *
 from .properties import *
 from .registry import *

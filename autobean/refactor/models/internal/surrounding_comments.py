@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 from . import fields
 from .placeholder import Placeholder
-from .. import base, internal
+from .. import base
 from ..spacing import Newline
 from ..block_comment import BlockComment
 
@@ -18,20 +18,21 @@ def _take_ignored(
 
 
 def _claim_comment(
-    maybe_comment: internal.Maybe[BlockComment],
+    current: Optional[BlockComment],
+    token_store: base.TokenStore,
     start: base.RawTokenModel,
     *,
     backwards: bool,
     ignore_if_already_claimed: bool,
 ) -> Optional[BlockComment]:
-    if maybe_comment.inner is not None:
-        return maybe_comment.inner
+    if current is not None:
+        return current
 
     ignored: list[base.RawTokenModel] = []
     if backwards:
-        succ = maybe_comment.token_store.get_prev
+        succ = token_store.get_prev
     else:
-        succ = maybe_comment.token_store.get_next
+        succ = token_store.get_next
 
     first = succ(start)
     if first is None:
@@ -49,24 +50,14 @@ def _claim_comment(
             return None
         raise ValueError('Comment already claimed.')
     comment.claimed = True
-    maybe_comment.inner = comment
     if ignored:
         if backwards:
-            maybe_comment.token_store.splice(
+            token_store.splice(
                 [*reversed(ignored), comment, newline], comment, first)
         else:
-            maybe_comment.token_store.splice(
+            token_store.splice(
                 [newline, comment, *ignored], first, comment)
     return comment
-
-
-def _unclaim_comment(maybe_comment: internal.Maybe[BlockComment]) -> Optional[BlockComment]:
-    existing_comment = maybe_comment.inner
-    if existing_comment is None:
-        return None
-    existing_comment.claimed = False
-    maybe_comment.inner = None
-    return existing_comment
 
 
 class SurroundingCommentsMixin(base.RawTreeModel):
@@ -74,21 +65,33 @@ class SurroundingCommentsMixin(base.RawTreeModel):
     _trailing_comment = fields.optional_left_field[BlockComment](separators=(Newline.from_default(),))
 
     def claim_leading_comment(self, *, ignore_if_already_claimed: bool = False) -> Optional[BlockComment]:
-        return _claim_comment(
+        self._leading_comment = _claim_comment(
             self._leading_comment,
+            self.token_store,
             self.first_token,
             backwards=True,
             ignore_if_already_claimed=ignore_if_already_claimed)
+        return self._leading_comment
 
     def unclaim_leading_comment(self) -> Optional[BlockComment]:
-        return _unclaim_comment(self._leading_comment)
+        current = self._leading_comment
+        if current is not None:
+            current.claimed = False
+            self._leading_comment = None
+        return current
 
     def claim_trailing_comment(self, *, ignore_if_already_claimed: bool = False) -> Optional[BlockComment]:
-        return _claim_comment(
+        self._trailing_comment = _claim_comment(
             self._trailing_comment,
+            self.token_store,
             self.last_token,
             backwards=False,
             ignore_if_already_claimed=ignore_if_already_claimed)
+        return self._trailing_comment
 
     def unclaim_trailing_comment(self) -> Optional[BlockComment]:
-        return _unclaim_comment(self._trailing_comment)
+        current = self._trailing_comment
+        if current is not None:
+            current.claimed = False
+            self._trailing_comment = None
+        return current

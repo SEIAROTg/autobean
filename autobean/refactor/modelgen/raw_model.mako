@@ -62,6 +62,14 @@ class ${model.name}(${', '.join(base_classes)}):
     ${field.field_name} = ${field.field_def}
 % endif
 % endfor
+% for field in model.fields:
+% if field.pivot_property_name is not None:
+
+    @internal.custom_property
+    def ${field.pivot_property_name}(self) -> base.RawTokenModel:
+        return ${model.pivot_token(field, field.floating)}
+% endif
+% endfor
 
 % for field in model.public_fields:
     ${field.raw_property_name} = ${field.raw_property_def}
@@ -85,34 +93,34 @@ class ${model.name}(${', '.join(base_classes)}):
             self,
             token_store: base.TokenStore,
 % for field in model.fields:
-            ${field.name}: ${field.internal_type},
+            ${field.ctor_param_name}: ${field.internal_type},
 % endfor
     ):
         super().__init__(token_store)
 % for field in model.fields:
-        self.${field.field_name} = ${field.name}
+        self.${field.field_name} = ${field.ctor_param_name}
 % endfor
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._${model.fields[0].name}.first_token
+        return ${model.pivot_token(None, Floating.RIGHT)}
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._${model.fields[-1].name}.last_token
+        return ${model.pivot_token(None, Floating.LEFT)}
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
 % for field in model.fields:
-            self.${field.field_name}.clone(token_store, token_transformer),
+            type(self).${field.field_name}.clone(self.${field.field_name}, token_store, token_transformer),
 % endfor
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
 % for field in model.fields:
-        self.${field.field_name} = self.${field.field_name}.reattach(token_store, token_transformer)
+        self.${field.field_name} = type(self).${field.field_name}.reattach(self.${field.field_name}, token_store, token_transformer)
 % endfor
 
     def _eq(self, other: base.RawTreeModel) -> bool:
@@ -140,16 +148,13 @@ class ${model.name}(${', '.join(base_classes)}):
 % if not field.is_public and field.cardinality == FieldCardinality.REQUIRED:
         ${field.name} = ${field.inner_type}.from_default()
 % elif not field.is_public and field.cardinality == FieldCardinality.OPTIONAL:
-        maybe_${field.name} = cls.${field.field_name}.create_maybe(None)
-% elif field.cardinality == FieldCardinality.OPTIONAL:
-        maybe_${field.name} = cls.${field.field_name}.create_maybe(${field.name})
+        ${field.name} = None
 % elif field.cardinality == FieldCardinality.REPEATED:
         repeated_${field.name} = cls.${field.field_name}.create_repeated(${field.name})
 % endif
 % endfor
 <%
 skip_space = True
-args = []
 %>\
         tokens = [
 % for field in model.fields:
@@ -158,33 +163,19 @@ args = []
             ${sep},
 % endfor
 % endif
-<% skip_space = False %>\
+<% skip_space = field.floating == Floating.RIGHT %>\
 % if field.cardinality == FieldCardinality.REQUIRED:
             *${field.name}.detach(),
-<%
-args.append(field.name)
-%>\
-% elif field.cardinality == FieldCardinality.OPTIONAL:
-            *maybe_${field.name}.detach(),
-<%
-skip_space = field.floating == Floating.RIGHT
-args.append(f'maybe_{field.name}')
-%>\
-% elif field.cardinality == FieldCardinality.REPEATED:
-            *repeated_${field.name}.detach(),
-<%
-args.append(f'repeated_{field.name}')
-%>\
 % else:
-<% assert False %>\
+            *cls.${field.field_name}.detach_with_separators(${field.ctor_param_name}),
 % endif
 % endfor
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-% for arg in args:
-        ${arg}.reattach(token_store)
+% for field in model.fields:
+        cls.${field.field_name}.reattach(${field.ctor_param_name}, token_store)
 % endfor
-        return cls(token_store, ${', '.join(args)})
+        return cls(token_store, ${', '.join(field.ctor_param_name for field in model.fields)})
 % if model.generate_from_value:
 
     @classmethod
@@ -217,6 +208,6 @@ args.append(f'repeated_{field.name}')
 % if field.cardinality == FieldCardinality.REPEATED:
         self.${field.raw_property_name}.auto_claim_comments()
 % else:
-        self.${field.field_name}.auto_claim_comments()
+        type(self).${field.field_name}.auto_claim_comments(self.${field.field_name})
 % endif
 % endfor

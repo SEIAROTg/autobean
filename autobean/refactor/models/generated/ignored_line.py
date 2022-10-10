@@ -18,9 +18,17 @@ class IgnoredLine(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
     _ignored = internal.required_field[Ignored]()
     _eol = internal.required_field[Eol]()
 
-    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment)
+    @internal.custom_property
+    def _leading_comment_pivot(self) -> base.RawTokenModel:
+        return self._ignored.first_token
+
+    @internal.custom_property
+    def _trailing_comment_pivot(self) -> base.RawTokenModel:
+        return self._eol.last_token
+
+    raw_leading_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._leading_comment, _leading_comment_pivot)
     raw_ignored = internal.required_node_property(_ignored)
-    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment)
+    raw_trailing_comment = internal.optional_node_property(internal.SurroundingCommentsMixin._trailing_comment, _trailing_comment_pivot)
 
     leading_comment = internal.optional_string_property(raw_leading_comment, BlockComment)
     trailing_comment = internal.optional_string_property(raw_trailing_comment, BlockComment)
@@ -29,10 +37,10 @@ class IgnoredLine(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
     def __init__(
             self,
             token_store: base.TokenStore,
-            leading_comment: internal.Maybe[BlockComment],
+            leading_comment: Optional[BlockComment],
             ignored: Ignored,
             eol: Eol,
-            trailing_comment: internal.Maybe[BlockComment],
+            trailing_comment: Optional[BlockComment],
     ):
         super().__init__(token_store)
         self._leading_comment = leading_comment
@@ -42,27 +50,27 @@ class IgnoredLine(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
 
     @property
     def first_token(self) -> base.RawTokenModel:
-        return self._leading_comment.first_token
+        return (self._leading_comment and self._leading_comment.first_token) or self._ignored.first_token
 
     @property
     def last_token(self) -> base.RawTokenModel:
-        return self._trailing_comment.last_token
+        return (self._trailing_comment and self._trailing_comment.last_token) or self._eol.last_token
 
     def clone(self: _Self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> _Self:
         return type(self)(
             token_store,
-            self._leading_comment.clone(token_store, token_transformer),
-            self._ignored.clone(token_store, token_transformer),
-            self._eol.clone(token_store, token_transformer),
-            self._trailing_comment.clone(token_store, token_transformer),
+            type(self)._leading_comment.clone(self._leading_comment, token_store, token_transformer),
+            type(self)._ignored.clone(self._ignored, token_store, token_transformer),
+            type(self)._eol.clone(self._eol, token_store, token_transformer),
+            type(self)._trailing_comment.clone(self._trailing_comment, token_store, token_transformer),
         )
 
     def _reattach(self, token_store: base.TokenStore, token_transformer: base.TokenTransformer) -> None:
         self._token_store = token_store
-        self._leading_comment = self._leading_comment.reattach(token_store, token_transformer)
-        self._ignored = self._ignored.reattach(token_store, token_transformer)
-        self._eol = self._eol.reattach(token_store, token_transformer)
-        self._trailing_comment = self._trailing_comment.reattach(token_store, token_transformer)
+        self._leading_comment = type(self)._leading_comment.reattach(self._leading_comment, token_store, token_transformer)
+        self._ignored = type(self)._ignored.reattach(self._ignored, token_store, token_transformer)
+        self._eol = type(self)._eol.reattach(self._eol, token_store, token_transformer)
+        self._trailing_comment = type(self)._trailing_comment.reattach(self._trailing_comment, token_store, token_transformer)
 
     def _eq(self, other: base.RawTreeModel) -> bool:
         return (
@@ -81,25 +89,23 @@ class IgnoredLine(internal.SurroundingCommentsMixin, base.RawTreeModel, internal
             leading_comment: Optional[BlockComment] = None,
             trailing_comment: Optional[BlockComment] = None,
     ) -> _Self:
-        maybe_leading_comment = cls._leading_comment.create_maybe(leading_comment)
         eol = Eol.from_default()
-        maybe_trailing_comment = cls._trailing_comment.create_maybe(trailing_comment)
         tokens = [
-            *maybe_leading_comment.detach(),
+            *cls._leading_comment.detach_with_separators(leading_comment),
             *ignored.detach(),
             *eol.detach(),
-            *maybe_trailing_comment.detach(),
+            *cls._trailing_comment.detach_with_separators(trailing_comment),
         ]
         token_store = base.TokenStore.from_tokens(tokens)
-        maybe_leading_comment.reattach(token_store)
-        ignored.reattach(token_store)
-        eol.reattach(token_store)
-        maybe_trailing_comment.reattach(token_store)
-        return cls(token_store, maybe_leading_comment, ignored, eol, maybe_trailing_comment)
+        cls._leading_comment.reattach(leading_comment, token_store)
+        cls._ignored.reattach(ignored, token_store)
+        cls._eol.reattach(eol, token_store)
+        cls._trailing_comment.reattach(trailing_comment, token_store)
+        return cls(token_store, leading_comment, ignored, eol, trailing_comment)
 
     def auto_claim_comments(self) -> None:
         self.claim_leading_comment(ignore_if_already_claimed=True)
         self.claim_trailing_comment(ignore_if_already_claimed=True)
-        self._trailing_comment.auto_claim_comments()
-        self._ignored.auto_claim_comments()
-        self._leading_comment.auto_claim_comments()
+        type(self)._trailing_comment.auto_claim_comments(self._trailing_comment)
+        type(self)._ignored.auto_claim_comments(self._ignored)
+        type(self)._leading_comment.auto_claim_comments(self._leading_comment)
