@@ -19,7 +19,7 @@ class TestInlineComment(base.BaseTestModel):
             (models.Transaction, '2000-01-01 * \n Assets:Foo  ; bar\n    bar: "baz" ; baz', None),
         ],
     )
-    def test_parse_success(self, model_type: Type[models.RawTreeModel], text: str, inline_comment: models.InlineComment) -> None:
+    def test_parse_success(self, model_type: Type[models.RawTreeModel], text: str, inline_comment: Optional[str]) -> None:
         model = self.parser.parse(text, model_type)
         assert getattr(model, 'inline_comment') == inline_comment
         assert self.print_model(model) == text
