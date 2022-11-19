@@ -99,6 +99,9 @@ class _Extractor:
             'cards': 'https://api.truelayer.com/data/v1/cards',
         }
         r = requests.get(url[type_], headers=self._auth_headers)
+        if not r.ok:
+            logging.error('Error fetching accounts: %s', r.text)
+            r.raise_for_status()
         accounts = r.json().get('results', [])
         config_accounts = self._config.data.setdefault(type_, {})
         for account in accounts:
@@ -146,6 +149,9 @@ class _Extractor:
                 'to': format_iso_datetime(time.time()),
             }
         )
+        if not r.ok:
+            logging.error('Error fetching transactions: %s', r.text)
+            r.raise_for_status()
         txns = r.json().get('results', [])
         logging.info(
             f'Fetched {len(txns)} {log_transaction} for account '
@@ -164,6 +170,9 @@ class _Extractor:
         logging.info(
             f'Fetching balance for account {account["name"]} ({account_id}).')
         r = requests.get(url[type_], headers=self._auth_headers)
+        if not r.ok:
+            logging.error('Error fetching balance: %s', r.text)
+            r.raise_for_status()
         balances = r.json().get('results', [])
         logging.info(
             f'Fetched {len(balances)} balance entries for account '
