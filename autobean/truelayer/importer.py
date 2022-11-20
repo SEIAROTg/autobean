@@ -100,8 +100,8 @@ class _Extractor:
         }
         r = requests.get(url[type_], headers=self._auth_headers)
         if not r.ok:
-            logging.error('Error fetching accounts: %s', r.text)
-            r.raise_for_status()
+            logging.warning('Could not fetch %s: %s', type_, r.text)
+            return
         accounts = r.json().get('results', [])
         config_accounts = self._config.data.setdefault(type_, {})
         for account in accounts:
