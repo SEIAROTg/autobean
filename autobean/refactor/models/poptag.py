@@ -1,1 +1,0 @@
-from .generated.poptag import *
