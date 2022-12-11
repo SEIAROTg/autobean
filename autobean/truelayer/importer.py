@@ -52,7 +52,7 @@ class Importer(importer.ImporterProtocol):
     def identify(self, file: cache._FileMemo) -> bool:
         return file.name.endswith(CONFIG_SUFFIX)
 
-    def extract(self, file: cache._FileMemo, existing_entries: list[Directive] = None) -> list[Directive]:
+    def extract(self, file: cache._FileMemo, existing_entries: Optional[list[Directive]] = None) -> list[Directive]:
         config = _Config(self._client_id, self._client_secret, file)
         extractor = _Extractor(config)
         return extractor.extract(existing_entries)
