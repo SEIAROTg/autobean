@@ -416,7 +416,7 @@ class _OAuthManager:
                     code = received_code
                     self.send_response(200)
                     response = b'You can now close this tab.\n'
-                    self.send_header('Content-Type', 'str/plain')
+                    self.send_header('Content-Type', 'text/plain')
                     self.send_header('Content-Length', str(len(response)))
                     self.end_headers()
                     self.wfile.write(response)
