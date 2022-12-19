@@ -130,7 +130,7 @@ def assert_same_errors(actuals: list[error_lib.Error], expecteds: list[ExpectedE
     for actual, expected in zip(actuals, expecteds):
         assert os.path.basename(actual.source['filename']) == expected.filename
         assert actual.source['lineno'] == expected.lineno
-        assert expected.message in actual.message
+        assert expected.message in actual.message, f'Missing error message {expected.message!r}'
 
 
 def apply_plugin(

@@ -1,11 +1,11 @@
-from typing import Any, Optional
+from typing import Any
 import os.path
-from beancount.core.data import Directive, Transaction, Custom, Open
+from beancount.core.data import Directive, Transaction, Open
 from beancount import loader
 from autobean.utils import error_lib
-from autobean.share import utils
+from autobean.share import utils, directives
 from autobean.share.split_postings import split_postings
-from autobean.share.link_accounts import link_accounts, Link
+from autobean.share.link_accounts import link_accounts
 
 
 def process_ledger(entries: list[Directive], is_nobody: bool, options: dict[str, Any], logger: error_lib.ErrorLogger) -> list[Directive]:
@@ -29,12 +29,17 @@ def process_included_files(entries: list[Directive], is_nobody: bool, includes: 
     links = []
     entries_by_file = {}
     for entry in entries:
-        if isinstance(entry, Custom) and entry.type == 'autobean.share.include':
-            filename, file_entries = process_include_directive(entry, is_nobody, includes, logger)
-            if filename:
-                entries_by_file[filename] = file_entries
-        if isinstance(entry, Custom) and entry.type == 'autobean.share.link':
-            links.append(Link(entry))
+        if include := directives.Include.try_parse(entry):
+            if isinstance(include, error_lib.Error):
+                logger.log_error(include)
+                continue
+            entries_by_file[include.filename] = process_include_directive(
+                include, is_nobody, includes, logger)
+        elif link := directives.Link.try_parse(entry):
+            if isinstance(link, error_lib.Error):
+                logger.log_error(link)
+                continue
+            links.append(link)
         else:
             ret.append(entry)
     resolved_entries = link_accounts(entries_by_file, links, logger)
@@ -44,34 +49,23 @@ def process_included_files(entries: list[Directive], is_nobody: bool, includes: 
 
 
 def process_include_directive(
-        entry: Custom,
+        include: directives.Include,
         is_nobody: bool,
         includes: set[str],
-        logger: error_lib.ErrorLogger) -> tuple[Optional[str], list[Directive]]:
-    if len(entry.values) != 1:
-        logger.log_error(error_lib.InvalidDirectiveError(
-            entry.meta, 'autobean.share.include expects 1 argument but {} are given'.format(len(entry.values)), entry
-        ))
-        return None, []
-    if entry.values[0].dtype is not str:
-        logger.log_error(error_lib.InvalidDirectiveError(
-            entry.meta, 'autobean.share.include expects a path as argument', entry
-        ))
-        return None, []
-    filename = entry.values[0].value
-    path = os.path.join(os.path.dirname(entry.meta['filename']), filename)
+        logger: error_lib.ErrorLogger) -> list[Directive]:
+    path = os.path.join(os.path.dirname(include.custom.meta['filename']), include.filename)
     entries, errors, options = loader.load_file(path)
-    logger.log_loading_errors(errors, entry)
+    logger.log_loading_errors(errors, include.custom)
     entries = process_ledger(entries, is_nobody, options, logger)
     includes.update(set(options['include']))
-    return filename, entries
+    return entries
 
 
 def filter_out_share_directives(entries: list[Directive]) -> list[Directive]:
     return [
         entry
         for entry in entries
-        if not utils.is_autobean_share_directive(entry)
+        if not directives.is_autobean_share_directive(entry)
     ]
 
 def filter_out_share_meta(entries: list[Directive]) -> list[Directive]:

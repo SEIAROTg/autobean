@@ -1,11 +1,20 @@
+import dataclasses
 import decimal
 from typing import Any, Iterator
 from beancount.parser import options
 from beancount.core import account_types
-from beancount.core.data import Amount, Custom, Directive, Posting, Transaction
+from beancount.core.data import Directive, Posting, Transaction
 from beancount.core.amount import mul
 from beancount.core import realization
-from autobean.utils import error_lib
+from autobean.utils import error_lib, typed_custom
+
+
+@dataclasses.dataclass(frozen=True)
+class StockSplitCustom(typed_custom.TypedCustom):
+    TYPE = 'autobean.stock_split'
+    ERROR_MESSAGE = f'{TYPE} expects exactly one multiplier and one commodity'
+    multiplier: decimal.Decimal
+    commodity: typed_custom.Currency
 
 
 class Realizer:
@@ -48,36 +57,27 @@ def plugin(entries: list[Directive], options_map: dict[str, Any]) -> tuple[list[
     realizer = Realizer(options_map)
     
     for entry in entries:
-        if not isinstance(entry, Custom) or entry.type != 'autobean.stock_split':
-            if isinstance(entry, Transaction):
-                realizer.realize_transaction(entry)
+        if split := StockSplitCustom.try_parse(entry):
+            if isinstance(split, error_lib.Error):
+                logger.log_error(split)
+                continue
+            postings = realizer.get_split_postings(split.commodity.name, split.multiplier)
+            txn = Transaction(
+                date=entry.date,
+                flag='*',
+                payee=None,
+                narration=f'{split.commodity.name} split {split.multiplier}:1',
+                tags=set(),
+                links=set(),
+                postings=list(postings),
+                meta=entry.meta,
+            )
+            realizer.realize_transaction(txn)
+            results.append(txn)
+        elif isinstance(entry, Transaction):
+            realizer.realize_transaction(entry)
             results.append(entry)
-            continue
-        if (
-                entry.values is None
-                or len(entry.values) != 1
-                or entry.values[0].dtype is not Amount
-                or entry.values[0].value.number is None
-        ):
-            logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta,
-                'autobean.stock-split expects exactly one number and one commodity.',
-                entry))
-            continue
-
-        multiplier, commodity = entry.values[0].value
-        postings = realizer.get_split_postings(commodity, multiplier)
-        txn = Transaction(
-            date=entry.date,
-            flag='*',
-            payee=None,
-            narration=f'{commodity} split {multiplier}:1',
-            tags=set(),
-            links=set(),
-            postings=list(postings),
-            meta=entry.meta,
-        )
-        realizer.realize_transaction(txn)
-        results.append(txn)
+        else:
+            results.append(entry)
 
     return results, logger.errors

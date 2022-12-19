@@ -1,4 +1,3 @@
-from tokenize import maybe
 from typing import Any, Optional
 from collections import defaultdict
 from decimal import Decimal
@@ -7,7 +6,7 @@ from beancount.core import realization, inventory
 import beancount.core.account
 from autobean.utils import error_lib
 from autobean.share.policy import Policy
-from autobean.share import utils
+from autobean.share import directives, utils
 
 
 TOLERANCE = Decimal(1e-6)
@@ -52,40 +51,34 @@ class SplitPostingsPlugin:
     def process(self, entries: list[Directive]) -> list[Directive]:
         ret = []
         for entry in entries:
-            if utils.is_share_policy_directive(entry):
-                self.process_share_policy_definition(entry)
-                entry = None
-            elif utils.is_proportionate_assertion_directive(entry):
-                self.process_proportionate(entry)
+            if policy := directives.SharePolicy.try_parse(entry):
+                if isinstance(policy, error_lib.Error):
+                    self.logger.log_error(policy)
+                else:
+                    self.process_share_policy_definition(policy)
+                continue
+            elif assertion := directives.ProportionateAssertion.try_parse(entry):
+                if isinstance(assertion, error_lib.Error):
+                    self.logger.log_error(assertion)
+                    continue
+                self.process_proportionate(assertion)
             elif isinstance(entry, Open):
                 entry = self.process_open(entry)
             elif isinstance(entry, Close):
                 self.process_close(entry)
             elif isinstance(entry, Transaction):
                 entry = self.process_transaction(entry)
-            if entry:
-                ret.append(entry)
+            ret.append(entry)
         return ret
 
-    def process_share_policy_definition(self, entry: Custom) -> None:
-        if len(entry.values) != 1:
-            self.logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'Share policy definition expects 1 account or string argument but {} are given'.format(len(entry.values)), entry
-            ))
-        elif entry.values[0].dtype == beancount.core.account.TYPE:
-            # account policy
-            account: str = entry.values[0].value
-            recursive: bool = entry.meta.get('share_recursive', True)
-            if self.get_referenced_accounts(account, recursive, entry):
-                policy = self.extract_policy(entry.meta, entry)
-                self.account_policies[(account, recursive)].replace(policy)
-        elif entry.values[0].dtype is str:
+    def process_share_policy_definition(self, policy_def: directives.SharePolicy) -> None:
+        entry = policy_def.custom
+        if isinstance(policy_def.subject, str):
             # named policy
-            policy_name: str = entry.values[0].value
+            policy_name = policy_def.subject
             if not policy_name:
                 self.logger.log_error(InvalidSharePolicyError(
-                    entry.meta, 'Policy name cannot be empty', entry
-                ))
+                    entry.meta, 'Policy name cannot be empty', entry))
                 return
             policy = self.extract_policy(entry.meta, entry)
             # Allow changes on policies to propagate
@@ -94,9 +87,12 @@ class SplitPostingsPlugin:
             else:
                 self.named_policies[policy_name].replace(policy)
         else:
-            self.logger.log_error(InvalidSharePolicyError(
-                entry.meta, 'Share policy must be assigned a name or applied on an account', entry
-            ))
+            # account policy
+            account = policy_def.subject.name
+            recursive: bool = entry.meta.get('share_recursive', True)
+            if self.get_referenced_accounts(account, recursive, entry):
+                policy = self.extract_policy(entry.meta, entry)
+                self.account_policies[(account, recursive)].replace(policy)
 
     def process_open(self, entry: Open) -> Open:
         self.open_accounts.add(entry.account)
@@ -157,18 +153,9 @@ class SplitPostingsPlugin:
         self.realize_transaction(entry)
         return entry
 
-    def process_proportionate(self, entry: Custom) -> None:
-        if len(entry.values) != 1:
-            self.logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'Proportionate assertion expects 1 account argument but {} are given'.format(len(entry.values)), entry
-            ))
-            return
-        if entry.values[0].dtype != beancount.core.account.TYPE:
-            self.logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'Proportionate assertion must be applied on an account', entry
-            ))
-            return
-        account = entry.values[0].value
+    def process_proportionate(self, assertion: directives.ProportionateAssertion) -> None:
+        account = assertion.account.name
+        entry = assertion.custom
         recursive = entry.meta.get('share_recursive', True)
         accounts = self.get_referenced_accounts(account, recursive, entry)
         for account in accounts:

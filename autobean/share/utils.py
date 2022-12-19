@@ -1,6 +1,6 @@
 from typing import Iterable, TypeVar
 from decimal import Decimal
-from beancount.core.data import Posting, Directive, Custom
+from beancount.core.data import Posting, Directive
 from beancount.core.amount import Amount, mul as amount_mul, div as amount_div
 from beancount.core.position import CostSpec
 from beancount.core.inventory import Inventory
@@ -46,26 +46,6 @@ def get_residual_postings(residual: Inventory, account_rounding: str) -> list[Po
         )
         for position in residual
     ]
-
-
-def is_share_policy_directive(entry: Directive) -> bool:
-    return isinstance(entry, Custom) and entry.type == 'autobean.share.policy'
-
-
-def is_proportionate_assertion_directive(entry: Directive) -> bool:
-    return isinstance(entry, Custom) and entry.type == 'autobean.share.proportionate'
-
-
-def is_include_directive(entry: Directive) -> bool:
-    return isinstance(entry, Custom) and entry.type == 'autobean.share.include'
-
-
-def is_autobean_share_directive(entry: Directive) -> bool:
-    return isinstance(entry, Custom) and (entry.type.startswith('autobean.share.') or entry.type == 'autobean.share')
-
-
-def is_owner_directive(entry: Directive) -> bool:
-    return isinstance(entry, Custom) and entry.type == 'autobean.share.owner'
 
 
 def is_subaccount(account: str) -> bool:

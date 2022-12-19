@@ -1,6 +1,6 @@
-source.bean:4:Share policy must be assigned a name or applied on an account
-source.bean:7:Share policy definition expects 1 account or string argument but 2 are given
-source.bean:10:Share policy definition expects 1 account or string argument but 2 are given
+source.bean:4:autobean.share.policy expects exactly one string or account as argument
+source.bean:7:autobean.share.policy expects exactly one string or account as argument
+source.bean:10:autobean.share.policy expects exactly one string or account as argument
 source.bean:13:Policy name cannot be empty
 source.bean:16:Expect a name to share with
 source.bean:20:The name to share with must start with an uppercase letter
@@ -16,10 +16,10 @@ source.bean:53:Account "Assets:NonExistent" is not found or inactive, as well as
 source.bean:59:No applicable share policy to account "Assets:Foo"
 source.bean:60:No applicable share policy to account "Assets:Bar"
 source.bean:62:No applicable share policy to proportionate assertion on account "Assets:Bar"
-source.bean:65:Proportionate assertion must be applied on an account
-source.bean:66:Proportionate assertion expects 1 account argument but 2 are given
+source.bean:65:autobean.share.proportionate expects exactly one account as argument
+source.bean:66:autobean.share.proportionate expects exactly one account as argument
 source.bean:69:Account "Assets:NonExistent" is not found or inactive, as well as all its sub-accounts
 source.bean:72:Account "Assets:Existent:Foo" is not found or inactive, as well as all its sub-accounts
-source.bean:76:autobean.share.include expects a path as argument
-source.bean:77:autobean.share.include expects 1 argument but 2 are given
+source.bean:76:autobean.share.include expects exactly one path as argument
+source.bean:77:autobean.share.include expects exactly one path as argument
 source.bean:78:autobean/share/tests/errors/foo.bean" does not exist

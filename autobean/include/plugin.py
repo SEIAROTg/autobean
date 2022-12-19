@@ -1,14 +1,22 @@
+import dataclasses
 import os.path
 from typing import Any
-from beancount.core.data import Directive, Custom
+from beancount.core.data import Directive
 from beancount import loader
-from autobean.utils import error_lib
+from autobean.utils import error_lib, typed_custom
 from autobean.utils.plugin_base import PluginBase
 
 
 def plugin(entries: list[Directive], options: dict[str, Any]) -> tuple[list[Directive], list[error_lib.Error]]:
     plugin = IncludePlugin()
     return plugin.process(entries, options)
+
+
+@dataclasses.dataclass(frozen=True)
+class IncludeCustom(typed_custom.TypedCustom):
+    TYPE = 'autobean.include'
+    ERROR_MESSAGE = f'{TYPE} expects exactly one path as argument'
+    path: str
 
 
 class IncludePlugin(PluginBase):
@@ -22,28 +30,20 @@ class IncludePlugin(PluginBase):
         self._includes = set(options['include'])
         ret = []
         for entry in entries:
-            if isinstance(entry, Custom) and entry.type == 'autobean.include':
-                ret.extend(self.process_include_directive(entry))
+            if include := IncludeCustom.try_parse(entry):
+                if isinstance(include, error_lib.Error):
+                    self._error_logger.log_error(include)
+                    continue
+                ret.extend(self.process_include_directive(include))
             else:
                 ret.append(entry)
         # Allow tools to refresh data when included files are updated.
         options['include'] = list(self._includes)
         return ret, self._error_logger.errors
 
-    def process_include_directive(self, entry: Custom) -> list[Directive]:
-        if len(entry.values) != 1:
-            self._error_logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'autobean.include expects 1 argument but {} are given'.format(len(entry.values)), entry
-            ))
-            return []
-        if entry.values[0].dtype is not str:
-            self._error_logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'autobean.include expects a path as argument', entry
-            ))
-            return []
-        path = entry.values[0].value
-        path = os.path.join(os.path.dirname(entry.meta['filename']), path)
+    def process_include_directive(self, include: IncludeCustom) -> list[Directive]:
+        path = os.path.join(os.path.dirname(include.custom.meta['filename']), include.path)
         entries, errors, _ = loader.load_file(path)
-        self._error_logger.log_loading_errors(errors, entry)
+        self._error_logger.log_loading_errors(errors, include.custom)
         self._includes.add(path)
         return entries

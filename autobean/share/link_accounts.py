@@ -1,64 +1,20 @@
-from dataclasses import dataclass
 from collections import defaultdict, deque, Counter
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Iterable, Optional
 from beancount.core import amount
-from beancount.core.data import Directive, Transaction, Custom, filter_txns, iter_entry_dates
-from beancount.core.account import TYPE as ACCOUNT_TYPE
+from beancount.core.data import Directive, Transaction, filter_txns, iter_entry_dates
 from autobean.utils import error_lib
-from autobean.share import utils
+from autobean.share import utils, directives
 
 
 class UnresolvedLinkError(error_lib.Error):
     pass
 
 
-class Link:
-    def __init__(self, directive: Custom) -> None:
-        self._directive = directive
-        (
-            self._filename,
-            self._account,
-            self._complement_filename,
-            self._complement_account,
-        ) = directive.values
-
-    @property
-    def directive(self) -> Custom:
-        return self._directive
-
-    @property
-    def filename(self) -> str:
-        return self._filename
-
-    @property
-    def account(self) -> str:
-        return self._account
-    
-    @property
-    def complement_filename(self) -> str:
-        return self._complement_filename
-    
-    @property
-    def complement_account(self) -> str:
-        return self._complement_account
-
-    def __repr__(self) -> str:
-        return str(tuple(self.directive.values))
-    
-    def valid(self) -> bool:
-        if len(self.directive.values) != 4:
-            return False
-        if (tuple(v.dtype for v in self.directive.values) !=
-                (str, ACCOUNT_TYPE, str, ACCOUNT_TYPE)):
-            return False
-        return True
-
-
 def link_accounts(
         entries_by_file: dict[str, list[Directive]],
-        links: Iterable[Link],
+        links: Iterable[directives.Link],
         logger: error_lib.ErrorLogger) -> list[Directive]:
 
     _check_links(entries_by_file, links, logger)
@@ -68,18 +24,10 @@ def link_accounts(
 
 def _check_links(
         entries_by_file: dict[str, list[Directive]],
-        links: Iterable[Link],
+        links: Iterable[directives.Link],
         logger: error_lib.ErrorLogger) -> None:
     all_endpoints = set()
     for link in links:
-        if not link.valid():
-            logger.log_error(error_lib.InvalidDirectiveError(
-                link.directive.meta,
-                'autobean.share.link expects {filename} {account} '
-                '{complement filename} {complement account} as arguments',
-                link.directive,
-            ))
-            continue
         endpoints = [
             (link.filename, link.account),
             (link.complement_filename, link.complement_account),
@@ -87,30 +35,28 @@ def _check_links(
         for ep in endpoints:
             if ep in all_endpoints:
                 logger.log_error(error_lib.InvalidDirectiveError(
-                    link.directive.meta,
+                    link.custom.meta,
                     f'Account {ep[1]} in {ep[0]} has multiple links',
-                    link.directive,
+                    link.custom,
                 ))
             if ep[0] not in entries_by_file:
                 logger.log_error(error_lib.InvalidDirectiveError(
-                    link.directive.meta,
+                    link.custom.meta,
                     f'Ledger {ep[0]} was not included with '
                     f'"autobean.share.include" from this ledger',
-                    link.directive,
+                    link.custom,
                 ))
             all_endpoints.add(ep)
 
 
 def _build_graph(
         entries_by_file: dict[str, list[Directive]],
-        links: Iterable[Link],
+        links: Iterable[directives.Link],
         logger: error_lib.ErrorLogger) -> dict[int, list[tuple[Transaction, str]]]:
 
     day = timedelta(days=1)
     edges = defaultdict(list) # id(txn) -> [(complement txn, account)]
     for link in links:
-        if not link.valid():
-            continue
         entries = entries_by_file.get(link.filename, [])
         complement_entries = entries_by_file.get(link.complement_filename, [])
 
