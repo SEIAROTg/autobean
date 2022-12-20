@@ -1,11 +1,9 @@
 import re
-from typing import List
 from beancount.core.data import Directive, Transaction
 from autobean.utils.error_lib import ErrorLogger
 
 
 RESIDUAL_ACCOUNT = 'Assets:Receivable'
-ERROR_ACCOUNT = 'Equity:Error'
 
 
 def map_residual_accounts(entries: list[Directive], logger: ErrorLogger) -> list[Directive]:
@@ -18,7 +16,6 @@ def map_residual_accounts(entries: list[Directive], logger: ErrorLogger) -> list
         for posting in entry.postings:
             account = posting.account
             account = re.sub(r'^\[Residuals\](?=:|$)', RESIDUAL_ACCOUNT.replace('\\', '\\\\'), account)
-            account = re.sub(r'^\[Error\](?=:|$)', ERROR_ACCOUNT.replace('\\', '\\\\'), account)
             posting = posting._replace(
                 account=account
             )

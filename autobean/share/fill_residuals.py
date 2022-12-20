@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any
 from collections import defaultdict
 from beancount.core.data import Directive, Transaction
 from beancount.core import interpolate
@@ -11,15 +11,12 @@ def fill_residuals(entries: list[Directive], options: dict[str, Any]) -> list[Di
         if not isinstance(entry, Transaction):
             ret.append(entry)
             continue
-        # Create residual postings for each party and add up all postings into real accounts
-        # If the original transaction was not balanced we book residuals to error account
-        # so we don't accidentially make it looks balanced for a subaccount in some cases.
         original_residual = interpolate.compute_residual(entry.postings)
         tolerances = interpolate.infer_tolerances(entry.postings, options)
-        if original_residual.is_small(tolerances):
-            subaccount_tmpl = '[Residuals]:[{}]'
-        else:
-            subaccount_tmpl = '[Error]:[{}]'
+        if not original_residual.is_small(tolerances):
+            # The original transaction was not balanced, skip as we don't know what to do.
+            ret.append(entry)
+            continue
         postings = entry.postings[:]
         postings_by_party = defaultdict(list)
         for posting in entry.postings:
@@ -28,7 +25,7 @@ def fill_residuals(entries: list[Directive], options: dict[str, Any]) -> list[Di
         for party, party_postings in postings_by_party.items():
             residual = interpolate.compute_residual(party_postings)
             # Use square brackets in account name to avoid collision with actual accounts
-            subaccount = subaccount_tmpl.format(party)
+            subaccount = f'[Residuals]:[{party}]'
             postings += utils.get_residual_postings(residual, subaccount)
         ret.append(entry._replace(postings=postings))
     return ret
