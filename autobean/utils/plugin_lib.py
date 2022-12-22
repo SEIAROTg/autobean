@@ -4,7 +4,7 @@ import decimal
 import inspect
 import re
 import shlex
-from typing import Any, Callable, ClassVar, Iterable, Iterator, NewType, Optional, Type, TypeVar
+from typing import Any, Callable, ClassVar, Iterable, Iterator, NewType, Optional, Type, TypeVar, Union, get_args, get_origin
 from beancount.core.data import Custom, Directive
 from beancount.core.amount import Amount
 from beancount.core import account as beancount_account
@@ -125,16 +125,20 @@ def _get_arg(annotation: Any, queue: list[grammar.ValueType]) -> Optional[Any]:
     if not queue:
         return None
     value = queue.pop()
-    if annotation is Account:
-        if value.dtype == beancount_account.TYPE:
-            return Account(value.value)
-    elif annotation is decimal.Decimal and value.dtype is Amount:
-        if value.value.number is not None:
-            queue.append(grammar.ValueType(Currency(value.value.currency), Currency))
-            return value.value.number
+    if get_origin(annotation) is Union:
+        options = get_args(annotation)
     else:
-        if value.dtype is annotation:
+        options = (annotation,)
+    for option in options:
+        if value.dtype is option:
             return value.value
+        elif option is Account:
+            if value.dtype == beancount_account.TYPE:
+                return Account(value.value)
+        elif option is decimal.Decimal and value.dtype is Amount:
+            if value.value.number is not None:
+                queue.append(grammar.ValueType(Currency(value.value.currency), Currency))
+                return value.value.number
     return None
 
 
