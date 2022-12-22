@@ -8,7 +8,7 @@ from beancount.core.data import Directive, Transaction
 from beancount.ops import balance
 from beancount.parser import booking, parser
 import pytest
-from .plugin import plugin
+from .plugin import Plugin
 
 
 _FOO_TEXT = textwrap.dedent('''
@@ -60,7 +60,7 @@ _FOO_TEXT = textwrap.dedent('''
 def load(text: str) -> tuple[list[Directive], list[Any]]:
     entries, parsing_errors, options_map = parser.parse_string(text)
     entries, booking_errors = booking.book(entries, options_map)
-    entries, plugin_errors = plugin(entries, options_map)
+    entries, plugin_errors = Plugin.plugin(entries, options_map)
     entries, balance_errors = balance.check(entries, options_map)
     return entries, [
         *parsing_errors,

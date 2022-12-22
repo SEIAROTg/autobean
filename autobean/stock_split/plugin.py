@@ -1,20 +1,11 @@
-import dataclasses
 import decimal
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator, Optional
 from beancount.parser import options
 from beancount.core import account_types
-from beancount.core.data import Directive, Posting, Transaction
+from beancount.core.data import Custom, Directive, Posting, Transaction
 from beancount.core.amount import mul
 from beancount.core import realization
-from autobean.utils import error_lib, typed_custom
-
-
-@dataclasses.dataclass(frozen=True)
-class StockSplitCustom(typed_custom.TypedCustom):
-    TYPE = 'autobean.stock_split'
-    ERROR_MESSAGE = f'{TYPE} expects exactly one multiplier and one commodity'
-    multiplier: decimal.Decimal
-    commodity: typed_custom.Currency
+from autobean.utils import plugin_lib
 
 
 class Realizer:
@@ -51,33 +42,35 @@ class Realizer:
                     meta=None)
 
 
-def plugin(entries: list[Directive], options_map: dict[str, Any]) -> tuple[list[Directive], list]:
-    results = []
-    logger = error_lib.ErrorLogger()
-    realizer = Realizer(options_map)
-    
-    for entry in entries:
-        if split := StockSplitCustom.try_parse(entry):
-            if isinstance(split, error_lib.Error):
-                logger.log_error(split)
-                continue
-            postings = realizer.get_split_postings(split.commodity.name, split.multiplier)
-            txn = Transaction(
-                date=entry.date,
-                flag='*',
-                payee=None,
-                narration=f'{split.commodity.name} split {split.multiplier}:1',
-                tags=set(),
-                links=set(),
-                postings=list(postings),
-                meta=entry.meta,
-            )
-            realizer.realize_transaction(txn)
-            results.append(txn)
-        elif isinstance(entry, Transaction):
-            realizer.realize_transaction(entry)
-            results.append(entry)
-        else:
-            results.append(entry)
+@plugin_lib.plugin('autobean.stock_split')
+class Plugin(plugin_lib.BasePlugin):
 
-    return results, logger.errors
+    def process(self, entries: list[Directive], options: dict[str, Any], arg: Optional[str]) -> Iterable[Directive]:
+        self._realizer = Realizer(options)
+        return super().process(entries, options, arg)
+
+    @plugin_lib.handle_custom('autobean.stock_split', 'exactly one multiplier and one commodity')
+    def handle_stock_split(
+            self,
+            entry: Custom,
+            multiplier: decimal.Decimal,
+            commodity: plugin_lib.Currency,
+    ) -> Iterator[Transaction]:
+        postings = self._realizer.get_split_postings(commodity, multiplier)
+        txn = Transaction(
+            date=entry.date,
+            flag='*',
+            payee=None,
+            narration=f'{commodity} split {multiplier}:1',
+            tags=set(),
+            links=set(),
+            postings=list(postings),
+            meta=entry.meta,
+        )
+        self._realizer.realize_transaction(txn)
+        yield txn
+
+    @plugin_lib.handle(Transaction)
+    def handle_txn(self, txn: Transaction) -> Iterator[Transaction]:
+        self._realizer.realize_transaction(txn)
+        yield txn

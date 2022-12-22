@@ -1,2 +1,2 @@
-source.bean:1:autobean.include expects exactly one path as argument
-source.bean:2:autobean.include expects exactly one path as argument
+source.bean:1:autobean.include expects exactly one path
+source.bean:2:autobean.include expects exactly one path

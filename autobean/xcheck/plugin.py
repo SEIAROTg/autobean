@@ -1,19 +1,11 @@
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 from collections import Counter
 import os.path
 import datetime
 from beancount.core.data import Directive, Custom, Transaction, Balance, Posting
 from beancount import loader
 from beancount.ops.validation import ValidationError
-import beancount.core.account
-import beancount.ops.balance
-from autobean.utils import error_lib
-from autobean.utils.plugin_base import PluginBase
-
-
-def plugin(entries: list[Directive], options: dict[str, Any]) -> tuple[list[Directive], list]:
-    plugin = CrossCheckPlugin()
-    return plugin.process(entries, options)
+from autobean.utils import error_lib, plugin_lib
 
 
 class CrossCheckError(error_lib.Error):
@@ -39,48 +31,29 @@ class PostingToCompare:
         return hash((self.transaction.date, self.posting.account, self.posting.units))
 
 
-class CrossCheckPlugin(PluginBase):
+@plugin_lib.plugin('autobean.xcheck')
+class CrossCheckPlugin(plugin_lib.BasePlugin):
     _includes: set[str]
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._includes = set()
-
-    def process(self, entries: list[Directive], options: dict) -> tuple[list[Directive], list]:
+    def process(self, entries: list[Directive], options: dict[str, Any], arg: Optional[str]) -> Iterable[Directive]:
+        self._entries = entries
         self._includes = set(options['include'])
-        generated_entries = []
-        for entry in entries:
-            if isinstance(entry, Custom) and entry.type == 'autobean.xcheck':
-                generated_entries += self.process_xcheck_directive(entry, entries)
-        # Allow tools to refresh data when included files are updated.
+        yield from super().process(entries, options, arg)
         options['include'] = list(self._includes)
-        return entries + generated_entries, self._error_logger.errors
 
-    def process_xcheck_directive(self, entry: Custom, entries: list[Directive]) -> list[Balance]:
-        if len(entry.values) < 2:
-            self._error_logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'autobean.xcheck expects at least 2 arguments but 1 is given', entry
-            ))
-            return []
-        if entry.values[0].dtype is not str \
-                or entry.values[1].dtype is not datetime.date \
-                or any(arg.dtype != beancount.core.account.TYPE for arg in entry.values[2:]):
-            self._error_logger.log_error(error_lib.InvalidDirectiveError(
-                entry.meta, 'autobean.xcheck expects a path, a start date and zero or more accounts as arguments', entry
-            ))
-            return []
-        path = entry.values[0].value
+    @plugin_lib.handle_custom('autobean.xcheck', 'a path, a start date and zero or more accounts')
+    def handle_xcheck(self, entry: Custom, path: str, start: datetime.date, *accounts_tuple: plugin_lib.Account) -> Iterable[Directive]:
+        yield entry
         path = os.path.join(os.path.dirname(entry.meta['filename']), path)
-        start = entry.values[1].value
+        accounts = set[str](accounts_tuple)
         end = entry.date
-        accounts = {arg.value for arg in entry.values[2:]}
         stmt_entries, stmt_errors, _ = loader.load_file(path)
         stmt_errors = [error for error in stmt_errors if not isinstance(error, ValidationError)]
         if stmt_errors:
             self._error_logger.log_loading_errors(stmt_errors, entry)
-            return []
+            return
 
-        entries = _filter_by_time_period(entries, start, end)
+        entries = _filter_by_time_period(self._entries, start, end)
         stmt_entries = _filter_by_time_period(stmt_entries, start, end)
         postings = list(_extract_related_postings(entries, accounts))
         stmt_postings = list(_extract_related_postings(stmt_entries, accounts))
@@ -95,7 +68,9 @@ class CrossCheckPlugin(PluginBase):
                 posting.posting.meta, 'Missing posting', posting.transaction
             ))
         self._includes.add(path)
-        return [entry for entry in stmt_entries if isinstance(entry, Balance)]
+        for entry in stmt_entries:
+            if isinstance(entry, Balance):
+                yield entry
 
 
 def _extract_related_postings(entries: list[Directive], accounts: set[str]) -> Iterable[PostingToCompare]:

@@ -3,7 +3,7 @@ from autobean.xcheck import plugin
 import autobean.utils.plugin_test_utils as utils
 
 
-@utils.generate_tests(os.path.dirname(__file__), plugin)
+@utils.generate_tests(os.path.dirname(__file__), plugin.CrossCheckPlugin.plugin)
 def test() -> None:
     pass
 
@@ -19,7 +19,7 @@ def test_include_option() -> None:
     assert 'include' in ledger.options
     assert statement_path not in ledger.options['include']
 
-    _, errors = utils.apply_plugin(plugin, ledger.entries, ledger.options, None)
+    _, errors = utils.apply_plugin(plugin.CrossCheckPlugin.plugin, ledger.entries, ledger.options, None)
 
     assert not errors, errors
     assert statement_path in ledger.options['include'], 'statement files not added into options["include"]'

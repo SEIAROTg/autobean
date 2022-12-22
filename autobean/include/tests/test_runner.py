@@ -3,7 +3,7 @@ from autobean.include import plugin
 import autobean.utils.plugin_test_utils as utils
 
 
-@utils.generate_tests(os.path.dirname(__file__), plugin)
+@utils.generate_tests(os.path.dirname(__file__), plugin.IncludePlugin.plugin)
 def test() -> None:
     pass
 
@@ -19,7 +19,8 @@ def test_include_option() -> None:
     assert 'include' in ledger.options
     assert external_path not in ledger.options['include']
 
-    _, errors = utils.apply_plugin(plugin, ledger.entries, ledger.options, None)
+    _, errors = utils.apply_plugin(
+        plugin.IncludePlugin.plugin, ledger.entries, ledger.options, None)
 
     assert not errors, errors
     assert external_path in ledger.options['include'], 'included files not added into options["include"]'

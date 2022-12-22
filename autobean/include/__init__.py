@@ -1,3 +1,3 @@
-from autobean.include.plugin import plugin
+from autobean.include.plugin import IncludePlugin
 
-__plugins__ = [plugin]
+__plugins__ = [IncludePlugin.plugin]

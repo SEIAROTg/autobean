@@ -1,5 +1,5 @@
-source.bean:1:autobean.xcheck expects at least 2 arguments but 1 is given
-source.bean:2:autobean.xcheck expects a path, a start date and zero or more accounts as arguments
-source.bean:3:autobean.xcheck expects a path, a start date and zero or more accounts as arguments
-source.bean:4:autobean.xcheck expects a path, a start date and zero or more accounts as arguments
+source.bean:1:autobean.xcheck expects a path, a start date and zero or more accounts
+source.bean:2:autobean.xcheck expects a path, a start date and zero or more accounts
+source.bean:3:autobean.xcheck expects a path, a start date and zero or more accounts
+source.bean:4:autobean.xcheck expects a path, a start date and zero or more accounts
 source.bean:5:foo.bean" does not exist

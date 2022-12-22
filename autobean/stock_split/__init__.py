@@ -1,3 +1,3 @@
-from .plugin import plugin
+from .plugin import Plugin
 
-__plugins__ = [plugin]
+__plugins__ = [Plugin.plugin]

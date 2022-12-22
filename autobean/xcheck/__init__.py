@@ -1,3 +1,3 @@
-from autobean.xcheck.plugin import plugin
+from autobean.xcheck.plugin import CrossCheckPlugin
 
-__plugins__ = [plugin]
+__plugins__ = [CrossCheckPlugin.plugin]
