@@ -15,9 +15,10 @@ Account = NewType('Account', str)
 Currency = NewType('Currency', str)
 _HANDLER_METADATA_ATTR = '_autobean_handler_metadata'
 _T = TypeVar('_T', bound=Directive)
+_R = TypeVar('_R', bound=Iterable[Directive])
 _Plugin = TypeVar('_Plugin', bound='BasePlugin')
-_RegularHandlerImpl = Callable[[_Plugin, _T], Iterable[Directive]]
-_CustomHandlerImpl = Callable[..., Iterable[Directive]]  # (self, custom, *args)
+_RegularHandlerImpl = Callable[[_Plugin, _T], _R]
+_CustomHandlerImpl = Callable[..., _R]  # (self, custom, *args)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -163,8 +164,8 @@ def plugin(
 
 def handle(
         directive_type: Type[_T],
-) -> Callable[[_RegularHandlerImpl[_Plugin, _T]], _RegularHandlerImpl[_Plugin, _T]]:
-    def decorator(func: _RegularHandlerImpl[_Plugin, _T]) -> _RegularHandlerImpl[_Plugin, _T]:
+) -> Callable[[_RegularHandlerImpl[_Plugin, _T, _R]], _RegularHandlerImpl[_Plugin, _T, _R]]:
+    def decorator(func: _RegularHandlerImpl[_Plugin, _T, _R]) -> _RegularHandlerImpl[_Plugin, _T, _R]:
         setattr(func, _HANDLER_METADATA_ATTR, _RegularHandlerMetadata(directive_type))
         return func
     return decorator
