@@ -43,13 +43,13 @@ class CrossCheckPlugin(plugin_lib.BasePlugin):
 
     @plugin_lib.handle_custom('autobean.xcheck', 'a path, a start date and zero or more accounts')
     def handle_xcheck(self, entry: Custom, path: str, start: datetime.date, *accounts_tuple: plugin_lib.Account) -> Iterable[Directive]:
-        yield entry
         path = os.path.join(os.path.dirname(entry.meta['filename']), path)
         accounts = set[str](accounts_tuple)
         end = entry.date
         stmt_entries, stmt_errors, _ = loader.load_file(path)
         stmt_errors = [error for error in stmt_errors if not isinstance(error, ValidationError)]
         if stmt_errors:
+            yield entry
             self._error_logger.log_loading_errors(stmt_errors, entry)
             return
 
@@ -68,9 +68,10 @@ class CrossCheckPlugin(plugin_lib.BasePlugin):
                 posting.posting.meta, 'Missing posting', posting.transaction
             ))
         self._includes.add(path)
-        for entry in stmt_entries:
-            if isinstance(entry, Balance):
-                yield entry
+        for stmt_entry in stmt_entries:
+            if isinstance(stmt_entry, Balance):
+                yield stmt_entry
+        yield entry
 
 
 def _extract_related_postings(entries: list[Directive], accounts: set[str]) -> Iterable[PostingToCompare]:

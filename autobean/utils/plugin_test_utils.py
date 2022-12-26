@@ -1,8 +1,9 @@
 import collections
 import dataclasses
+import io
+import re
 from typing import Any, Callable, Optional, Union
 import os
-import sys
 import copy
 import pytest
 from beancount import loader
@@ -15,6 +16,7 @@ from autobean.utils.compare import compare_entries
 NonParameterizedPlugin = Callable[[list[Directive], dict[str, Any]], tuple[list[Directive], list[error_lib.Error]]]
 ParameterizedPlugin = Callable[[list[Directive], dict[str, Any], str], tuple[list[Directive], list[error_lib.Error]]]
 Plugin = Union[NonParameterizedPlugin, ParameterizedPlugin]
+_BRACKET_ESCAPE_REGEX = re.compile(r':TEST--(.*)--$')
 
 
 @dataclasses.dataclass(frozen=True)
@@ -30,6 +32,13 @@ class ExpectedErrors:
 
     def add(self, filename: str, lineno: int, message: str) -> None:
         self.errors[(filename, lineno)].append(message)
+
+    def format(self) -> str:
+        return '\n'.join(
+            f'{filename}:{lineno}:{message}'
+            for (filename, lineno), messages in sorted(self.errors.items())
+            for message in sorted(messages)
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -49,7 +58,6 @@ def generate_tests(tests_path: str, plugin: Plugin) -> Callable[[Callable[[], No
             assert_same_errors(testcase.source.errors, testcase.source_expected_errors)
             entries, errors = apply_plugin(
                 plugin, testcase.source.entries, testcase.source.options, testcase.plugin_arg)
-            entries = postprocess(entries)
             if testcase.expected_entries is not None:
                 assert_same_results(entries, testcase.expected_entries)
             assert_same_errors(errors, testcase.expected_errors)
@@ -96,6 +104,8 @@ def collect_testcases(tests_path: str) -> tuple[list[str], list[Testcase]]:
 def load_testcase(path: str, name: str) -> tuple[Optional[Ledger], ExpectedErrors]:
     bean_path = os.path.join(path, f'{name}.bean')
     ledger = load_ledger(bean_path) if os.path.isfile(bean_path) else None
+    if ledger:
+        ledger = dataclasses.replace(ledger, entries=unescape_entries(ledger.entries))
     errors_path = os.path.join(path, f'{name}.errors')
     errors = load_expected_errors(errors_path) if os.path.isfile(errors_path) else ExpectedErrors()
     return ledger, errors
@@ -117,34 +127,38 @@ def load_expected_errors(path: str) -> ExpectedErrors:
 
 
 def assert_same_results(actuals: list[Directive], expecteds: list[Directive]) -> None:
-    same, missings1, missings2 = compare_entries(actuals, expecteds)
-    for missing in missings1:
-        print('Unexpected entry:', file=sys.stderr)
-        printer.print_entry(missing, file=sys.stderr)
-    for missing in missings2:
-        print('Missing entry:', file=sys.stderr)
-        printer.print_entry(missing, file=sys.stderr)
-    assert same
+    # string comparison for better error output
+    actual_io = io.StringIO()
+    printer.print_entries(actuals, file=actual_io)
+    expected_io = io.StringIO()
+    printer.print_entries(expecteds, file=expected_io)
+    assert actual_io.getvalue() == expected_io.getvalue(), "unexpected output"
+
+    # catch potential mismatch that isn't printed
+    same, _, _= compare_entries(actuals, expecteds)
+    assert same, "unexpected output"
 
 
 def assert_same_errors(actuals: list[error_lib.Error], expecteds: ExpectedErrors) -> None:
     actual_errors = ExpectedErrors()
+    matched_expected_errors = ExpectedErrors()
+    unmatched_expected_errors = copy.deepcopy(expecteds)
     for actual in actuals:
-        actual_errors.add(
-            os.path.basename(actual.source['filename']), actual.source['lineno'], actual.message)
+        filename = os.path.basename(actual.source['filename'])
+        lineno = actual.source['lineno']
+        actual_errors.add(filename, lineno, actual.message)
 
-    unexpected_locations = set(actual_errors.errors.keys()) - set(expecteds.errors.keys())
-    assert not unexpected_locations, (
-        f'Unexpected errors: { {k: actual_errors.errors[k] for k in unexpected_locations} }')
-    missing_locations = set(expecteds.errors.keys()) - set(actual_errors.errors.keys())
-    assert not missing_locations, (
-        f'Missing errors: { {k: expecteds.errors[k] for k in missing_locations} }')
-    for location in actual_errors.errors:
-        assert len(actual_errors.errors[location]) == len(expecteds.errors[location]), (
-            f'Expected errors {expecteds.errors[location]} at {location}, got {actual_errors.errors[location]}')
-        for actual_msg, expected_msg in zip(actual_errors.errors[location], expecteds.errors[location]):
-            assert expected_msg in actual_msg, (
-                f'Expected error {expected_msg!r} at {location}, got {actual_msg!r}')
+        keywords = unmatched_expected_errors.errors.get((filename, lineno), [])
+        for i, keyword in enumerate(keywords):
+            if keyword in actual.message:
+                matched_expected_errors.add(filename, lineno, actual.message)
+                keywords.pop(i)
+                break
+    for (filename, lineno), keywords in unmatched_expected_errors.errors.items():
+        for keyword in keywords:
+            matched_expected_errors.add(filename, lineno, f'*{keyword}*')
+
+    assert actual_errors.format() == matched_expected_errors.format(), "unexpected errors"
 
 
 def apply_plugin(
@@ -158,27 +172,27 @@ def apply_plugin(
     return plugin(entries, options, plugin_arg)
 
 
-def postprocess_account(account: str) -> str:
-    """Replaces subaccount square brackets with hyphens.
+def unescape_account(account: str) -> str:
+    """Unescapes square brackets from expected output.
 
-    This is to allow testdata to be parsed normally.
+    Expected output was escaped so it could parse.
     """
-    return account.replace('[', 'TEST--').replace(']', '--')
+    return re.sub(_BRACKET_ESCAPE_REGEX, r':[\1]', account)
 
 
-def postprocess(entries: list[Directive]) -> list[Directive]:
+def unescape_entries(entries: list[Directive]) -> list[Directive]:
     ret = []
     for entry in entries:
         if isinstance(entry, Transaction):
             postings = [
                 posting._replace(
-                    account=postprocess_account(posting.account))
+                    account=unescape_account(posting.account))
                 for posting in entry.postings
             ]
             ret.append(entry._replace(postings=postings))
         elif isinstance(entry, Open) or isinstance(entry, Close):
             ret.append(entry._replace(
-                account=postprocess_account(entry.account)))
+                account=unescape_account(entry.account)))
         else:
             ret.append(entry)
 
