@@ -6,7 +6,6 @@
 2000-01-01 open Expenses:Bean
 2000-01-01 open Expenses:Tax
 2000-01-01 open Income:Irrelevant
-2000-01-01 open Assets:Receivable
 
 2000-01-01 *
     Assets:BankOfBean:JointAccount           -120.00 USD

@@ -1,25 +1,26 @@
 2000-01-01 open Assets:BankOfBean:JointAccount
 2000-01-01 open Expenses:Bean
-2000-01-01 open Assets:Receivable:TEST--Charlie--
-2000-01-01 open Assets:Receivable:TEST--Bob--
+2000-01-01 open Assets:Receivable:Bob
 
 2000-01-01 *
     Assets:BankOfBean:JointAccount            -50.00 USD
     Expenses:Bean                             100.00 USD
-    Assets:Receivable:TEST--Bob--             -50.00 USD
+    Assets:Receivable:Bob                     -50.00 USD
+
+2000-01-02 open Assets:Receivable:Charlie
 
 2000-01-02 *
     Assets:BankOfBean:JointAccount            -50.00 USD
-    Assets:Receivable:TEST--Bob--             -10.00 USD
-    Assets:Receivable:TEST--Charlie--          60.00 USD
+    Assets:Receivable:Bob                     -10.00 USD
+    Assets:Receivable:Charlie                  60.00 USD
 
 2000-01-03 *
     Assets:BankOfBean:JointAccount            -50.00 USD
-    Assets:Receivable:TEST--Bob--             -50.00 USD
-    Assets:Receivable:TEST--Charlie--         100.00 USD
+    Assets:Receivable:Bob                     -50.00 USD
+    Assets:Receivable:Charlie                 100.00 USD
 
 2000-01-04 *
     Assets:BankOfBean:JointAccount            -50.00 USD
     Expenses:Bean                              20.00 USD
-    Assets:Receivable:TEST--Bob--             -50.00 USD
-    Assets:Receivable:TEST--Charlie--          80.00 USD
+    Assets:Receivable:Bob                     -50.00 USD
+    Assets:Receivable:Charlie                  80.00 USD
