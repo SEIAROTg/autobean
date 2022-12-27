@@ -7,7 +7,7 @@ import os
 import copy
 import pytest
 from beancount import loader
-from beancount.core.data import Directive, Transaction, Open, Close
+from beancount.core.data import Balance, Directive, Transaction, Open, Close
 from beancount.parser import printer
 from autobean.utils import error_lib
 from autobean.utils.compare import compare_entries
@@ -16,7 +16,8 @@ from autobean.utils.compare import compare_entries
 NonParameterizedPlugin = Callable[[list[Directive], dict[str, Any]], tuple[list[Directive], list[error_lib.Error]]]
 ParameterizedPlugin = Callable[[list[Directive], dict[str, Any], str], tuple[list[Directive], list[error_lib.Error]]]
 Plugin = Union[NonParameterizedPlugin, ParameterizedPlugin]
-_BRACKET_ESCAPE_REGEX = re.compile(r':TEST--(.*)--$')
+_BRACKET_TO_ESCAPE_REGEX = re.compile(r':\[(.*?)\]')
+_BRACKET_ESCAPED_REGEX = re.compile(r':TEST--(.*?)--$')
 
 
 @dataclasses.dataclass(frozen=True)
@@ -68,51 +69,73 @@ def generate_tests(tests_path: str, plugin: Plugin) -> Callable[[Callable[[], No
 
 
 def collect_testcases(tests_path: str) -> tuple[list[str], list[Testcase]]:
-    ids: list[str] = []
-    testcases: list[Testcase] = []
+    all_ids: list[str] = []
+    all_testcases: list[Testcase] = []
     suites = os.listdir(tests_path)
     for suite in suites:
-        full_path = os.path.join(tests_path, suite)
-        if not os.path.isdir(full_path) or suite.startswith('.') or suite.startswith('_'):
+        ids, testcases = load_test_suite(tests_path, suite)
+        all_ids += ids
+        all_testcases += testcases
+    return all_ids, all_testcases
+
+
+def load_test_suite(tests_path: str, suite: str) -> tuple[list[str], list[Testcase]]:
+    full_path = os.path.join(tests_path, suite)
+    ids = list[str]()
+    testcases = list[Testcase]()
+    if not os.path.isdir(full_path) or suite.startswith('.') or suite.startswith('_'):
+        return [], []
+    names = set()
+    for filename in os.listdir(full_path):
+        segs = filename.rsplit('.', 2)
+        if len(segs) != 2:
             continue
-        names = set()
-        for filename in os.listdir(full_path):
-            segs = filename.rsplit('.', 2)
-            if len(segs) != 2:
-                continue
-            names.add(segs[0])
-        if 'source' not in names:
+        names.add(segs[0])
+    if 'source' not in names:
+        return [], []
+    names.remove('source')
+    source, source_expected_errors = load_expected(full_path, 'source')
+    assert source
+    for name in names:
+        if name.startswith('_'):
             continue
-        names.remove('source')
-        source, source_expected_errors = load_testcase(full_path, 'source')
-        assert source
-        for name in names:
-            if name.startswith('_'):
-                continue
-            plugin_arg = name if name != 'None' else None
-            expected_ledger, expected_errors = load_testcase(full_path, name)
-            ids.append(f'{suite} ({plugin_arg})')
-            testcases.append(Testcase(
-                source=copy.deepcopy(source),
-                source_expected_errors=source_expected_errors,
-                plugin_arg=plugin_arg,
-                expected_entries=expected_ledger.entries if expected_ledger else None,
-                expected_errors=expected_errors))
+        plugin_arg = name if name != 'None' else None
+        expected_ledger, expected_errors = load_expected(
+            full_path, name, escape_brackets=True)
+        ids.append(f'{suite} ({plugin_arg})')
+        testcases.append(Testcase(
+            source=copy.deepcopy(source),
+            source_expected_errors=source_expected_errors,
+            plugin_arg=plugin_arg,
+            expected_entries=expected_ledger.entries if expected_ledger else None,
+            expected_errors=expected_errors))
     return ids, testcases
 
 
-def load_testcase(path: str, name: str) -> tuple[Optional[Ledger], ExpectedErrors]:
+def load_expected(
+        path: str,
+        name: str,
+        *,
+        escape_brackets: bool = False,
+) -> tuple[Optional[Ledger], ExpectedErrors]:
     bean_path = os.path.join(path, f'{name}.bean')
-    ledger = load_ledger(bean_path) if os.path.isfile(bean_path) else None
-    if ledger:
-        ledger = dataclasses.replace(ledger, entries=unescape_entries(ledger.entries))
+    ledger = (
+        load_ledger(bean_path, escape_brackets=escape_brackets)
+        if os.path.isfile(bean_path) else None)
     errors_path = os.path.join(path, f'{name}.errors')
     errors = load_expected_errors(errors_path) if os.path.isfile(errors_path) else ExpectedErrors()
     return ledger, errors
 
 
-def load_ledger(path: str) -> Ledger:
-    entries, errors, options = loader.load_file(path)
+def load_ledger(path: str, *, escape_brackets: bool = False) -> Ledger:
+    if escape_brackets:
+        with open(path) as f:
+            content = f.read()
+        content = _escape_output(content)
+        entries, errors, options = loader.load_string(content)
+        entries = _unescape_entries(entries)
+    else:
+        entries, errors, options = loader.load_file(path)
     return Ledger(entries, errors, options)
 
 
@@ -172,28 +195,57 @@ def apply_plugin(
     return plugin(entries, options, plugin_arg)
 
 
-def unescape_account(account: str) -> str:
+def _escape_output(output: str) -> str:
+    return re.sub(_BRACKET_TO_ESCAPE_REGEX, r':TEST--\1--', output)
+
+
+def _unescape_account(account: str) -> str:
     """Unescapes square brackets from expected output.
 
     Expected output was escaped so it could parse.
     """
-    return re.sub(_BRACKET_ESCAPE_REGEX, r':[\1]', account)
+    return re.sub(_BRACKET_ESCAPED_REGEX, r':[\1]', account)
 
 
-def unescape_entries(entries: list[Directive]) -> list[Directive]:
+def _unescape_entries(entries: list[Directive]) -> list[Directive]:
     ret = []
     for entry in entries:
         if isinstance(entry, Transaction):
             postings = [
                 posting._replace(
-                    account=unescape_account(posting.account))
+                    account=_unescape_account(posting.account))
                 for posting in entry.postings
             ]
             ret.append(entry._replace(postings=postings))
-        elif isinstance(entry, Open) or isinstance(entry, Close):
+        elif isinstance(entry, Open | Close | Balance):
             ret.append(entry._replace(
-                account=unescape_account(entry.account)))
+                account=_unescape_account(entry.account)))
         else:
             ret.append(entry)
 
     return ret
+
+
+def generate_goldens(path: str, suite: str, plugin: Plugin) -> None:
+    _, testcases = load_test_suite(path, suite)
+    if not testcases:
+        print(f'No testcases found for {suite}.')
+    for testcase in testcases:
+        entries, errors = apply_plugin(
+            plugin, testcase.source.entries, testcase.source.options, testcase.plugin_arg)
+        if testcase.expected_entries is not None:
+            output_path = os.path.join(path, suite, f'{testcase.plugin_arg}.bean')
+            with open(output_path, 'w') as f:
+                printer.print_entries(entries, file=f)
+            print(f'Generated {output_path}.')
+        if errors:
+            expected_errors = ExpectedErrors()
+            for error in errors:
+                expected_errors.add(
+                    os.path.basename(error.source['filename']),
+                    error.source['lineno'],
+                    error.message)
+            output_path = os.path.join(path, suite, f'{testcase.plugin_arg}.errors')
+            with open(output_path, 'w') as f:
+                f.write(expected_errors.format())
+            print(f'Generated {output_path}.')
