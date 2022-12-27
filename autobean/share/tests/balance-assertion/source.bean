@@ -1,11 +1,39 @@
-2000-01-01 custom "autobean.share.policy" "default"
+2000-01-01 open Assets:Foo
     share-Alice: 1
 
-2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Assets:Bar
+    share-Alice: 1
+    share_final: TRUE
+
+2000-01-01 open Assets:Baz
+    share-Alice: 1
+    share-Bob: 1
+    share_final: TRUE
+
+2000-01-01 open Assets:Qux
+
 2000-01-01 open Expenses:Bean
 
 2000-01-01 *
-    Assets:BankOfBean:JointAccount           -100.00 USD
-    Expenses:Bean                             100.00 USD
+    Assets:Foo                                100.00 USD
+    Assets:Bar                               -100.00 USD
+    Assets:Baz                                100.00 USD
+    Assets:Qux                               -100.00 USD
+        share-Alice: 1
+        share_final: TRUE
 
-2000-01-02 balance Assets:BankOfBean:JointAccount -100.00 USD
+; not final, ignore
+2000-01-02 balance Assets:Foo  100.00 USD
+
+; final, show for Alice
+2000-01-03 balance Assets:Bar -100.00 USD
+
+; final, show for Alice and Bob
+2000-01-04 balance Assets:Baz  100.00 USD
+
+; not final, ignore
+2000-01-05 balance Assets:Qux -100.00 USD
+
+; explicit, show for Alice
+2000-01-06 balance Assets:Qux -100.00 USD
+    share-Alice: 1

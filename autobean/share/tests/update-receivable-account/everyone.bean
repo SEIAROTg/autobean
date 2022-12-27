@@ -1,0 +1,21 @@
+2000-01-01 open Assets:BankOfBean:[Alice]
+2000-01-01 open Assets:BankOfBean:[Bob]
+2000-01-01 open Expenses:Bean:[Alice]
+2000-01-01 open Expenses:Bean:[Bob]
+2000-01-01 open Assets:Receivables:Alice
+2000-01-01 open Assets:Receivables:Bob
+
+2000-01-01 * 
+  Assets:BankOfBean:[Alice]  -100.00 USD
+  Expenses:Bean:[Bob]         100.00 USD
+  Assets:Receivables:Alice   -100.00 USD
+  Assets:Receivables:Bob      100.00 USD
+
+2000-01-02 open Liabilities:Payables:Bob
+2000-01-02 open Liabilities:Payables:Alice
+
+2000-01-02 * 
+  Assets:BankOfBean:[Bob]     -100.00 USD
+  Expenses:Bean:[Alice]        100.00 USD
+  Liabilities:Payables:Bob    -100.00 USD
+  Liabilities:Payables:Alice   100.00 USD

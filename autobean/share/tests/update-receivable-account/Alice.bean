@@ -1,0 +1,13 @@
+2000-01-01 open Assets:BankOfBean
+2000-01-01 open Expenses:Bean
+2000-01-01 open Assets:Receivables:Bob
+
+2000-01-01 * 
+  Assets:BankOfBean       -100.00 USD
+  Assets:Receivables:Bob   100.00 USD
+
+2000-01-02 open Liabilities:Payables:Bob
+
+2000-01-02 * 
+  Expenses:Bean              100.00 USD
+  Liabilities:Payables:Bob  -100.00 USD

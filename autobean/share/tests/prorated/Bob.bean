@@ -1,0 +1,24 @@
+2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Expenses:Bean
+2000-01-01 open Expenses:Tax
+2000-01-01 open Income:Irrelevant
+
+2000-01-01 * 
+  Assets:BankOfBean:JointAccount  -72.00 USD
+  Expenses:Bean                    60.00 USD
+  Expenses:Tax                     12.00 USD
+
+2000-01-02 open Assets:Receivables:Alice
+
+2000-01-02 * 
+  Assets:BankOfBean:JointAccount  -144.00 USD
+  Expenses:Bean                     60.00 USD
+  Expenses:Tax                      12.00 USD
+  Assets:Receivables:Alice          72.00 USD
+
+2000-01-03 * 
+  Assets:BankOfBean:JointAccount  -84.00 USD
+  Income:Irrelevant               -60.00 USD
+  Expenses:Bean                    60.00 USD
+  Expenses:Tax                      0.00 USD
+  Assets:Receivables:Alice         84.00 USD

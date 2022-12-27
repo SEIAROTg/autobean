@@ -1,11 +1,24 @@
-from collections import defaultdict, deque, Counter
-from datetime import timedelta
-from decimal import Decimal
+import collections
+import dataclasses
+import datetime
+import decimal
+import re
 from typing import Any, Iterable, Optional
 from beancount.core import amount
-from beancount.core.data import Directive, Transaction, filter_txns, iter_entry_dates
+from beancount.core.data import Custom, Directive, Transaction, filter_txns, iter_entry_dates
 from autobean.utils import error_lib
-from autobean.share import utils, directives
+
+
+_MAIN_ACCOUNT_REGEX = re.compile(r':\[.*\]$')
+
+
+@dataclasses.dataclass(frozen=True)
+class Link:
+    path: str
+    account: str
+    complement_path: str
+    complement_account: str
+    custom: Custom
 
 
 class UnresolvedLinkError(error_lib.Error):
@@ -14,7 +27,7 @@ class UnresolvedLinkError(error_lib.Error):
 
 def link_accounts(
         entries_by_file: dict[str, list[Directive]],
-        links: Iterable[directives.Link],
+        links: Iterable[Link],
         logger: error_lib.ErrorLogger) -> list[Directive]:
 
     _check_links(entries_by_file, links, logger)
@@ -22,15 +35,19 @@ def link_accounts(
     return _resolve_links(entries_by_file, edges, logger)
 
 
+def _main_account(account: str) -> str:
+    return re.sub(_MAIN_ACCOUNT_REGEX, '', account)
+
+
 def _check_links(
         entries_by_file: dict[str, list[Directive]],
-        links: Iterable[directives.Link],
+        links: Iterable[Link],
         logger: error_lib.ErrorLogger) -> None:
     all_endpoints = set()
     for link in links:
         endpoints = [
-            (link.filename, link.account),
-            (link.complement_filename, link.complement_account),
+            (link.path, link.account),
+            (link.complement_path, link.complement_account),
         ]
         for ep in endpoints:
             if ep in all_endpoints:
@@ -51,14 +68,14 @@ def _check_links(
 
 def _build_graph(
         entries_by_file: dict[str, list[Directive]],
-        links: Iterable[directives.Link],
+        links: Iterable[Link],
         logger: error_lib.ErrorLogger) -> dict[int, list[tuple[Transaction, str]]]:
 
-    day = timedelta(days=1)
-    edges = defaultdict(list) # id(txn) -> [(complement txn, account)]
+    day = datetime.timedelta(days=1)
+    edges = collections.defaultdict(list) # id(txn) -> [(complement txn, account)]
     for link in links:
-        entries = entries_by_file.get(link.filename, [])
-        complement_entries = entries_by_file.get(link.complement_filename, [])
+        entries = entries_by_file.get(link.path, [])
+        complement_entries = entries_by_file.get(link.complement_path, [])
 
         for entry in filter_txns(entries):
             expected_complement_feature = _transaction_feature(
@@ -128,7 +145,8 @@ def _build_graph(
 def _resolve_links(
         entries_by_file: dict[str, list[Directive]],
         edges: dict[int, list[tuple[Transaction, str]]],
-        logger: error_lib.ErrorLogger) -> list[Directive]:
+        logger: error_lib.ErrorLogger,
+) -> list[Directive]:
     ret = []
     all_visited = set()
     bad = set()
@@ -140,7 +158,7 @@ def _resolve_links(
                 ret.append(entry)
                 continue
 
-            q = deque([entry])
+            q = collections.deque([entry])
             visited = set()
             txns = []
             while q:
@@ -164,32 +182,34 @@ def _resolve_links(
 def _transaction_feature(
         entry: Transaction,
         account: str,
-        negated: bool) -> tuple[Optional[str], Counter]:
+        negated: bool,
+) -> tuple[Optional[str], collections.Counter]:
     link_key = entry.meta.get('share_link_key', None)
 
     posting_features = []
     for posting in entry.postings:
-        if utils.main_account(posting.account) != account:
+        if _main_account(posting.account) != account:
             continue
         if negated:
-            units = amount.mul(posting.units, Decimal(-1))
+            units = amount.mul(posting.units, decimal.Decimal(-1))
         else:
             units = posting.units
         posting_features.append(units)
-    return link_key, Counter(posting_features)
+    return link_key, collections.Counter(posting_features)
 
 
 def merge_transactions(
         txns: list[Transaction],
         edges: dict[int, list[tuple[Transaction, str]]],
-        logger: error_lib.ErrorLogger) -> Optional[Transaction]:
+        logger: error_lib.ErrorLogger,
+) -> Optional[Transaction]:
     date = None
     flag = None
     payee = None
     narration = ''
-    tags: set[str] = set()
-    links: set[str] = set()
-    meta: dict[str, Any] = {}
+    tags = set[str]()
+    links = set[str]()
+    meta = dict[str, Any]()
     postings = []
     compatible = True
     last_txn = None
@@ -217,7 +237,7 @@ def merge_transactions(
             break
         accounts_to_remove = set(edge[1] for edge in edges[id(txn)])
         for posting in txn.postings:
-            if utils.main_account(posting.account) not in accounts_to_remove:
+            if _main_account(posting.account) not in accounts_to_remove:
                 postings.append(posting)
 
     if not compatible and last_txn:

@@ -1,0 +1,61 @@
+2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Expenses:Bean
+
+; posting policy
+
+2000-01-01 *
+    Assets:BankOfBean:JointAccount           -100.00 USD
+        share-Alice: 1
+    Expenses:Bean                             100.00 USD
+        share-Bob: 1
+
+; transaction policy
+
+2000-01-02 *
+    share-Bob: 1
+    Assets:BankOfBean:JointAccount           -100.00 USD
+        share-Alice: 1
+    Expenses:Bean                             100.00 USD
+
+; wildcard account policy
+
+2000-01-03 custom "autobean.share.policy" "Assets:BankOfBean:*"
+    share-Alice: 1
+
+2000-01-03 *
+    share-Bob: 1
+    Assets:BankOfBean:JointAccount           -100.00 USD
+    Expenses:Bean                             100.00 USD
+
+; account policy
+
+2000-01-04 custom "autobean.share.policy" "Assets:BankOfBean:JointAccount"
+    share-Bob: 1
+
+2000-01-04 *
+    share-Alice: 1
+    Assets:BankOfBean:JointAccount           -100.00 USD
+    Expenses:Bean                             100.00 USD
+
+; named poilcy
+
+2000-01-05 custom "autobean.share.policy" "alice"
+    share-Alice: 1
+
+2000-01-05 custom "autobean.share.policy" "bob"
+    share-Bob: 1
+
+2000-01-05 *
+    share_policy: "bob"
+    Assets:BankOfBean:JointAccount           -100.00 USD
+        share_policy: "alice"
+    Expenses:Bean                             100.00 USD
+
+; default policy
+
+2000-01-06 custom "autobean.share.policy" "default"
+    share-Bob: 1
+
+2000-01-06 *
+    Assets:BankOfBean:JointAccount           -100.00 USD
+    Expenses:Bean                             100.00 USD

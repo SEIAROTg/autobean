@@ -6,14 +6,17 @@
 2000-01-01 open Expenses:Bean
 2000-01-01 open Income:Topup
 
-2000-01-02 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
-2000-01-02 custom "autobean.share.proportionate" Assets:BankOfBean
+2000-01-02 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount ; should pass
+2000-01-02 custom "autobean.share.proportionate" Assets:BankOfBean              ; should pass
 
-2000-01-03 *
+2000-01-02 *
     Income:Topup                             -100.00 USD
         share-Alice: 1
     Assets:BankOfBean:JointAccount            100.00 USD
         share-Alice: 1
+
+2000-01-03 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount ; should fail
+2000-01-03 custom "autobean.share.proportionate" Assets:BankOfBean              ; should fail
 
 2000-01-04 *
     Income:Topup                             -100.00 USD
@@ -21,20 +24,40 @@
     Assets:BankOfBean:JointAccount            100.00 USD
         share-Bob: 1
 
-2000-01-05 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
-2000-01-05 custom "autobean.share.proportionate" Assets:BankOfBean
+2000-01-05 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount ; should pass
+2000-01-05 custom "autobean.share.proportionate" Assets:BankOfBean              ; should pass
 
-2000-01-06 *
-    Assets:BankOfBean:JointAccount           -100.00 USD
-    Expenses:Bean                             100.00 USD
+2000-01-06 custom "autobean.share.policy" Assets:BankOfBean:JointAccount
+    share-Alice: 2
+    share-Bob: 3
 
-2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
-2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean
+2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount ; should fail
+2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean              ; should pass
 
-2000-01-08 *
-    Assets:BankOfBean:JointAccount           -100.00 USD
-    Expenses:Bean                             100.00 USD
+2000-01-08 custom "autobean.share.policy" Assets:BankOfBean
+    share-Alice: 2
+    share-Bob: 3
+
+2000-01-09 *
+    Income:Topup                             -100.00 USD
+        share-Alice: 1
+    Assets:BankOfBean:JointAccount            100.00 USD
         share-Alice: 1
 
-2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount
-2000-01-07 custom "autobean.share.proportionate" Assets:BankOfBean
+2000-01-10 *
+    Income:Topup                             -200.00 USD
+        share-Bob: 1
+    Assets:BankOfBean:JointAccount            200.00 USD
+        share-Bob: 1
+
+2000-01-11 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount ; should pass
+2000-01-11 custom "autobean.share.proportionate" Assets:BankOfBean              ; should pass
+
+2000-01-12 *
+    Income:Topup                             -100.00 USD
+        share-Charlie: 1
+    Assets:BankOfBean:JointAccount            100.00 USD
+        share-Charlie: 1
+
+2000-01-13 custom "autobean.share.proportionate" Assets:BankOfBean:JointAccount ; should fail
+2000-01-13 custom "autobean.share.proportionate" Assets:BankOfBean              ; should fail

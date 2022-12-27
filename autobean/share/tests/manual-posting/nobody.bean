@@ -1,0 +1,28 @@
+2000-01-01 open Assets:BankOfBean
+2000-01-01 open Expenses:Bean
+2000-01-01 open Assets:Receivables:Bob
+2000-01-01 open Assets:Receivables:Alice
+
+2000-01-01 * 
+  Assets:BankOfBean         -100.00 USD
+  Expenses:Bean              100.00 USD
+  Assets:Receivables:Alice  -100.00 USD
+  Assets:Receivables:Bob     100.00 USD
+
+2000-01-02 open Assets:Receivables:Charlie
+
+2000-01-02 * 
+  Assets:Receivables:Bob      -100.00 USD
+  Assets:Receivables:Bob        80.00 GBP @ 1.25 USD
+  Assets:Receivables:Alice      50.00 USD
+  Assets:Receivables:Charlie    50.00 USD
+  Assets:Receivables:Alice     -40.00 GBP @ 1.25 USD
+  Assets:Receivables:Charlie   -40.00 GBP @ 1.25 USD
+
+2000-01-03 * 
+  Assets:Receivables:Bob      -100.00 USD
+  Assets:Receivables:Bob       100.00 USD
+  Assets:Receivables:Alice     100.00 USD
+  Assets:Receivables:Charlie  -100.00 USD
+  Assets:Receivables:Alice    -100.00 USD
+  Assets:Receivables:Charlie   100.00 USD

@@ -1,0 +1,40 @@
+2000-01-01 open Assets:BankOfBean:JointAccount:[Alice]
+2000-01-01 open Assets:BankOfBean:JointAccount:[Bob]
+2000-01-01 open Expenses:Bean:[Alice]
+2000-01-01 open Expenses:Bean:[Bob]
+2000-01-01 open Assets:Receivables:Alice
+2000-01-01 open Assets:Receivables:Bob
+
+2000-01-01 * 
+  Assets:BankOfBean:JointAccount:[Alice]  -100.00 USD
+  Expenses:Bean:[Bob]                      100.00 USD
+  Assets:Receivables:Alice                -100.00 USD
+  Assets:Receivables:Bob                   100.00 USD
+
+2000-01-02 * 
+  Assets:BankOfBean:JointAccount:[Alice]  -100.00 USD
+  Expenses:Bean:[Bob]                      100.00 USD
+  Assets:Receivables:Alice                -100.00 USD
+  Assets:Receivables:Bob                   100.00 USD
+
+2000-01-03 * 
+  Assets:BankOfBean:JointAccount:[Alice]  -100.00 USD
+  Expenses:Bean:[Bob]                      100.00 USD
+  Assets:Receivables:Alice                -100.00 USD
+  Assets:Receivables:Bob                   100.00 USD
+
+2000-01-04 * 
+  Assets:BankOfBean:JointAccount:[Bob]  -100.00 USD
+  Expenses:Bean:[Alice]                  100.00 USD
+  Assets:Receivables:Bob                -100.00 USD
+  Assets:Receivables:Alice               100.00 USD
+
+2000-01-05 * 
+  Assets:BankOfBean:JointAccount:[Alice]  -100.00 USD
+  Expenses:Bean:[Bob]                      100.00 USD
+  Assets:Receivables:Alice                -100.00 USD
+  Assets:Receivables:Bob                   100.00 USD
+
+2000-01-06 * 
+  Assets:BankOfBean:JointAccount:[Bob]  -100.00 USD
+  Expenses:Bean:[Bob]                    100.00 USD

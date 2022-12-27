@@ -1,6 +1,17 @@
-2000-01-01 open Assets:BankOfBean:JointAccount
+2000-01-01 open Assets:Foo
+2000-01-01 open Assets:Bar
+2000-01-01 open Assets:Baz
+2000-01-01 open Assets:Qux
 2000-01-01 open Expenses:Bean
+2000-01-01 open Assets:Receivables:Bob
 
-2000-01-01 *
-    Assets:BankOfBean:JointAccount           -100.00 USD
-    Expenses:Bean                             100.00 USD
+2000-01-01 * 
+  Assets:Foo               100.00 USD
+  Assets:Bar              -100.00 USD
+  Assets:Baz                50.00 USD
+  Assets:Qux              -100.00 USD
+  Assets:Receivables:Bob    50.00 USD
+
+2000-01-03 balance Assets:Bar                                      -100.00 USD
+2000-01-04 balance Assets:Baz                                      50.00 USD
+2000-01-06 balance Assets:Qux                                      -100.00 USD

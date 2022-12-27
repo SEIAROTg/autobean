@@ -1,10 +1,11 @@
 import collections
+import contextlib
 import dataclasses
 import decimal
 import inspect
 import re
 import shlex
-from typing import Any, Callable, ClassVar, Iterable, Iterator, NewType, Optional, Type, TypeVar, Union, get_args, get_origin
+from typing import Any, Callable, ClassVar, Generic, Iterable, Iterator, NewType, Optional, Type, TypeVar, Union, get_args, get_origin
 from beancount.core.data import Custom, Directive
 from beancount.core.amount import Amount
 from beancount.core import account as beancount_account
@@ -13,7 +14,7 @@ from autobean.utils import error_lib
 
 Account = NewType('Account', str)
 Currency = NewType('Currency', str)
-_HANDLER_METADATA_ATTR = '_autobean_handler_metadata'
+_HANDLER_ATTR = '_autobean_handler'
 _T = TypeVar('_T', bound=Directive)
 _R = TypeVar('_R', bound=Iterable[Directive])
 _Plugin = TypeVar('_Plugin', bound='BasePlugin')
@@ -22,23 +23,26 @@ _CustomHandlerImpl = Callable[..., _R]  # (self, custom, *args)
 
 
 @dataclasses.dataclass(frozen=True)
-class _RegularHandlerMetadata:
+class _RegularHandler(Generic[_Plugin, _T, _R]):
     directive_type: Type[Directive]
+    when: Optional[Callable[[_Plugin], bool]]
+    impl: _RegularHandlerImpl[_Plugin, _T, _R]
 
 
 @dataclasses.dataclass(frozen=True)
-class _CustomHandlerMetadata:
+class _CustomHandler:
     custom_type: str
     params_description: str
     params: list[inspect.Parameter]
+    impl: _CustomHandlerImpl
 
 
 class BasePlugin:
     _NAME: ClassVar[str]
     _ARGUMENT_TYPE: ClassVar[Any]
     _CUSTOM_SCOPE: ClassVar[Optional[re.Pattern]]
-    _REGULAR_HANDLERS: ClassVar[dict[int, _RegularHandlerImpl]]
-    _CUSTOM_HANDLERS: ClassVar[dict[str, list[tuple[_CustomHandlerMetadata, _CustomHandlerImpl]]]]
+    _REGULAR_HANDLERS: ClassVar[dict[int, _RegularHandler]]
+    _CUSTOM_HANDLERS: ClassVar[dict[str, list[_CustomHandler]]]
 
     _error_logger: error_lib.ErrorLogger
 
@@ -74,18 +78,22 @@ class BasePlugin:
 
     def _process_entry(self, entry: Directive) -> Iterator[Directive]:
         if isinstance(entry, Custom) and (handlers := self._CUSTOM_HANDLERS.get(entry.type)):
-            for metadata, func in handlers:
-                if (args := _get_args(entry.values or [], metadata)) is not None:
-                    yield from func(self, entry, *args)
+            for chandler in handlers:
+                if (args := _get_args(entry.values or [], chandler)) is not None:
+                    with _wrap_plugin_exception(entry, self._error_logger):
+                        yield from chandler.impl(self, entry, *args)
                     return
             self._error_logger.log_error(
                 error_lib.InvalidDirectiveError(
                     entry.meta,
-                    f'Invalid arguments: {shlex.quote(entry.type)} expects {metadata.params_description}.',
+                    f'Invalid arguments: {shlex.quote(entry.type)} expects {chandler.params_description}.',
                     entry))
             return
-        if handler := self._REGULAR_HANDLERS.get(id(type(entry))):
-            yield from handler(self, entry)
+        if rhandler := self._REGULAR_HANDLERS.get(id(type(entry))):
+            if rhandler.when is not None and not rhandler.when(self):
+                return
+            with _wrap_plugin_exception(entry, self._error_logger):
+                yield from rhandler.impl(self, entry)
             return
         yield entry
         if isinstance(entry, Custom) and (
@@ -96,13 +104,22 @@ class BasePlugin:
             return
 
 
+@contextlib.contextmanager
+def _wrap_plugin_exception(entry: Directive, error_logger: error_lib.ErrorLogger) -> Iterator[None]:
+    try:
+        yield
+    except error_lib.PluginException as e:
+        error_logger.log_error(error_lib.PluginError(
+            e.meta or entry.meta, str(e), entry))
+
+
 def _get_args(
         values: list[grammar.ValueType],
-        metadata: _CustomHandlerMetadata,
+        handler: _CustomHandler,
 ) -> Optional[list[Any]]:
     queue = values[::-1]
     args = []
-    for param in metadata.params:
+    for param in handler.params:
         if param.kind in (
                 inspect.Parameter.POSITIONAL_OR_KEYWORD,
                 inspect.Parameter.POSITIONAL_ONLY):
@@ -155,11 +172,11 @@ def plugin(
         regular_handlers = {}
         custom_handlers = collections.defaultdict(list) 
         for _, func in inspect.getmembers(cls, predicate=inspect.isfunction):
-            metadata = getattr(func, _HANDLER_METADATA_ATTR, None)
-            if isinstance(metadata, _RegularHandlerMetadata):
-                regular_handlers[id(metadata.directive_type)] = func
-            elif isinstance(metadata, _CustomHandlerMetadata):
-                custom_handlers[metadata.custom_type].append((metadata, func))
+            handler = getattr(func, _HANDLER_ATTR, None)
+            if isinstance(handler, _RegularHandler):
+                regular_handlers[id(handler.directive_type)] = handler
+            elif isinstance(handler, _CustomHandler):
+                custom_handlers[handler.custom_type].append(handler)
         cls._REGULAR_HANDLERS = regular_handlers
         cls._CUSTOM_HANDLERS = custom_handlers
         return cls
@@ -168,18 +185,21 @@ def plugin(
 
 def handle(
         directive_type: Type[_T],
+        *,
+        when: Optional[Callable[[_Plugin], bool]] = None,
 ) -> Callable[[_RegularHandlerImpl[_Plugin, _T, _R]], _RegularHandlerImpl[_Plugin, _T, _R]]:
-    def decorator(func: _RegularHandlerImpl[_Plugin, _T, _R]) -> _RegularHandlerImpl[_Plugin, _T, _R]:
-        setattr(func, _HANDLER_METADATA_ATTR, _RegularHandlerMetadata(directive_type))
-        return func
+    def decorator(impl: _RegularHandlerImpl[_Plugin, _T, _R]) -> _RegularHandlerImpl[_Plugin, _T, _R]:
+        setattr(impl, _HANDLER_ATTR, _RegularHandler(directive_type, when, impl))
+        return impl
     return decorator
 
 
 def handle_custom(custom_type: str, params_description: str) -> Callable[[_CustomHandlerImpl], _CustomHandlerImpl]:
-    def decorator(func: _CustomHandlerImpl) -> _CustomHandlerImpl:
-        setattr(func, _HANDLER_METADATA_ATTR, _CustomHandlerMetadata(
+    def decorator(impl: _CustomHandlerImpl) -> _CustomHandlerImpl:
+        setattr(impl, _HANDLER_ATTR, _CustomHandler(
             custom_type=custom_type,
             params_description=params_description,
-            params=list(inspect.signature(func).parameters.values())[2:]))
-        return func
+            params=list(inspect.signature(impl).parameters.values())[2:],
+            impl=impl))
+        return impl
     return decorator
