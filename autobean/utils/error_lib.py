@@ -1,4 +1,4 @@
-from typing import Iterable, NamedTuple
+from typing import Any, Iterable, NamedTuple, Optional
 from beancount.loader import LoadError
 from beancount.core.data import Directive, Meta
 
@@ -11,6 +11,16 @@ class Error(NamedTuple):
 
 class InvalidDirectiveError(Error):
     pass
+
+
+class PluginError(Error):
+    pass
+
+
+class PluginException(Exception):
+    def __init__(self, *args: Any, meta: Optional[Meta] = None, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.meta = meta
 
 
 class ErrorLogger:
