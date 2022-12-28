@@ -216,6 +216,7 @@ def _unescape_entries(entries: list[Directive]) -> list[Directive]:
                     account=_unescape_account(posting.account))
                 for posting in entry.postings
             ]
+            postings = sorted(postings, key=lambda p: p.meta['lineno'])
             ret.append(entry._replace(postings=postings))
         elif isinstance(entry, Open | Close | Balance):
             ret.append(entry._replace(
