@@ -1,6 +1,7 @@
 import collections
 import dataclasses
 import decimal
+import functools
 import itertools
 from typing import Any, Iterator, Optional, TypeVar
 from beancount.core import account as account_lib, amount as amount_lib, inventory as inventory_lib, convert, interpolate, realization
@@ -11,7 +12,6 @@ from beancount.ops import balance as balance_lib
 from autobean.utils import error_lib
 from . import policy_lib, viewpoint_lib
 
-_CONVERSION_HACK_LABEL = 'autobean.share conversion hack'
 # TODO: consider determining the tolerance in a better way
 _PROPORTIONATE_TOLERANCE = decimal.Decimal(1e-6)
 _O = TypeVar('_O', bound=policy_lib.Ownership)
@@ -53,18 +53,9 @@ def _split_posting_weighted(
     }
 
 
-def _generate_posting_pair(posting: Posting, policy: policy_lib.Policy) -> tuple[Posting, Posting]:
+def _get_complement_posting(posting: Posting) -> Posting:
     units = convert.get_weight(posting)
-    if policy.conversion or (not posting.price and not posting.cost):
-        return posting, posting._replace(units=units, price=None, cost=None)
-    if posting.cost:
-        raise error_lib.PluginException('share_conversion: FALSE is not supported for postings with cost')
-    # We hold the price information in cost as beancount inventory doesn't support price
-    inverse_price = Cost(
-        number = 1 / posting.price.number,
-        currency=posting.units.currency,
-        label=_CONVERSION_HACK_LABEL)
-    return posting._replace(price=None), posting._replace(units=units, price=None, cost=inverse_price)
+    return posting._replace(units=units, price=None, cost=None)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -95,24 +86,101 @@ class _GroupedPostings:
         return cls(weighted_postings_policies, prorated_postings_policies)
 
 
-def _complement_posting_from_position(
-        position: inventory_lib.Position,
-        account: str,
-) -> Posting:
-    if position.cost and position.cost.label == _CONVERSION_HACK_LABEL:
-        cost = None
-        price = Amount(position.cost.number, position.cost.currency)
-    else:
-        cost = position.cost
-        price = None
-    return Posting(
-        account=account,
-        units=position.units,
-        price=price,
-        cost=cost,
-        flag=None,
-        meta=(),
-    )
+class _Inventory:
+
+    def __init__(self) -> None:
+        self._positions = collections.defaultdict[tuple[str, Amount, Cost], decimal.Decimal](
+            decimal.Decimal)
+
+    def add_posting(self, posting: Posting) -> None:
+        key = (posting.units.currency, posting.price, posting.cost)
+        self._positions[key] += posting.units.number
+
+    def is_small(self, tolerances: decimal.Decimal | dict[str, decimal.Decimal]) -> bool:
+        if isinstance(tolerances, decimal.Decimal):
+            for balance in self._positions.values():
+                if abs(balance) > tolerances:
+                    return False
+            return True
+        for (currency, _, _), balance in self._positions.items():
+            tolerance = tolerances.get(currency, decimal.Decimal(0))
+            if abs(balance) > tolerance:
+                return False
+        return True
+
+    @property
+    def positions(self) -> dict[tuple[str, Amount, Cost], decimal.Decimal]:
+        return self._positions
+
+
+@dataclasses.dataclass(frozen=True)
+class _ConversionTableEntry:
+    from_currency: str
+    price: Optional[Amount]
+    cost: Optional[Cost]
+
+    @functools.cached_property
+    def rate(self) -> decimal.Decimal:
+        if self.cost:
+            return self.cost.number
+        elif self.price:
+            return self.price.number
+        assert False
+
+
+class _ConversionTable:
+    def __init__(self, table: dict[str, _ConversionTableEntry]):
+        self._table = table
+
+    @classmethod
+    def from_grouped_postings(cls, grouped_postings: _GroupedPostings) -> '_ConversionTable':
+        table = dict[str, _ConversionTableEntry]()
+        weighted: list[_PostingPolicy] = grouped_postings.weighted
+        prorated: list[_PostingPolicy] = grouped_postings.prorated
+
+        for posting, policy in itertools.chain(weighted, prorated):
+            if policy.conversion or (not posting.price and not posting.cost):
+                continue
+            currency = posting.cost.currency if posting.cost else posting.price.currency
+            entry = _ConversionTableEntry(posting.units.currency, posting.price, posting.cost)
+            table[currency] = entry
+        for posting, policy in itertools.chain(weighted, prorated):
+            if not posting.price and not posting.cost:
+                continue
+            currency = posting.cost.currency if posting.cost else posting.price.currency
+            entry = _ConversionTableEntry(posting.units.currency, posting.price, posting.cost)
+            existing_entry = table.get(currency)
+            if existing_entry and existing_entry != entry:
+                raise error_lib.PluginException(
+                    f'Ambiguous conversion for currency {currency}. '
+                    'Consider not using share_conversion: FALSE.')
+        return cls(table)
+
+    def create_complement_posting(
+            self,
+            account: str,
+            number: decimal.Decimal,
+            currency: str,
+            price: Optional[Amount],
+            cost: Optional[Cost],
+            meta: Optional[dict[str, Any]],
+    ) -> Posting:
+        if entry := self._table.get(currency):
+            units = Amount(
+                number=number / entry.rate,
+                currency=entry.from_currency)
+            cost = entry.cost
+            price = entry.price
+        else:
+            units = Amount(number, currency)
+        return Posting(
+            account=account,
+            units=units,
+            price=price,
+            cost=cost,
+            flag=None,
+            meta=meta,
+        )
 
 
 class _ProratedOwnershipBuilder:
@@ -145,13 +213,25 @@ class _ProratedOwnershipBuilder:
 
 
 class _TransactionProcessor:
-    def __init__(self, *, receivable_account: str) -> None:
+    def __init__(
+            self,
+            *,
+            transaction: Transaction,
+            policy_db: policy_lib.PolicyDatabase,
+            options: dict[str, Any],
+            receivable_account: str,
+    ) -> None:
+        self._transaction = transaction
         self._receivable_account = receivable_account
-        self._postings = list[Posting]()
+        self._tolerance = interpolate.infer_tolerances(self._transaction.postings, options)
         self._postings_by_party = collections.defaultdict[str, list[Posting]](list)
-        self._inventory_by_party = collections.defaultdict[str, inventory_lib.Inventory](inventory_lib.Inventory)
+        self._inventory_by_party = collections.defaultdict[str, _Inventory](_Inventory)
         # complement receivable postings generated from explicit postings on receivables
         self._complement_receivables = collections.defaultdict[str, list[Posting]](list)
+
+        grouped_postings = _GroupedPostings.from_transaction(transaction, policy_db)
+        self._conversion_table = _ConversionTable.from_grouped_postings(grouped_postings)
+        self._process_transaction(grouped_postings)
 
     def _add_weighted_posting(
             self,
@@ -160,13 +240,13 @@ class _TransactionProcessor:
             ownership: policy_lib.WeightedOwnership,
     ) -> dict[str, Posting]:
         policy_lib.strip_share_meta(posting.meta)
-        posting, complement = _generate_posting_pair(posting, policy)
+        complement = _get_complement_posting(posting)
         party_postings = _split_posting_weighted(posting, ownership)
         for party, posting in party_postings.items():
             self._postings_by_party[party].append(posting)
         complement_party_postings = _split_posting_weighted(complement, ownership)
         for party, posting in complement_party_postings.items():
-            self._inventory_by_party[party].add_amount(posting.units, posting.cost)
+            self._inventory_by_party[party].add_posting(posting)
         parent, _, receivable_party = posting.account.rpartition(':')
         if parent == self._receivable_account:
             for party, posting in party_postings.items():
@@ -176,15 +256,10 @@ class _TransactionProcessor:
                 ))
         return party_postings
 
-    def process_transaction(
+    def _process_transaction(
             self,
-            transaction: Transaction,
-            policy_db: policy_lib.PolicyDatabase,
-            options: dict[str, Any],
+            grouped_postings: _GroupedPostings,
     ) -> None:
-        self._postings = transaction.postings
-        self._tolerance = interpolate.infer_tolerances(transaction.postings, options)
-        grouped_postings = _GroupedPostings.from_transaction(transaction, policy_db)
         prorated_ownership_builder = _ProratedOwnershipBuilder()
         for posting, weighted_policy in grouped_postings.weighted:
             party_postings = self._add_weighted_posting(posting, weighted_policy, weighted_policy.ownership)
@@ -198,7 +273,7 @@ class _TransactionProcessor:
                 self._add_weighted_posting(posting, prorated_policy, prorated_ownership)
 
     def realize(self, root: realization.RealAccount, accounts: set[str]) -> None:
-        for posting in self._postings:
+        for posting in self._transaction.postings:
             if posting.account in accounts:
                 realization.get_or_create(
                     root, posting.account,
@@ -220,7 +295,7 @@ class _TransactionProcessor:
     ) -> list[Posting]:
         if viewpoint == viewpoint_lib.NOBODY:
             return [
-                *self._postings,
+                *self._transaction.postings,
                 *itertools.chain.from_iterable(self._complement_receivables.values()),
                 *self._get_complement_postings(),
             ]
@@ -259,10 +334,16 @@ class _TransactionProcessor:
             *,
             excluded_party: Optional[str] = None) -> list[Posting]:
         return [
-            _complement_posting_from_position(position, f'{self._receivable_account}:{party}')
+            self._conversion_table.create_complement_posting(
+                account=f'{self._receivable_account}:{party}',
+                number=number,
+                currency=currency,
+                price=price,
+                cost=cost,
+                meta=self._transaction.meta)
             for party, inventory in self._inventory_by_party.items()
             if party != excluded_party and not inventory.is_small(self._tolerance)
-            for position in inventory
+            for (currency, price, cost), number in inventory.positions.items()
         ]
 
 
@@ -284,8 +365,11 @@ class AccountSplitter:
         self._used_subaccounts = collections.defaultdict[str, set[str]](set)
 
     def process_transaction(self, transaction: Transaction, receivable_account: str) -> Optional[Transaction]:
-        processor = _TransactionProcessor(receivable_account=receivable_account)
-        processor.process_transaction(transaction, self._policy_db, self._options)
+        processor = _TransactionProcessor(
+            transaction=transaction,
+            policy_db=self._policy_db,
+            options=self._options,
+            receivable_account=receivable_account)
         asserted_accounts = {
             posting.account
             for posting in transaction.postings

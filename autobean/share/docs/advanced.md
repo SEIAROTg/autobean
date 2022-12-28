@@ -47,7 +47,7 @@ The solution this plugin presents is to attach a `share_prorated_included: FALSE
 
 Also, to make it work, all participating postings must have the same currency, though it doesn't have to match the currency of the `share_prorated: TRUE` posting.
 
-## Currency selection
+## Currency conversion
 
 Consider the following transaction:
 
@@ -75,12 +75,12 @@ We can always do this but it would also be nice to avoid that redundancy:
 
 ```beancount
 2000-01-01 *
-    Assets:Bank                  -20.00 USD @@
+    Assets:Bank                  -20.00 USD @ 0.75 GBP
         share-Alice: 1
     Expenses:Movie                15.00 GBP
         share-Bob: 1
     Assets:Receivables:Bob       -15.00 GBP
-    Assets:Receivables:Bob        20.00 USD
+    Assets:Receivables:Bob        20.00 USD @ 0.75 GBP
 ```
 
 Essentially, there is a choice to make between conversion first or loan first, that is, to differentiate between:
@@ -93,8 +93,8 @@ Essentially, there is a choice to make between conversion first or loan first, t
 
 ; loan first
 2000-01-01 *
-    Assets:Bank                  -20.00 USD
-    Assets:Receivables:Bob        15.00 GBP @@
+    Assets:Bank                  -20.00 USD @@ 15.00 GBP
+    Assets:Receivables:Bob        20.00 USD @@ 15.00 GBP
 ```
 
 Because the receivable account isn't part of our input, the `@` conversion will always be attached to the `Assets:Bank` side. Some additional information is therefore required to make that choice, which, in this plugin, is the `share_conversion` meta:
@@ -113,8 +113,8 @@ This will yield:
 ```beancount
 ; Alice
 2000-01-01 *
-    Assets:Bank                  -20.00 USD
-    Assets:Receivables:Bob        20.00 USD
+    Assets:Bank                  -20.00 USD @@ 15.00 GBP
+    Assets:Receivables:Bob        20.00 USD @@ 15.00 GBP
 
 ; Bob
 2000-01-01 *
@@ -123,12 +123,15 @@ This will yield:
 
 ; everyone
 2000-01-01 *
-    Assets:Bank:[Alice]          -20.00 USD
+    Assets:Bank:[Alice]          -20.00 USD @@ 15.00 GBP
     Expenses:Movie:[Bob]          15.00 GBP
-    Assets:Receivables:Bob        20.00 USD
-    Assets:Receivables:Alice     -20.00 USD @@
+    Assets:Receivables:Bob        20.00 USD @@ 15.00 GBP
+    Assets:Receivables:Alice     -20.00 USD @@ 15.00 GBP
 ```
 
+However, this may only be used under unambiguous circumstance. If Alice paid `50 USD @ 1.25 GBP`, Bob paid `60 USD @ 1.2 GBP`, Charlie spent `30 USD`, and Delta spent `60 USD`, who should use which rate becomes difficult for the automation to decide.
+
+This plugin therefore requires that if a posting has `share_conversion: FALSE`, there must be a unique way in the transaction to convert to its cost / price currency. For example, if a posting `-20.00 USD @ 0.75 GBP` has `share_conversion: FALSE`, any other postings must either not have `GBP` as their cost / price currency or must use the identical conversion rate and as a result, all `GBP` in receivable postings will be converted to `USD @ 0.75 GBP`.
 
 ## Balance assertion
 

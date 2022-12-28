@@ -22,8 +22,7 @@ A beancount plugin to ease expense split, joint bookkeeping, and debt management
     ; Some recommended settings.
     2000-01-01 * custom "autobean.share.policy" "Assets:*"
         share-Alice: 1
-        share_enforced: TRUE
-        share_conversion: FALSE
+        share_final: TRUE
         share_prorated_included: FALSE
     ```
 4. Describe things from the overall viewpoint
