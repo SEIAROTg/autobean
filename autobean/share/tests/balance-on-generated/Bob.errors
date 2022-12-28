@@ -1,0 +1,2 @@
+source.bean:15:pad must not be used on generated accounts. Consider using autobean.share.pad instead.
+source.bean:16:balance must not be used on generated accounts. Consider using autobean.share.balance instead.

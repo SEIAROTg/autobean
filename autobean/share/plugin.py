@@ -160,10 +160,6 @@ class Plugin(plugin_lib.BasePlugin):
 
     @plugin_lib.handle(Transaction, when=_is_enabled)
     def handle_transaction(self, entry: Transaction) -> Iterator[Directive]:
-        if entry.flag == flags.FLAG_PADDING:
-            if any(self._is_generated_account(posting.account) for posting in entry.postings):
-                raise error_lib.PluginException(
-                    f'pad must not be used on generated accounts. Consider using autobean.share.pad instead.')
         if transaction := self._account_splitter.process_transaction(entry, self._receivable_account):
             for posting in transaction.postings:
                 if self._is_receivable_account(posting.account):

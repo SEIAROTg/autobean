@@ -88,7 +88,9 @@ def _get_meta(meta: dict[str, Any], key: str, type_: type[_T], default: _U) -> _
     return _check_type(key, value, type_)
 
 
-def try_parse_policy_definition(meta: dict[str, Any]) -> Optional[PolicyDefinition]:
+def try_parse_policy_definition(meta: Optional[dict[str, Any]]) -> Optional[PolicyDefinition]:
+    if not meta:
+        return None
     weights = {}
     for key, value in meta.items():
         if key.startswith('share-'):
@@ -128,7 +130,9 @@ def try_parse_policy_definition(meta: dict[str, Any]) -> Optional[PolicyDefiniti
     )
 
 
-def strip_share_meta(meta: dict[str, Any]) -> None:
+def strip_share_meta(meta: Optional[dict[str, Any]]) -> None:
+    if not meta:
+        return
     for key in list(meta):
         if key.startswith('share-') or key.startswith('share_'):
             del meta[key]
