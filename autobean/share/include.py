@@ -10,7 +10,7 @@ from . import link_accounts
 class IncludePlugin(plugin_lib.BasePlugin):
 
     def process(self, entries: list[Directive], options: dict[str, Any], arg: Optional[str]) -> Iterable[Directive]:
-        self._enabled = False
+        self._enabled = True
         self._includes = set(options['include'])
         self._entries_by_file = dict[str, list[Directive]]()
         self._links = list[link_accounts.Link]()
