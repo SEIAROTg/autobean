@@ -447,14 +447,17 @@ class AccountSplitter:
 
 
 def _check_balance(
-        real_account: realization.RealAccount,
+        real_account: Optional[realization.RealAccount],
         balance: Balance,
         expected_amount: Amount,
         tolerance: decimal.Decimal,
         error_logger: error_lib.ErrorLogger,
 ) -> None:
-    subtree_balance = realization.compute_balance(real_account, leaf_only=False)
-    actual_amount = subtree_balance.get_currency_units(expected_amount.currency)
+    if real_account is not None:
+        subtree_balance = realization.compute_balance(real_account, leaf_only=False)
+        actual_amount = subtree_balance.get_currency_units(expected_amount.currency)
+    else:
+        actual_amount = amount_lib.Amount(decimal.Decimal(0), expected_amount.currency)
     diff_amount = amount_lib.sub(actual_amount, expected_amount)
     if abs(diff_amount.number) > tolerance:
         diff_direction = 'too much' if diff_amount.number > 0 else 'too little'

@@ -209,6 +209,7 @@ def _unescape_account(account: str) -> str:
 
 def _unescape_entries(entries: list[Directive]) -> list[Directive]:
     ret = []
+    entries = sorted(entries, key=lambda e: e.meta['lineno'])
     for entry in entries:
         if isinstance(entry, Transaction):
             postings = [
