@@ -113,8 +113,12 @@ class _Inventory:
         return self._positions
 
 
-@dataclasses.dataclass(frozen=True)
 class _ConversionTableEntry:
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class _UnambiguousConversionTableEntry(_ConversionTableEntry):
     from_currency: str
     price: Optional[Amount]
     cost: Optional[Cost]
@@ -128,32 +132,41 @@ class _ConversionTableEntry:
         assert False
 
 
+class _AmbiguousConversionTableEntry(_ConversionTableEntry):
+    pass
+
+
+_AMBIGUOUS_CONVERSION_TABLE_ENTRY = _AmbiguousConversionTableEntry()
+
+
 class _ConversionTable:
     def __init__(self, table: dict[str, _ConversionTableEntry]):
         self._table = table
 
     @classmethod
     def from_grouped_postings(cls, grouped_postings: _GroupedPostings) -> '_ConversionTable':
-        table = dict[str, _ConversionTableEntry]()
+        entries_by_currency = collections.defaultdict[str, set[_UnambiguousConversionTableEntry]](set)
+        no_conversion_currencies: set[str] = set()
         weighted: list[_PostingPolicy] = grouped_postings.weighted
         prorated: list[_PostingPolicy] = grouped_postings.prorated
 
         for posting, policy in itertools.chain(weighted, prorated):
-            if policy.conversion or (not posting.price and not posting.cost):
-                continue
-            currency = posting.cost.currency if posting.cost else posting.price.currency
-            entry = _ConversionTableEntry(posting.units.currency, posting.price, posting.cost)
-            table[currency] = entry
-        for posting, policy in itertools.chain(weighted, prorated):
             if not posting.price and not posting.cost:
                 continue
             currency = posting.cost.currency if posting.cost else posting.price.currency
-            entry = _ConversionTableEntry(posting.units.currency, posting.price, posting.cost)
-            existing_entry = table.get(currency)
-            if existing_entry and existing_entry != entry:
-                raise error_lib.PluginException(
-                    f'Ambiguous conversion for currency {currency}. '
-                    'Consider not using share_conversion: FALSE.')
+            if not policy.conversion:
+                no_conversion_currencies.add(currency)
+            entry = _UnambiguousConversionTableEntry(posting.units.currency, posting.price, posting.cost)
+            entries_by_currency[currency].add(entry)
+
+        table = dict[str, _ConversionTableEntry]()
+        for currency in no_conversion_currencies:
+            entries = entries_by_currency[currency]
+            if len(entries) == 1:
+                table[currency] = next(iter(entries))
+            else:
+                table[currency] = _AMBIGUOUS_CONVERSION_TABLE_ENTRY
+
         return cls(table)
 
     def create_complement_posting(
@@ -166,6 +179,10 @@ class _ConversionTable:
             meta: Optional[dict[str, Any]],
     ) -> Posting:
         if entry := self._table.get(currency):
+            if not isinstance(entry, _UnambiguousConversionTableEntry):
+                raise error_lib.PluginException(
+                    f'Ambiguous conversion for currency {currency}. '
+                    'Consider not using share_conversion: FALSE.')
             units = Amount(
                 number=number / entry.rate,
                 currency=entry.from_currency)

@@ -19,3 +19,8 @@
   Assets:BankOfBean       -100.00 USD @ 0.8 GBP
   Assets:BankOfBean        -10.00 GBP
   Assets:Receivables:Bob    112.5 USD @ 0.8 GBP
+
+2000-01-01 * 
+  Assets:BankOfBean  -100.00 USD @ 0.8 GBP
+  Assets:BankOfBean   -16.00 USD @ 0.75 GBP
+  Expenses:Bean        92.00 GBP

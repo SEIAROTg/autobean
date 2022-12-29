@@ -46,6 +46,16 @@
     Expenses:Bean                              92.00 GBP
         share-Bob: 1
 
+; ok: ambiguous, but no receivables
+2000-01-01 *
+    Assets:BankOfBean                        -100.00 USD @ 0.8 GBP
+        share-Alice: 1
+        share_conversion: FALSE
+    Assets:BankOfBean                         -16.00 USD @ 0.75 GBP
+        share-Alice: 1
+    Expenses:Bean                              92.00 GBP
+        share-Alice: 1
+
 ; error: mixed rates
 2000-01-01 *
     Assets:BankOfBean                        -100.00 USD @ 0.8 GBP
