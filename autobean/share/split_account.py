@@ -236,7 +236,6 @@ class _TransactionProcessor:
     def _add_weighted_posting(
             self,
             posting: Posting,
-            policy: policy_lib.Policy,
             ownership: policy_lib.WeightedOwnership,
     ) -> dict[str, Posting]:
         policy_lib.strip_share_meta(posting.meta)
@@ -262,30 +261,22 @@ class _TransactionProcessor:
     ) -> None:
         prorated_ownership_builder = _ProratedOwnershipBuilder()
         for posting, weighted_policy in grouped_postings.weighted:
-            party_postings = self._add_weighted_posting(posting, weighted_policy, weighted_policy.ownership)
+            party_postings = self._add_weighted_posting(posting, weighted_policy.ownership)
             if grouped_postings.prorated:
                 prorated_ownership_builder.check_currency(posting.units.currency)
                 if weighted_policy.prorated_included:
                     prorated_ownership_builder.add_postings(party_postings)
         if grouped_postings.prorated:
             prorated_ownership = prorated_ownership_builder.build()
-            for posting, prorated_policy in grouped_postings.prorated:
-                self._add_weighted_posting(posting, prorated_policy, prorated_ownership)
+            for posting, _ in grouped_postings.prorated:
+                self._add_weighted_posting(posting, prorated_ownership)
 
     def realize(self, root: realization.RealAccount, accounts: set[str]) -> None:
-        for posting in self._transaction.postings:
-            if posting.account in accounts:
-                realization.get_or_create(
-                    root, posting.account,
-                ).balance.add_position(posting)
-
-    def realize_by_party(self, roots: dict[str, realization.RealAccount], accounts: set[str]) -> None:
         for party, postings in self._postings_by_party.items():
             for posting in postings:
                 if posting.account in accounts:
-                    realization.get_or_create(
-                        roots[party], posting.account,
-                    ).balance.add_position(posting)
+                    real_account = realization.get_or_create(root, f'{posting.account}:{party}')
+                    real_account.balance.add_position(posting)
 
     def get_postings(
             self,
@@ -359,9 +350,7 @@ class AccountSplitter:
         self._options = options
         self._viewpoint = viewpoint
         self._asserted_accounts = asserted_accounts
-        self._overall_real_root = realization.RealAccount('')
-        self._party_real_roots = collections.defaultdict[str, realization.RealAccount](
-            lambda: realization.RealAccount(''))
+        self._real_root = realization.RealAccount('')
         self._used_subaccounts = collections.defaultdict[str, set[str]](set)
 
     def process_transaction(self, transaction: Transaction, receivable_account: str) -> Optional[Transaction]:
@@ -375,8 +364,7 @@ class AccountSplitter:
             for posting in transaction.postings
             if any(account in self._asserted_accounts for account in account_lib.parents(posting.account))
         }
-        processor.realize(self._overall_real_root, asserted_accounts)
-        processor.realize_by_party(self._party_real_roots, asserted_accounts)
+        processor.realize(self._real_root, asserted_accounts)
         postings = processor.get_postings(
             viewpoint=self._viewpoint,
             used_subaccounts=self._used_subaccounts)
@@ -391,8 +379,9 @@ class AccountSplitter:
             policy_lib.strip_share_meta(balance.meta)
             return [balance]
         tolerance = balance_lib.get_balance_tolerance(balance, self._options)
-        real_account = realization.get(self._overall_real_root, balance.account)
-        _check_balance(real_account, balance, balance.amount, tolerance, error_logger)
+        real_account = realization.get(self._real_root, balance.account)
+        total_balance, balance_by_party = _compute_balance(real_account)
+        _check_balance(total_balance, balance, balance.amount, tolerance, error_logger)
         policy = self._policy_db.get_balance_policy(balance)
         policy_lib.strip_share_meta(balance.meta)
         if not policy:
@@ -408,9 +397,8 @@ class AccountSplitter:
         for party, weight in policy.ownership.weights.items():
             if party == self._viewpoint:
                 continue  # will be checked by the returned balance directive
-            real_account = realization.get(self._party_real_roots[party], balance.account)
             balance_amount = _amount_distrib(balance.amount, weight, policy.ownership.total_weight)
-            _check_balance(real_account, balance, balance_amount, tolerance, error_logger)
+            _check_balance(balance_by_party.get(party), balance, balance_amount, tolerance, error_logger)
         if self._viewpoint not in policy.ownership.weights:
             return []
         return [
@@ -427,7 +415,7 @@ class AccountSplitter:
                 f'No applicable share policy found for autobean.share.proportionate on {account}')
         if len(policy.ownership.weights) > 1:
             # single party owner is by construction proportionate
-            _check_proportionate(account, policy, self._overall_real_root, self._party_real_roots)
+            _check_proportionate(account, policy, self._real_root)
         if viewpoint_lib.is_overall(self._viewpoint):
             policy_lib.strip_share_meta(entry.meta)
             return entry
@@ -446,18 +434,32 @@ class AccountSplitter:
         return results
 
 
+def _compute_balance(real_account: Optional[realization.RealAccount]) -> tuple[
+        inventory_lib.Inventory,
+        dict[str, inventory_lib.Inventory]
+]:
+    total_balance = inventory_lib.Inventory()
+    balance_by_party = collections.defaultdict[str, inventory_lib.Inventory](
+        inventory_lib.Inventory)
+    if real_account is not None:
+        for ra in realization.iter_children(real_account, leaf_only=True):
+            total_balance += ra.balance
+            party = ra.account.split(':')[-1]
+            balance_by_party[party] += ra.balance
+    return total_balance, balance_by_party
+
+
 def _check_balance(
-        real_account: Optional[realization.RealAccount],
+        actual_balance: Optional[inventory_lib.Inventory],
         balance: Balance,
         expected_amount: Amount,
         tolerance: decimal.Decimal,
         error_logger: error_lib.ErrorLogger,
 ) -> None:
-    if real_account is not None:
-        subtree_balance = realization.compute_balance(real_account, leaf_only=False)
-        actual_amount = subtree_balance.get_currency_units(expected_amount.currency)
-    else:
+    if actual_balance is None:
         actual_amount = amount_lib.Amount(decimal.Decimal(0), expected_amount.currency)
+    else:
+        actual_amount = actual_balance.get_currency_units(expected_amount.currency)
     diff_amount = amount_lib.sub(actual_amount, expected_amount)
     if abs(diff_amount.number) > tolerance:
         diff_direction = 'too much' if diff_amount.number > 0 else 'too little'
@@ -473,32 +475,20 @@ def _check_balance(
 def _check_proportionate(
         account: str,
         policy: policy_lib.Policy[policy_lib.WeightedOwnership],
-        overall_real_root: realization.RealAccount,
-        party_real_roots: dict[str, realization.RealAccount],
+        real_root: realization.RealAccount,
 ) -> None:
-    real_account = realization.get(overall_real_root, account)
+    real_account = realization.get(real_root, account)
     if real_account is None:
         return  # empty account is by definition proportionate
-
-    subtree_balance = realization.compute_balance(real_account, leaf_only=False)
-    party_subtree_balances = {}
-    for party, party_real_root in party_real_roots.items():
-        if (party_real_account := realization.get(party_real_root, account)) is not None:
-            party_subtree_balance = realization.compute_balance(
-                party_real_account, leaf_only=False)
-        else:
-            party_subtree_balance = inventory_lib.Inventory()
-        if party in policy.ownership.weights:
-            party_subtree_balances[party] = party_subtree_balance
-        elif not party_subtree_balance.is_small(_PROPORTIONATE_TOLERANCE):
-            raise error_lib.PluginException(f'Disproportionate balance on account {account}')
-        party_subtree_balances[party] = party_subtree_balance
-    for key, position in subtree_balance.items():
+    total_balance, balance_by_party = _compute_balance(real_account)
+    if set(balance_by_party) - set(policy.ownership.weights):
+        raise error_lib.PluginException(f'Disproportionate balance on account {account}')
+    for key, position in total_balance.items():
         for party, weight in policy.ownership.weights.items():
             expected_num = position.units.number * weight / policy.ownership.total_weight
             actual_num = 0
-            if (party_subtree_balance := party_subtree_balances.get(party)) is not None:
-                if party_position := party_subtree_balance.get(key):
+            if (party_balance := balance_by_party.get(party)) is not None:
+                if party_position := party_balance.get(key):
                     actual_num = party_position.units.number
             diff_num = actual_num - expected_num
             if abs(diff_num) > _PROPORTIONATE_TOLERANCE:
