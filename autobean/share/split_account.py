@@ -279,10 +279,9 @@ class _TransactionProcessor:
         prorated_ownership_builder = _ProratedOwnershipBuilder()
         for posting, weighted_policy in grouped_postings.weighted:
             party_postings = self._add_weighted_posting(posting, weighted_policy.ownership)
-            if grouped_postings.prorated:
+            if grouped_postings.prorated and weighted_policy.prorated_included:
                 prorated_ownership_builder.check_currency(posting.units.currency)
-                if weighted_policy.prorated_included:
-                    prorated_ownership_builder.add_postings(party_postings)
+                prorated_ownership_builder.add_postings(party_postings)
         if grouped_postings.prorated:
             prorated_ownership = prorated_ownership_builder.build()
             for posting, _ in grouped_postings.prorated:

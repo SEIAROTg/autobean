@@ -9,12 +9,14 @@
 2000-01-01 open Expenses:Tax
 2000-01-01 open Income:Irrelevant
 
+; ok
 2000-01-01 *
     Assets:BankOfBean:JointAccount           -120.00 USD
     Expenses:Bean                             100.00 USD
     Expenses:Tax                               20.00 USD
         share_prorated: TRUE
 
+; ok
 2000-01-02 *
     Assets:BankOfBean:JointAccount           -240.00 USD
     Expenses:Bean                             100.00 USD
@@ -23,9 +25,35 @@
     Expenses:Tax                               40.00 USD
         share_prorated: TRUE
 
+; ok
 2000-01-03 *
     Assets:BankOfBean:JointAccount           -140.00 USD
     Income:Irrelevant                        -100.00 USD
+    Expenses:Bean                             100.00 USD
+    Expenses:Bean                             100.00 USD
+        share-Alice: 1
+    Expenses:Tax                               40.00 USD
+        share_prorated: TRUE
+
+; ok: prorated_included currency doesn't have to match prorated currency
+2000-01-04 *
+    Assets:BankOfBean:JointAccount           -120.00 USD
+    Expenses:Bean                              80.00 GBP @@ 100.00 USD
+    Expenses:Tax                               20.00 USD
+        share_prorated: TRUE
+
+; error: mismatched currency
+2000-01-05 *
+    Assets:BankOfBean:JointAccount           -240.00 USD
+    Expenses:Bean                              80.00 GBP @@ 100.00 USD
+    Expenses:Bean                             100.00 USD
+        share-Alice: 1
+    Expenses:Tax                               40.00 USD
+        share_prorated: TRUE
+
+; ok: mismatched currency is excluded
+2000-01-06 *
+    Assets:BankOfBean:JointAccount           -200.00 GBP @@ 240.00 USD
     Expenses:Bean                             100.00 USD
     Expenses:Bean                             100.00 USD
         share-Alice: 1

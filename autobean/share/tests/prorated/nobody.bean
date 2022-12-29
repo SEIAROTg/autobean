@@ -27,3 +27,16 @@
   Expenses:Tax                      40.00 USD
   Assets:Receivables:Alice          84.00 USD
   Assets:Receivables:Bob           -84.00 USD
+
+2000-01-04 * 
+  Assets:BankOfBean:JointAccount  -120.00 USD
+  Expenses:Bean                     80.00 GBP @ 1.25 USD
+  Expenses:Tax                      20.00 USD
+
+2000-01-06 * 
+  Assets:BankOfBean:JointAccount  -200.00 GBP @ 1.2 USD
+  Expenses:Bean                    100.00 USD
+  Expenses:Bean                    100.00 USD
+  Expenses:Tax                      40.00 USD
+  Assets:Receivables:Alice         72.000 USD
+  Assets:Receivables:Bob          -72.000 USD
