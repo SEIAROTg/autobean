@@ -38,7 +38,7 @@ def test_parse_weighted(txn: Transaction) -> None:
         'Bob': 1.5,
     }
     assert policy_def.parent is None
-    assert policy_def.final is None
+    assert policy_def.enforced is None
     assert policy_def.conversion is None
     assert policy_def.prorated_included is None
 
@@ -136,7 +136,7 @@ class _TestPolicyDatabase:
             ownership=ownership,
             **{
                 'parent': None,
-                'final': None,
+                'enforced': None,
                 'conversion': None,
                 'prorated_included': None,
                 **options,
@@ -150,9 +150,9 @@ class TestAddPolicy(_TestPolicyDatabase):
         with pytest.raises(error_lib.PluginException, match='unknown.*foo'):
             self._policy_db.add_policy('bar', policy)
 
-    def test_add_final_without_ownership(self) -> None:
-        policy = self._create_policy(final=True)
-        with pytest.raises(error_lib.PluginException, match='Final.*ownership'):
+    def test_add_balance_policy_without_ownership(self) -> None:
+        policy = self._create_policy(enforced=True)
+        with pytest.raises(error_lib.PluginException, match='share_enforced.*ownership'):
             self._policy_db.add_policy('foo', policy)
 
 
@@ -305,40 +305,56 @@ class TestPostingPolicyResolution(_TestPolicyDatabase):
             self._policy_db.get_posting_policy(txn.postings[0], policy_def)
 
     @_parse_doc(Transaction)
-    def test_final_ownership_override_rejected(self, txn: Transaction) -> None:
+    def test_balance_policy_ownership_override_rejected(self, txn: Transaction) -> None:
         """
         2000-01-01 *
             Assets:Account 100.00 USD
                 share-Bob: 1
         """
-        self._policy_db.add_policy('Assets:Account', self._create_policy(42, final=True))
+        self._policy_db.add_policy('Assets:Account', self._create_policy(42, enforced=True))
 
         policy_def = policy_lib.try_parse_policy_definition(txn.meta)
-        with pytest.raises(error_lib.PluginException, match='override.*final'):
+        with pytest.raises(error_lib.PluginException, match='override.*share_enforced'):
             self._policy_db.get_posting_policy(txn.postings[0], policy_def)
 
     @_parse_doc(Transaction)
-    def test_final_unfinal_rejected(self, txn: Transaction) -> None:
+    def test_share_enforced_ephemeral_unset_rejected(self, txn: Transaction) -> None:
         """
         2000-01-01 *
             Assets:Account 100.00 USD
-                share_final: FALSE
+                share_enforced: FALSE
         """
-        self._policy_db.add_policy('Assets:Account', self._create_policy(42, final=True))
+        self._policy_db.add_policy('Assets:Account', self._create_policy(42, enforced=True))
 
         policy_def = policy_lib.try_parse_policy_definition(txn.meta)
-        with pytest.raises(error_lib.PluginException, match='unset.*final'):
+        with pytest.raises(error_lib.PluginException, match='unset.*share_enforced'):
             self._policy_db.get_posting_policy(txn.postings[0], policy_def)
 
     @_parse_doc(Transaction)
-    def test_final_option_accepted(self, txn: Transaction) -> None:
+    def test_share_enforced_unset_accepted(self, txn: Transaction) -> None:
+        """
+        2000-01-01 *
+            Assets:Account 100.00 USD
+                share_enforced: FALSE
+        """
+        self._policy_db.add_policy('Assets:*', self._create_policy(1, enforced=True))
+        self._policy_db.add_policy('Assets:Account', self._create_policy(42, enforced=False))
+
+        policy_def = policy_lib.try_parse_policy_definition(txn.meta)
+        policy = self._policy_db.get_posting_policy(txn.postings[0], policy_def)
+        assert isinstance(policy.ownership, policy_lib.WeightedOwnership)
+        assert policy.ownership.weights['Alice'] == 42
+        assert policy.enforced == False
+
+    @_parse_doc(Transaction)
+    def test_balance_policy_option_accepted(self, txn: Transaction) -> None:
         """
         2000-01-01 *
             Assets:Account 100.00 USD
                 share_conversion: FALSE
         """
         self._policy_db.add_policy('Assets:Account', self._create_policy(
-            42, final=True, conversion=True))
+            42, enforced=True, conversion=True))
 
         policy_def = policy_lib.try_parse_policy_definition(txn.meta)
         policy = self._policy_db.get_posting_policy(txn.postings[0], policy_def)
@@ -417,7 +433,7 @@ class TestBalancePolicyResolution(_TestPolicyDatabase):
 
         policy = self._policy_db.get_balance_policy(balance)
         assert policy
-        assert policy.final == False
+        assert policy.enforced == False
         assert policy.conversion == False
         assert policy.ownership.weights['Alice'] == 42
 
@@ -427,12 +443,12 @@ class TestBalancePolicyResolution(_TestPolicyDatabase):
         2000-01-01 balance Assets:Account 100.00 USD
         """
         self._policy_db.add_policy('Assets:Account', self._create_policy(conversion=False))
-        self._policy_db.add_policy('Assets:*', self._create_policy(42, conversion=True, final=True))
+        self._policy_db.add_policy('Assets:*', self._create_policy(42, conversion=True, enforced=True))
         self._policy_db.add_policy('default', self._create_policy(conversion=True))
 
         policy = self._policy_db.get_balance_policy(balance)
         assert policy
-        assert policy.final == True
+        assert policy.enforced == True
         assert policy.conversion == False
         assert policy.ownership.weights['Alice'] == 42
 
@@ -441,17 +457,17 @@ class TestBalancePolicyResolution(_TestPolicyDatabase):
         """
         2000-01-01 balance Assets:Account 100.00 USD
         """
-        self._policy_db.add_policy('Assets:*', self._create_policy(42, conversion=False, final=True))
+        self._policy_db.add_policy('Assets:*', self._create_policy(42, conversion=False, enforced=True))
         self._policy_db.add_policy('default', self._create_policy(conversion=True))
 
         policy = self._policy_db.get_balance_policy(balance)
         assert policy
-        assert policy.final == True
+        assert policy.enforced == True
         assert policy.conversion == False
         assert policy.ownership.weights['Alice'] == 42
 
     @_parse_doc(Balance)
-    def test_non_final_ignored(self, balance: Balance) -> None:
+    def test_non_balance_policy_ignored(self, balance: Balance) -> None:
         """
         2000-01-01 balance Assets:Account 100.00 USD
         """

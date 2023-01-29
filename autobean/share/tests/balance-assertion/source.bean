@@ -3,12 +3,12 @@
 
 2000-01-01 open Assets:Bar
     share-Alice: 1
-    share_final: TRUE
+    share_enforced: TRUE
 
 2000-01-01 open Assets:Baz
     share-Alice: 1
     share-Bob: 1
-    share_final: TRUE
+    share_enforced: TRUE
 
 2000-01-01 open Assets:Qux
 2000-01-01 open Expenses:Bean
@@ -21,18 +21,18 @@
     Assets:Baz                                100.00 USD
     Assets:Qux                               -100.00 USD
         share-Alice: 1
-        share_final: TRUE
+        share_enforced: TRUE
 
-; not final, ignore
+; not balance, ignore
 2000-01-03 balance Assets:Foo  100.00 USD
 
-; final, show for Alice
+; balance, show for Alice
 2000-01-04 balance Assets:Bar -100.00 USD
 
-; final, show for Alice and Bob
+; balance, show for Alice and Bob
 2000-01-05 balance Assets:Baz  100.00 USD
 
-; not final, ignore
+; not balance, ignore
 2000-01-06 balance Assets:Qux -100.00 USD
 
 ; explicit, show for Alice

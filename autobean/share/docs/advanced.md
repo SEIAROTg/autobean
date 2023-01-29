@@ -190,7 +190,7 @@ However, in practice we do want balance assertions — they help us build confid
 
 To bring back the check, we could simply perform the check before switching the viewpoint, so errors can be caught. This plugin always does that.
 
-To preserve the balance directives, given the source of problem was that Alice being the sole account owner is not clear, we could just add that information. The way to do that in this plugin is  `share_enforced: TRUE` in share policy at account or global level (but not transaction or posting level, which does not make sense). This enforces the ownership structure by disallowing any overrides. For example:
+To preserve the balance directives, given the source of problem was that Alice being the sole account owner is not clear, we could just add that information. The way to do that in this plugin is  `share_enforced: TRUE` in share policy at account or global level (but not transaction or posting level, which does not make sense). This enforces the ownership structure by disallowing overrides at posting or transaction level. For example:
 
 ```beancount
 2000-01-01 * custom "autobean.share.policy" Assets:Bank:Alice
