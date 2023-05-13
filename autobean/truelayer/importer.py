@@ -405,7 +405,7 @@ class _OAuthManager:
         class HttpHandler(http.server.BaseHTTPRequestHandler):
             def do_POST(self) -> None:
                 logging.info('OAuth response received.')
-                length = int(self.headers.get('Content-Length'))
+                length = int(self.headers['Content-Length'])
                 body = self.rfile.read(length).decode('utf-8')
                 data = dict(urllib.parse.parse_qsl(body))
                 received_state = data.get('state')
