@@ -46,6 +46,8 @@ class IncludePlugin(plugin_lib.BasePlugin):
     @plugin_lib.handle_custom('autobean.share.link', 'path to an included ledger, an account in it, path to another included ledger, and an account in it')
     def handle_link(self, entry: Custom, path: str, account: plugin_lib.Account, complement_path: str, complement_account: plugin_lib.Account) -> Iterable[Directive]:
         self._check_enabled(entry)
+        path = os.path.join(os.path.dirname(entry.meta['filename']), path)
+        complement_path = os.path.join(os.path.dirname(entry.meta['filename']), complement_path)
         self._links.append(link_accounts.Link(
             path=path,
             account=account,
