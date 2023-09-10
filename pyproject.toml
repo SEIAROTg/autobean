@@ -1,0 +1,39 @@
+[project]
+name = "autobean"
+version = "0.2.1"
+description = "A collection of plugins and scripts that help automating bookkeeping with beancount"
+authors = [
+    {name = "SEIAROTg", email = "seiarotg@gmail.com"},
+]
+dependencies = [
+    "beancount>=2.3.5",
+    "python-dateutil>=2.8.2",
+    "pyyaml>=6.0.1",
+    "requests>=2.31.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "GPL2"}
+
+[build-system]
+requires = ["pdm-pep517>=1.0"]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm]
+[tool.pdm.build]
+includes = [
+    "autobean/",
+]
+excludes = [
+    "autobean/*/tests/",
+]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest>=7.4.2",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.5.1",
+    "types-python-dateutil>=2.8.19.14",
+    "types-pyyaml>=6.0.12.11",
+    "types-requests>=2.31.0.2",
+]

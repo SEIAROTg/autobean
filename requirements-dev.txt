@@ -1,8 +1,0 @@
-pytest
-pytest-cov
-mypy
-pylint
-types-python-dateutil
-types-PyYAML
-types-requests
-
