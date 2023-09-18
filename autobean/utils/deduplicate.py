@@ -111,35 +111,34 @@ def deduplicate(
 class _Matcher:
     def __init__(self) -> None:
         self._new_nodes: set[_Node] = set()
-        self._edges: defaultdict[_Node, set[_Node]] = defaultdict(set)
+        self._edges = defaultdict[_Node, list[_Node]](list)
 
     def add_edge(self, new_entry: Directive, existing_entry: Directive) -> None:
         new_node = (True, new_entry)
         existing_node = (False, existing_entry)
         self._new_nodes.add(new_node)
-        self._edges[new_node].add(existing_node)
-        self._edges[existing_node].add(new_node)
+        self._edges[new_node].append(existing_node)
+        self._edges[existing_node].append(new_node)
+
+    def _dfs(self, node: _Node, matches: dict[_Node, _Node], visited: set[_Node]) -> bool:
+        visited.add(node)
+        for sibling in self._edges[node]:
+            if sibling not in matches:
+                matches[sibling] = node
+                matches[node] = sibling
+                return True
+        for sibling in self._edges[node]:
+            if matches[sibling] not in visited and self._dfs(matches[sibling], matches, visited):
+                matches[sibling] = node
+                matches[node] = sibling
+                return True
+        return False
 
     def matches(self) -> set[_Node]:
-        matches = set()
+        matches = dict[_Node, _Node]()
         for new_node in self._new_nodes:
-            if new_node in matches:
-                continue
-            q: deque[_Node] = deque()
-            q.append(new_node)
-            visited = set()
-            while q:
-                u = q.popleft()
-                if u in visited:
-                    continue
-                visited.add(u)
-                if u not in matches and u != new_node:
-                    matches.add(new_node)
-                    matches.add(u)
-                    break
-                for v in self._edges[u]:
-                    q.append(v)
-        return matches
+            self._dfs(new_node, matches, set())
+        return matches.keys() | matches.values()
 
     def subgraphs(self) -> Iterable[set[_Node]]:
         visited = set()
