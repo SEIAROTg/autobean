@@ -69,7 +69,7 @@ class CrossCheckPlugin(plugin_lib.BasePlugin):
             ))
         self._includes.add(path)
         for stmt_entry in stmt_entries:
-            if isinstance(stmt_entry, Balance):
+            if isinstance(stmt_entry, Balance) and (not accounts or stmt_entry.account in accounts):
                 yield stmt_entry
         yield entry
 
