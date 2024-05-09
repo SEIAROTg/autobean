@@ -156,7 +156,11 @@ class PolicyDatabase:
             raise error_lib.PluginException(
                 f'Policy with share_enforced must define ownership')
         if name.endswith(':*'):
-            self._wildcard_account_policies[name.removesuffix(':*')] = policy_def
+            prefix = name.removesuffix(':*')
+            self._wildcard_account_policies[prefix] = policy_def
+            if (account_policy_def := self._account_policies.get(prefix)) is not None:
+                self._account_policies[prefix] = _override_policy_def(
+                    policy_def, account_policy_def, is_ephemeral=False)
         elif ':' in name:
             self._account_policies[name] = policy_def
         else:

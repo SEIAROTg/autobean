@@ -201,16 +201,32 @@ class TestPostingPolicyResolution(_TestPolicyDatabase):
             share-Alice: 1
             Assets:Account 100.00 USD
                 share_prorated_included: FALSE
+            Assets:Account:Account 100.00 USD
+                share_prorated_included: FALSE
         """
-        self._policy_db.add_policy('Assets:Account', self._create_policy(42))
-        self._policy_db.add_policy('Assets:Account:*', self._create_policy(2))
+        self._policy_db.add_policy('Assets:Account:*', self._create_policy(42))
+        self._policy_db.add_policy('Assets:Account', self._create_policy(43))
         self._policy_db.add_policy('Assets:*', self._create_policy(3))
         self._policy_db.add_policy('default', self._create_policy(4))
 
         policy_def = policy_lib.try_parse_policy_definition(txn.meta)
+
+        policy = self._policy_db.get_posting_policy(txn.postings[0], policy_def)
+        assert isinstance(policy.ownership, policy_lib.WeightedOwnership)
+        assert policy.ownership.weights['Alice'] == 43
+        policy = self._policy_db.get_posting_policy(txn.postings[1], policy_def)
+        assert isinstance(policy.ownership, policy_lib.WeightedOwnership)
+        assert policy.ownership.weights['Alice'] == 42
+
+        self._policy_db.add_policy('Assets:Account:*', self._create_policy(42))
+
         policy = self._policy_db.get_posting_policy(txn.postings[0], policy_def)
         assert isinstance(policy.ownership, policy_lib.WeightedOwnership)
         assert policy.ownership.weights['Alice'] == 42
+        policy = self._policy_db.get_posting_policy(txn.postings[1], policy_def)
+        assert isinstance(policy.ownership, policy_lib.WeightedOwnership)
+        assert policy.ownership.weights['Alice'] == 42
+
 
     @_parse_doc(Transaction)
     def test_priority_wildcard_account_same(self, txn: Transaction) -> None:
