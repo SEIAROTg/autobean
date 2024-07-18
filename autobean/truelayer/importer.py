@@ -183,6 +183,9 @@ class _Extractor:
     def _fetch_all_transactions(self) -> list[Directive]:
         entries: list[Directive] = []
         for type_ in ACCOUNT_TYPES:
+            if not type_ in self._config.data:
+                continue
+
             for account_id, account in self._config.data[type_].items():
                 if not account['enabled']:
                     continue
