@@ -18,7 +18,7 @@ class IncludePlugin(plugin_lib.BasePlugin):
     @plugin_lib.handle_custom('autobean.include', 'exactly one path')
     def _handle_include(self, custom: Custom, path: str) -> Iterable[Directive]:
         path = os.path.join(os.path.dirname(custom.meta['filename']), path)
-        entries, errors, _ = loader.load_file(path)
+        entries, errors, options = loader.load_file(path)
         self._error_logger.log_loading_errors(errors, custom)
-        self._includes.add(path)
+        self._includes.update(options['include'])
         return entries
