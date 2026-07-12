@@ -1,8 +1,8 @@
 # autobean
 [![build](https://github.com/SEIAROTg/autobean/actions/workflows/build.yml/badge.svg)](https://github.com/SEIAROTg/autobean/actions/workflows/build.yml)
 [![pypi](https://img.shields.io/pypi/v/autobean)](https://pypi.org/project/autobean/)
-[![Maintainability](https://api.codeclimate.com/v1/badges/65e79b66e57139ed8bd0/maintainability)](https://codeclimate.com/github/SEIAROTg/autobean/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/65e79b66e57139ed8bd0/test_coverage)](https://codeclimate.com/github/SEIAROTg/autobean/test_coverage)
+[![Maintainability](https://qlty.sh/gh/SEIAROTg/projects/autobean/maintainability.svg)](https://qlty.sh/gh/SEIAROTg/projects/autobean)
+[![Test Coverage](https://qlty.sh/gh/SEIAROTg/projects/autobean/coverage.svg)](https://qlty.sh/gh/SEIAROTg/projects/autobean)
 [![license](https://img.shields.io/github/license/SEIAROTg/autobean.svg)](https://github.com/SEIAROTg/autobean)
 
 A collection of plugins and scripts that help automating bookkeeping with [beancount](http://furius.ca/beancount/).
